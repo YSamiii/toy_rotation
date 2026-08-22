@@ -1,0 +1,1978 @@
+{
+  "version": "0.10.33",
+  "updatedAt": "2026-08-20T13:40:00-04:00",
+  "entries": [
+    {
+      "key": "hape-mighty-echo-microphone",
+      "brand": "Hape",
+      "name": "Mighty Echo Microphone",
+      "nameZh": "回声麦克风",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 48,
+      "category": "音乐",
+      "skills": [
+        "语言",
+        "音乐启蒙",
+        "因果关系",
+        "角色扮演"
+      ]
+    },
+    {
+      "key": "hape-wonder-walker",
+      "brand": "Hape",
+      "name": "Wonder Walker Push and Pull Toddler Walking Toy",
+      "nameZh": "探索学步推车",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 36,
+      "category": "户外/大运动",
+      "skills": [
+        "大运动",
+        "平衡能力",
+        "身体协调",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "brio-steam-go-train",
+      "brand": "BRIO",
+      "name": "Steam & Go Train",
+      "nameZh": "蒸汽推行小火车",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 60,
+      "category": "车辆/轨道",
+      "skills": [
+        "精细动作",
+        "因果关系",
+        "大运动",
+        "角色扮演"
+      ]
+    },
+    {
+      "key": "brio-toddler-wobbler",
+      "brand": "BRIO",
+      "name": "Toddler Wobbler",
+      "nameZh": "幼儿学步推车",
+      "ageMinMonths": 9,
+      "ageMaxMonths": 30,
+      "category": "户外/大运动",
+      "skills": [
+        "大运动",
+        "平衡能力",
+        "身体协调"
+      ]
+    },
+    {
+      "key": "brio-dachshund",
+      "brand": "BRIO",
+      "name": "Dachshund Pull Along Toy",
+      "nameZh": "腊肠狗拖拉玩具",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 36,
+      "category": "户外/大运动",
+      "skills": [
+        "大运动",
+        "因果关系",
+        "角色扮演"
+      ]
+    },
+    {
+      "key": "baby-einstein-magic-touch-drums",
+      "brand": "Baby Einstein",
+      "name": "Magic Touch Drums",
+      "nameZh": "Magic Touch 木质触控鼓",
+      "ageMinMonths": 6,
+      "ageMaxMonths": 36,
+      "category": "音乐",
+      "skills": [
+        "音乐启蒙",
+        "因果关系",
+        "手眼协调",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "baby-einstein-together-in-tune-guitar",
+      "brand": "Baby Einstein",
+      "name": "Together in Tune Magic Touch Guitar",
+      "nameZh": "Together in Tune 木质触控吉他",
+      "ageMinMonths": 6,
+      "ageMaxMonths": 36,
+      "category": "音乐",
+      "skills": [
+        "音乐启蒙",
+        "因果关系",
+        "社交互动",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "fat-brain-playtab",
+      "brand": "Fat Brain Toys",
+      "name": "PlayTab Modular Sensory Activity Board",
+      "nameZh": "PlayTab 模块化感官活动板",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 48,
+      "category": "感官探索",
+      "skills": [
+        "精细动作",
+        "感官探索",
+        "因果关系",
+        "手眼协调"
+      ]
+    },
+    {
+      "key": "fat-brain-spillagain",
+      "brand": "Fat Brain Toys",
+      "name": "SpillAgain",
+      "nameZh": "SpillAgain 掉球重复游戏",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 36,
+      "category": "益智类玩具",
+      "skills": [
+        "因果关系",
+        "手眼协调",
+        "精细动作",
+        "专注力"
+      ]
+    },
+    {
+      "key": "green-toys-soft-top-push-car",
+      "brand": "Green Toys",
+      "name": "Soft Top Push Car",
+      "nameZh": "软顶推行小车",
+      "ageMinMonths": 6,
+      "ageMaxMonths": 36,
+      "category": "车辆/轨道",
+      "skills": [
+        "抓握能力",
+        "精细动作",
+        "角色扮演",
+        "感官探索"
+      ]
+    },
+    {
+      "key": "grimms-small-square-building-game",
+      "brand": "Grimm's",
+      "name": "Small Square Building Game",
+      "nameZh": "小方形建构游戏",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "积木/建构",
+      "skills": [
+        "空间认知",
+        "问题解决",
+        "精细动作",
+        "创造力"
+      ]
+    },
+    {
+      "key": "mideer-magnetic-playset-dreamy-princess",
+      "brand": "Mideer",
+      "name": "Magnetic Playset - Dreamy Princess",
+      "nameZh": "梦幻公主磁力换装游戏套装",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "角色扮演",
+      "skills": [
+        "创造力",
+        "精细动作",
+        "角色扮演",
+        "审美表达"
+      ]
+    },
+    {
+      "key": "beie-manhattan-grasp-ball",
+      "brand": "贝易",
+      "name": "BEIE Manhattan Grasp Ball",
+      "nameZh": "曼哈顿手抓球",
+      "ageMinMonths": 3,
+      "ageMaxMonths": 18,
+      "category": "感官探索",
+      "skills": [
+        "抓握能力",
+        "感官探索",
+        "手眼协调",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "beie-baby-gym-piano",
+      "brand": "贝易",
+      "name": "BEIE Baby Gym with Kick Piano",
+      "nameZh": "启蒙家健身架脚踏钢琴",
+      "ageMinMonths": 0,
+      "ageMaxMonths": 12,
+      "category": "感官探索",
+      "skills": [
+        "大运动",
+        "音乐启蒙",
+        "因果关系",
+        "视觉追踪"
+      ]
+    },
+    {
+      "key": "beie-nature-magnetic-tiles-60p",
+      "brand": "贝易",
+      "name": "Nature Magnetic Tiles 60P",
+      "nameZh": "大自然磁力片 60片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "积木/建构",
+      "skills": [
+        "空间认知",
+        "创造力",
+        "精细动作",
+        "问题解决"
+      ]
+    },
+    {
+      "key": "manlong-supreme-scooter",
+      "brand": "曼龙",
+      "name": "Mloong Kids Scooter",
+      "nameZh": "儿童滑板车",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 72,
+      "category": "户外/大运动",
+      "skills": [
+        "大运动",
+        "平衡能力",
+        "身体协调",
+        "空间认知"
+      ]
+    },
+    {
+      "key": "manlong-fantasy-play-tent",
+      "brand": "曼龙",
+      "name": "Mloong Fantasy Play Tent",
+      "nameZh": "幻想家儿童游戏帐篷",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 96,
+      "category": "角色扮演",
+      "skills": [
+        "角色扮演",
+        "创造力",
+        "社交互动"
+      ]
+    },
+    {
+      "key": "toi-magnetic-jigsaw-shapes",
+      "brand": "TOI",
+      "name": "Magnetic Jigsaw Puzzle: Shapes",
+      "nameZh": "磁性拼图游戏：形状",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 72,
+      "category": "拼图/配对",
+      "skills": [
+        "空间认知",
+        "精细动作",
+        "认知配对",
+        "问题解决"
+      ]
+    },
+    {
+      "key": "toi-magnetic-jigsaw-dressing",
+      "brand": "TOI",
+      "name": "Magnetic Jigsaw Puzzle: Dressing",
+      "nameZh": "磁性拼图游戏：换装",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 72,
+      "category": "角色扮演",
+      "skills": [
+        "角色扮演",
+        "精细动作",
+        "创造力",
+        "认知配对"
+      ]
+    },
+    {
+      "key": "toi-treasure-hunt-board-game",
+      "brand": "TOI",
+      "name": "Treasure Hunt Board Game",
+      "nameZh": "寻宝找找看亲子桌游",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "桌游",
+      "skills": [
+        "观察力",
+        "专注力",
+        "规则意识",
+        "社交互动"
+      ]
+    },
+    {
+      "key": "mideer-my-first-puzzle-dinosaurs-6in1-md1460",
+      "brand": "Mideer",
+      "name": "My First Puzzle – Dinosaurs 6-in-1",
+      "nameZh": "我的第一套拼图：恐龙 6合1",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 60,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "视觉空间",
+        "认知配对"
+      ],
+      "isSet": true,
+      "rotationRule": "split",
+      "catalogStatus": "complete",
+      "aliases": [
+        "Mideer dinosaur puzzle set",
+        "恐龙主题拼图套装",
+        "MD1460"
+      ]
+    },
+    {
+      "key": "mideer-level-up-dinosaur-projects-l2",
+      "brand": "Mideer",
+      "name": "Level Up! Puzzles with Storage Bag - Level 2: Dinosaur Projects",
+      "nameZh": "进阶拼图收纳袋 Level 2：恐龙工程",
+      "ageMinMonths": 30,
+      "ageMaxMonths": 72,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "视觉空间",
+        "问题解决",
+        "专注力"
+      ],
+      "isSet": true,
+      "rotationRule": "split"
+    },
+    {
+      "key": "mideer-portable-puzzle-dinosaur-age-104p",
+      "brand": "Mideer",
+      "name": "Portable Puzzle Box: Dinosaur Age 104P",
+      "nameZh": "便携拼图盒：恐龙时代 104片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "专注力",
+        "问题解决",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "mideer-lets-learn-dino-land-126p",
+      "brand": "Mideer",
+      "name": "Let's Learn Puzzle: Dino Land 126P",
+      "nameZh": "探索学习拼图：恐龙乐园 126片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "认知启蒙",
+        "专注力",
+        "问题解决"
+      ]
+    },
+    {
+      "key": "mideer-shaped-artist-dinosaur-world-280p",
+      "brand": "Mideer",
+      "name": "Shaped Artist Puzzle - Dinosaur World 280PCS",
+      "nameZh": "异形艺术家拼图：恐龙世界 280片",
+      "ageMinMonths": 60,
+      "ageMaxMonths": 120,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "专注力",
+        "问题解决",
+        "审美启蒙"
+      ]
+    },
+    {
+      "key": "mideer-32-in-1-classic-games",
+      "brand": "Mideer",
+      "name": "32 in 1 Classic Games",
+      "nameZh": "32合1经典桌游",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "桌游",
+      "skills": [
+        "逻辑推理",
+        "策略思维",
+        "规则意识",
+        "社交互动"
+      ]
+    },
+    {
+      "key": "mideer-level-up-l5-wonderful-adventure",
+      "brand": "Mideer",
+      "name": "Level Up! Puzzles with Storage Bag - Level 5: Wonderful Adventure 88P-126P",
+      "nameZh": "进阶拼图收纳袋 Level 5：奇妙冒险 88-126片",
+      "ageMinMonths": 60,
+      "ageMaxMonths": 120,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "专注力",
+        "问题解决",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "toi-magnetic-sudoku-jungle-band",
+      "brand": "TOI",
+      "name": "Magnetic Sudoku - Jungle Band",
+      "nameZh": "磁性数独：丛林乐队",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "桌游",
+      "skills": [
+        "逻辑推理",
+        "专注力",
+        "问题解决",
+        "规则意识"
+      ]
+    },
+    {
+      "key": "hape-polar-animal-tactile-puzzle",
+      "brand": "Hape",
+      "name": "Polar Animal Tactile Puzzle",
+      "nameZh": "极地动物触感拼图",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 60,
+      "category": "拼图/配对",
+      "skills": [
+        "感官探索",
+        "精细动作",
+        "认知配对",
+        "手眼协调"
+      ]
+    },
+    {
+      "key": "hape-tubing-pull-back-boat",
+      "brand": "Hape",
+      "name": "Tubing Pull-Back Boat Bath Toy",
+      "nameZh": "发条回力浴室小船",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 48,
+      "category": "感官探索",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "因果关系",
+        "感官探索"
+      ]
+    },
+    {
+      "key": "hape-bath-basketball-elephant-pal",
+      "brand": "Hape",
+      "name": "Bath Basketball Elephant Pal",
+      "nameZh": "大象浴室篮球",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 48,
+      "category": "户外/大运动",
+      "skills": [
+        "手眼协调",
+        "大运动",
+        "颜色认知",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "hape-magnetic-vehicles-30",
+      "brand": "Hape",
+      "name": "Magnetic Vehicles",
+      "nameZh": "30件磁性交通工具",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 72,
+      "category": "角色扮演",
+      "skills": [
+        "认知配对",
+        "语言",
+        "角色扮演",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "mideer-portable-puzzle-our-world-100p-md3027",
+      "canonicalKey": "mideer-portable-puzzle-our-world-100p-md3027",
+      "brand": "Mideer",
+      "name": "Portable Puzzle Box: Our World 100P",
+      "nameZh": "便携拼图盒：我们的世界 100片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "精细动作",
+        "问题解决",
+        "手眼协调"
+      ],
+      "aliases": [
+        "Our World 100P",
+        "MD3027"
+      ],
+      "catalogStatus": "remote",
+      "sourceUrl": "https://mideerart.com/products/portable-puzzle-box-our-world-100p"
+    },
+    {
+      "key": "mideer-level-up-l1-animals-2p-6p",
+      "canonicalKey": "mideer-level-up-l1-animals-2p-6p",
+      "brand": "Mideer",
+      "name": "Level Up! Puzzles with Storage Bag - Level 1: Animals 2P-6P",
+      "nameZh": "进阶拼图收纳袋 Level 1：动物 2-6片",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 36,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "视觉空间",
+        "认知配对"
+      ],
+      "aliases": [
+        "Level 1 Animals 2P-6P"
+      ],
+      "catalogStatus": "remote"
+    },
+    {
+      "key": "mideer-level-up-l1-animals-vehicles-2p-6p",
+      "canonicalKey": "mideer-level-up-l1-animals-vehicles-2p-6p",
+      "brand": "Mideer",
+      "name": "Level Up! Puzzles with Storage Bag - Level 1: Animals and Vehicles 2P-6P",
+      "nameZh": "进阶拼图收纳袋 Level 1：动物与车辆 2-6片",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 36,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "视觉空间",
+        "认知配对"
+      ],
+      "aliases": [
+        "Level 1 Animals and Vehicles 2P-6P"
+      ],
+      "catalogStatus": "remote"
+    },
+    {
+      "key": "melissa-doug-ms-rachel-wooden-song-puzzle-50355",
+      "canonicalKey": "melissa-doug-ms-rachel-wooden-song-puzzle-50355",
+      "brand": "Melissa & Doug",
+      "name": "Ms. Rachel Wooden Song Puzzle – 6 Pieces",
+      "nameZh": "Ms. Rachel 木制歌曲拼图 6片",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 60,
+      "category": "拼图/配对",
+      "skills": [
+        "语言",
+        "精细动作",
+        "问题解决",
+        "音乐",
+        "手眼协调"
+      ],
+      "aliases": [
+        "Ms Rachel Sound Puzzle",
+        "Item 50355"
+      ],
+      "catalogStatus": "remote",
+      "sourceUrl": "https://www.melissaanddoug.com/products/ms-rachel-sound-puzzle"
+    },
+    {
+      "key": "melissa-doug-building-site-floor-puzzle-48-50619",
+      "canonicalKey": "melissa-doug-building-site-floor-puzzle-48-50619",
+      "brand": "Melissa & Doug",
+      "name": "Building Site Floor Puzzle - 48 Pieces",
+      "nameZh": "建筑工地地板拼图 48片",
+      "ageMinMonths": 48,
+      "ageMaxMonths": 96,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "精细动作",
+        "问题解决",
+        "手眼协调"
+      ],
+      "aliases": [
+        "Construction Building Site Puzzle",
+        "Item 50619"
+      ],
+      "catalogStatus": "remote",
+      "sourceUrl": "https://www.melissaanddoug.com/products/building-site-floor-puzzle-48-pieces"
+    },
+    {
+      "key": "mideer-level-up-l4-dinosaur-world-54-88p",
+      "brand": "Mideer",
+      "name": "Level Up! Puzzles with Storage Bag - Level 4: Dinosaur's World 54P-88P",
+      "nameZh": "进阶拼图收纳袋 Level 4：恐龙世界 54–88片",
+      "ageMinMonths": 42,
+      "ageMaxMonths": 72,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "视觉空间",
+        "问题解决",
+        "专注力"
+      ],
+      "catalogSource": "remote"
+    },
+    {
+      "key": "mideer-level-up-l3-natural-scenery-24-35p",
+      "brand": "Mideer",
+      "name": "Level Up! Puzzles with Storage Bag - Level 3: Natural Scenery 24P-35P",
+      "nameZh": "进阶拼图收纳袋 Level 3：自然风景 24–35片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 60,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "视觉空间",
+        "专注力"
+      ],
+      "catalogSource": "remote"
+    },
+    {
+      "key": "mideer-level-up-l3-community-helpers-24-35p",
+      "brand": "Mideer",
+      "name": "Level Up! Puzzles with Storage Bag - Level 3: Busy Community Helpers 24P-35P",
+      "nameZh": "进阶拼图收纳袋 Level 3：忙碌的社区工作者 24–35片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 60,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "视觉空间",
+        "语言",
+        "社会认知"
+      ],
+      "catalogSource": "remote"
+    },
+    {
+      "key": "mideer-portable-puzzle-wonderful-ocean-104p",
+      "canonicalKey": "mideer-portable-puzzle-wonderful-ocean-104p",
+      "brand": "Mideer",
+      "name": "Portable Puzzle Box: Wonderful Ocean 104P",
+      "nameZh": "便携拼图盒：奇妙海洋 104片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 84,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "视觉空间",
+        "问题解决",
+        "专注力"
+      ],
+      "aliases": [
+        "Wonderful Ocean 104P",
+        "Mideer Ocean Puzzle 104"
+      ],
+      "catalogSource": "remote",
+      "sourceUrl": "https://mideerart.com/collections/portable-box-puzzles"
+    },
+    {
+      "key": "mideer-lets-learn-african-animals-126p",
+      "canonicalKey": "mideer-lets-learn-african-animals-126p",
+      "brand": "Mideer",
+      "name": "Let's Learn Puzzle: African Animals 126P",
+      "nameZh": "探索学习拼图：非洲动物 126片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 84,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "视觉空间",
+        "问题解决",
+        "动物认知"
+      ],
+      "aliases": [
+        "African Animals 126P",
+        "Mideer African Animals Puzzle"
+      ],
+      "catalogSource": "remote",
+      "sourceUrl": "https://mideerart.com/collections/100-to-300-pieces"
+    },
+    {
+      "key": "mideer-shaped-artist-robot-factory-226p",
+      "canonicalKey": "mideer-shaped-artist-robot-factory-226p",
+      "brand": "Mideer",
+      "name": "Shaped Artist Puzzle - Robot Factory 226PCS",
+      "nameZh": "异形艺术家拼图：机器人工厂 226片",
+      "ageMinMonths": 60,
+      "ageMaxMonths": 120,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "专注力",
+        "问题解决",
+        "精细动作",
+        "审美启蒙"
+      ],
+      "aliases": [
+        "Robot Factory 226PCS",
+        "Mideer Robot Factory Puzzle"
+      ],
+      "catalogSource": "remote",
+      "sourceUrl": "https://mideerart.com/collections/100-to-300-pieces"
+    },
+    {
+      "key": "mideer-magnetic-playset-sweet-girl",
+      "brand": "Mideer",
+      "name": "Magnetic Playset: Sweet Girl",
+      "nameZh": "磁性游戏套装：甜美女孩",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "桌游/益智",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "创造力",
+        "角色扮演",
+        "问题解决"
+      ]
+    },
+    {
+      "key": "hape-jungle-maze",
+      "brand": "Hape",
+      "name": "Jungle Maze",
+      "nameZh": "丛林磁性迷宫",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 72,
+      "category": "桌游/益智",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "问题解决",
+        "专注力",
+        "动物认知"
+      ]
+    },
+    {
+      "key": "hape-animal-pairs-puzzles",
+      "brand": "Hape",
+      "name": "Animal Pairs Puzzles",
+      "nameZh": "动物配对拼图 36片",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 48,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "认知配对",
+        "动物认知",
+        "问题解决"
+      ]
+    },
+    {
+      "key": "hape-wild-animal-puzzle",
+      "brand": "Hape",
+      "name": "Wild Animal Puzzle",
+      "nameZh": "野生动物拼图套装",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 48,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "问题解决",
+        "动物认知"
+      ]
+    },
+    {
+      "key": "hape-forest-animal-puzzle",
+      "brand": "Hape",
+      "name": "Forest Animal Puzzle",
+      "nameZh": "森林动物拼图套装",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 48,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "问题解决",
+        "动物认知"
+      ]
+    },
+    {
+      "key": "btoys-woofer-guitar",
+      "brand": "B. toys",
+      "name": "Woofer Interactive Dog Guitar",
+      "nameZh": "Woofer 小狗互动吉他",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 72,
+      "category": "音乐",
+      "skills": [
+        "音乐启蒙",
+        "精细动作",
+        "因果关系",
+        "创造力"
+      ]
+    },
+    {
+      "key": "connetix-rainbow-starter-pack-60",
+      "brand": "Connetix",
+      "name": "Rainbow Starter Pack 60 Piece",
+      "nameZh": "彩虹磁力片入门套装60片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "积木/建构",
+      "skills": [
+        "空间认知",
+        "创造力",
+        "精细动作",
+        "问题解决"
+      ]
+    },
+    {
+      "key": "haba-first-orchard",
+      "brand": "HABA",
+      "name": "My Very First Games - First Orchard",
+      "nameZh": "我的第一个桌游：果园",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 60,
+      "category": "桌游",
+      "skills": [
+        "规则意识",
+        "认知配对",
+        "社交互动",
+        "颜色认知"
+      ]
+    },
+    {
+      "key": "ikea-mula-stacking-rings",
+      "brand": "IKEA",
+      "name": "MULA Stacking Rings",
+      "nameZh": "MULA 彩色叠叠圈",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 36,
+      "category": "积木/建构",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "空间认知",
+        "颜色认知"
+      ]
+    },
+    {
+      "key": "duplo-number-train-10954",
+      "brand": "LEGO / DUPLO",
+      "name": "DUPLO Number Train - Learn To Count 10954",
+      "nameZh": "得宝数字火车10954",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 48,
+      "category": "积木/建构",
+      "skills": [
+        "数学启蒙",
+        "精细动作",
+        "角色扮演",
+        "空间认知"
+      ]
+    },
+    {
+      "key": "letoyvan-honeybake-coffee-machine",
+      "brand": "Le Toy Van",
+      "name": "Honeybake Coffee Machine",
+      "nameZh": "Honeybake 木制咖啡机",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "角色扮演",
+      "skills": [
+        "角色扮演",
+        "生活技能",
+        "语言",
+        "社交互动"
+      ]
+    },
+    {
+      "key": "learningresources-spike-hedgehog",
+      "brand": "Learning Resources",
+      "name": "Spike the Fine Motor Hedgehog",
+      "nameZh": "Spike 精细动作刺猬",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 48,
+      "category": "精细动作",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "颜色认知",
+        "认知配对"
+      ]
+    },
+    {
+      "key": "londji-discover-the-planets",
+      "brand": "Londji",
+      "name": "Discover the Planets Puzzle",
+      "nameZh": "探索行星拼图",
+      "ageMinMonths": 72,
+      "ageMaxMonths": 144,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "问题解决",
+        "专注力",
+        "科学启蒙"
+      ]
+    },
+    {
+      "key": "plan-toys-balancing-cactus",
+      "brand": "PlanToys",
+      "name": "Balancing Cactus",
+      "nameZh": "仙人掌平衡游戏",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "桌游",
+      "skills": [
+        "平衡能力",
+        "精细动作",
+        "策略思维",
+        "专注力"
+      ]
+    },
+    {
+      "key": "smartgames-bunny-boo",
+      "brand": "SmartGames",
+      "name": "Bunny Boo",
+      "nameZh": "兔宝宝空间逻辑游戏",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 60,
+      "category": "益智类玩具",
+      "skills": [
+        "空间认知",
+        "逻辑推理",
+        "问题解决",
+        "专注力"
+      ]
+    },
+    {
+      "key": "vtech-sit-to-stand-learning-walker",
+      "brand": "VTech",
+      "name": "Sit-to-Stand Learning Walker",
+      "nameZh": "坐立两用学习学步车",
+      "ageMinMonths": 9,
+      "ageMaxMonths": 36,
+      "category": "户外/大运动",
+      "skills": [
+        "大运动",
+        "因果关系",
+        "音乐启蒙",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "hahaland-tissue-box-sensory",
+      "brand": "hahaland",
+      "name": "Baby Tissue Box Sensory Toy",
+      "nameZh": "宝宝抽纸盒感官玩具",
+      "ageMinMonths": 6,
+      "ageMaxMonths": 24,
+      "category": "感官探索",
+      "skills": [
+        "感官探索",
+        "精细动作",
+        "手眼协调",
+        "因果关系"
+      ]
+    },
+    {
+      "key": "baby-einstein-take-along-tunes",
+      "brand": "Baby Einstein",
+      "name": "Take Along Tunes Musical Toy",
+      "nameZh": "随身音乐播放器玩具",
+      "ageMinMonths": 3,
+      "ageMaxMonths": 24,
+      "category": "音乐",
+      "skills": [
+        "音乐启蒙",
+        "因果关系",
+        "感官探索",
+        "抓握能力"
+      ]
+    },
+    {
+      "key": "fatbrain-spinagain",
+      "brand": "Fat Brain Toys",
+      "name": "SpinAgain",
+      "nameZh": "旋转叠叠乐",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 48,
+      "category": "精细动作",
+      "skills": [
+        "精细动作",
+        "因果关系",
+        "手眼协调",
+        "颜色认知"
+      ]
+    },
+    {
+      "key": "green-toys-stacking-cups",
+      "brand": "Green Toys",
+      "name": "Stacking Cups",
+      "nameZh": "叠叠杯套装",
+      "ageMinMonths": 6,
+      "ageMaxMonths": 36,
+      "category": "感官探索",
+      "skills": [
+        "精细动作",
+        "空间认知",
+        "因果关系",
+        "感官探索"
+      ]
+    },
+    {
+      "key": "grimms-large-rainbow",
+      "brand": "Grimm's",
+      "name": "Large Rainbow",
+      "nameZh": "大号彩虹积木",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 120,
+      "category": "积木/建构",
+      "skills": [
+        "空间认知",
+        "创造力",
+        "精细动作",
+        "开放式游戏"
+      ]
+    },
+    {
+      "key": "hape-pound-tap-bench-xylophone",
+      "brand": "Hape",
+      "name": "Pound & Tap Bench with Slide Out Xylophone",
+      "nameZh": "敲击台与抽拉木琴",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 36,
+      "category": "音乐",
+      "skills": [
+        "精细动作",
+        "音乐启蒙",
+        "因果关系",
+        "手眼协调"
+      ]
+    },
+    {
+      "key": "melissa-take-along-shape-sorter",
+      "brand": "Melissa & Doug",
+      "name": "Take-Along Shape Sorter",
+      "nameZh": "便携形状分类盒",
+      "ageMinMonths": 9,
+      "ageMaxMonths": 36,
+      "category": "拼图/配对",
+      "skills": [
+        "认知配对",
+        "精细动作",
+        "感官探索",
+        "手眼协调"
+      ]
+    },
+    {
+      "key": "mideer-level-up-dinosaur-world-l3",
+      "brand": "Mideer",
+      "name": "Level Up! Puzzles Level 3: Dinosaur World",
+      "nameZh": "进阶拼图 Level 3：恐龙世界",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 72,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "问题解决",
+        "专注力",
+        "精细动作"
+      ]
+    },
+    {
+      "key": "toi-animal-memory-game",
+      "brand": "TOI",
+      "name": "Animal Memory Matching Game",
+      "nameZh": "动物记忆配对游戏",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 84,
+      "category": "桌游",
+      "skills": [
+        "记忆力",
+        "认知配对",
+        "专注力",
+        "规则意识"
+      ]
+    },
+    {
+      "key": "beie-magnetic-tiles-basic",
+      "brand": "贝易",
+      "name": "BEIE STATE Magnetic Tiles Starter Set",
+      "nameZh": "贝易磁力片入门套装",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "积木/建构",
+      "skills": [
+        "空间认知",
+        "创造力",
+        "精细动作",
+        "问题解决"
+      ]
+    },
+    {
+      "key": "manlong-kids-slide-indoor",
+      "brand": "曼龙",
+      "name": "Manlong Kids Indoor Slide",
+      "nameZh": "曼龙儿童室内滑梯",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 60,
+      "category": "户外/大运动",
+      "skills": [
+        "大运动",
+        "平衡能力",
+        "身体协调",
+        "空间认知"
+      ]
+    },
+    {
+      "key": "learningresources-helping-hands-fine-motor-tool-set",
+      "brand": "Learning Resources",
+      "name": "Helping Hands Fine Motor Tool Set",
+      "nameZh": "Helping Hands 精细动作工具套装",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 72,
+      "category": "精细动作",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "抓握能力",
+        "分类能力"
+      ]
+    },
+    {
+      "key": "learningresources-fine-motor-feeding-friends",
+      "brand": "Learning Resources",
+      "name": "Fine Motor Feeding Friends",
+      "nameZh": "Fine Motor Feeding Friends 精细动作喂食游戏",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 72,
+      "category": "精细动作",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "抓握能力",
+        "专注力"
+      ]
+    },
+    {
+      "key": "brio-pull-along-moose",
+      "brand": "BRIO",
+      "name": "Pull-along Moose",
+      "nameZh": "驼鹿拖拉玩具",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 36,
+      "category": "户外/大运动",
+      "skills": [
+        "大运动",
+        "身体协调",
+        "因果关系",
+        "角色扮演"
+      ]
+    },
+    {
+      "key": "vtech-stretch-play-letters-flamingo",
+      "brand": "VTech",
+      "name": "Stretch & Play Letters Flamingo",
+      "nameZh": "Stretch & Play 字母火烈鸟",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 48,
+      "category": "音乐",
+      "skills": [
+        "语言",
+        "精细动作",
+        "大运动",
+        "音乐启蒙"
+      ]
+    },
+    {
+      "key": "plantoys-geometric-sorter",
+      "brand": "PlanToys",
+      "name": "Geometric Sorter",
+      "nameZh": "几何形状分类器",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 48,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "空间认知",
+        "分类能力",
+        "手眼协调"
+      ]
+    },
+    {
+      "key": "hape-wooden-shape-sorter",
+      "brand": "Hape",
+      "name": "Wooden Shape Sorter",
+      "nameZh": "木制形状分类盒",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 36,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "分类能力",
+        "空间认知"
+      ]
+    },
+    {
+      "key": "brio-my-first-push-go-train",
+      "brand": "BRIO",
+      "name": "My First Push & Go Train",
+      "nameZh": "我的第一辆推行小火车",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 48,
+      "category": "车辆/轨道",
+      "skills": [
+        "因果关系",
+        "精细动作",
+        "大运动"
+      ]
+    },
+    {
+      "key": "learning-resources-smart-snacks-shape-sorting-cupcakes",
+      "brand": "Learning Resources",
+      "name": "Smart Snacks Shape Sorting Cupcakes",
+      "nameZh": "纸杯蛋糕形状分类玩具",
+      "ageMinMonths": 24,
+      "ageMaxMonths": 60,
+      "category": "拼图/配对",
+      "skills": [
+        "分类能力",
+        "精细动作",
+        "数学启蒙",
+        "认知配对"
+      ]
+    },
+    {
+      "key": "melissa-doug-wooden-latches-board",
+      "brand": "Melissa & Doug",
+      "name": "Wooden Latches Board",
+      "nameZh": "木制门锁操作板",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 72,
+      "category": "精细动作",
+      "skills": [
+        "精细动作",
+        "生活技能",
+        "问题解决",
+        "因果关系"
+      ]
+    },
+    {
+      "key": "plantoys-walk-n-roll",
+      "brand": "PlanToys",
+      "name": "Walk N Roll",
+      "nameZh": "滚轮学步推行玩具",
+      "ageMinMonths": 12,
+      "ageMaxMonths": 36,
+      "category": "户外/大运动",
+      "skills": [
+        "大运动",
+        "因果关系",
+        "身体协调",
+        "感官探索"
+      ]
+    },
+    {
+      "key": "mideer-magnetic-tiles-wonderful-forest-40p",
+      "brand": "Mideer",
+      "name": "Colorful Magnetic Tiles: Wonderful Forest 40P",
+      "nameZh": "彩色磁力片：奇妙森林 40片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "积木/建构",
+      "skills": [
+        "创造力",
+        "空间认知",
+        "精细动作",
+        "专注力"
+      ],
+      "aliases": [
+        "Wonderful Forest Magnetic Tiles 40P"
+      ]
+    },
+    {
+      "key": "mideer-magnetic-tiles-jurassic-adventure-48p",
+      "brand": "Mideer",
+      "name": "Colorful Magnetic Tiles: Jurassic Adventure 48P",
+      "nameZh": "彩色磁力片：侏罗纪冒险 48片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "积木/建构",
+      "skills": [
+        "创造力",
+        "空间认知",
+        "精细动作",
+        "问题解决"
+      ],
+      "aliases": [
+        "Jurassic Adventure Magnetic Tiles 48P"
+      ]
+    },
+    {
+      "key": "mideer-creative-magnetic-building-blocks-20p",
+      "brand": "Mideer",
+      "name": "Creative Magnetic Building Blocks 20P",
+      "nameZh": "创意磁力积木 20片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "积木/建构",
+      "skills": [
+        "创造力",
+        "想象力",
+        "精细动作",
+        "空间认知"
+      ],
+      "aliases": [
+        "Creative Magnetic Blocks 20P"
+      ]
+    },
+    {
+      "key": "mideer-track-marble-building-blocks-51p",
+      "brand": "Mideer",
+      "name": "Track Marble Building Blocks 51P",
+      "nameZh": "滚珠轨道积木 51片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "积木/建构",
+      "skills": [
+        "空间认知",
+        "逻辑推理",
+        "问题解决",
+        "创造力",
+        "因果关系"
+      ],
+      "aliases": [
+        "Marble Run Building Blocks 51P"
+      ]
+    },
+    {
+      "key": "mideer-secret-puzzle-ocean-35p",
+      "brand": "Mideer",
+      "name": "Secret Puzzle: Ocean 35P",
+      "nameZh": "秘密探索拼图：海洋35片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 84,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "专注力",
+        "问题解决",
+        "感官探索"
+      ],
+      "sourceUrl": "https://mideerart.com/products/secret-puzzle-ocean-35p"
+    },
+    {
+      "key": "mideer-secret-puzzle-forest-35p",
+      "brand": "Mideer",
+      "name": "Secret Puzzle: Forest 35P",
+      "nameZh": "秘密探索拼图：森林35片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 84,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "专注力",
+        "问题解决",
+        "感官探索"
+      ],
+      "sourceUrl": "https://mideerart.com/products/secret-puzzle-forest-35p"
+    },
+    {
+      "key": "mideer-lets-learn-ocean-trip-126p",
+      "brand": "Mideer",
+      "name": "Let's Learn Puzzle: Ocean Trip 126P",
+      "nameZh": "认知学习拼图：海洋之旅126片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "逻辑推理",
+        "专注力",
+        "认知配对"
+      ],
+      "sourceUrl": "https://mideerart.com/products/lets-learn-puzzle-ocean-trip"
+    },
+    {
+      "key": "mideer-magnetic-maze-parking-lot",
+      "brand": "Mideer",
+      "name": "Magnetic Maze: Parking Lot",
+      "nameZh": "磁性迷宫：停车场",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 84,
+      "category": "精细动作",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "字母启蒙",
+        "专注力"
+      ],
+      "sourceUrl": "https://mideerart.com/products/magnetic-maze-parking-lot"
+    },
+    {
+      "key": "toi-beginner-puzzle-land-transportation-animals",
+      "brand": "TOI",
+      "name": "Beginner Puzzle 4-in-a-Box: Land Transportation & Animals",
+      "nameZh": "启蒙四合一拼图：陆地交通与动物",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 72,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "认知配对",
+        "逻辑推理"
+      ],
+      "sourceUrl": "https://www.toiworld.com/product/toi-beginner-puzzle-4-in-a-box-land-transportation-animals-paper-jigsaw-puzzle.html"
+    },
+    {
+      "key": "toi-four-puzzles-seasons",
+      "brand": "TOI",
+      "name": "4 Puzzles in a Box: Seasons",
+      "nameZh": "四合一拼图：四季",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 84,
+      "category": "拼图/配对",
+      "skills": [
+        "精细动作",
+        "手眼协调",
+        "认知配对",
+        "逻辑推理"
+      ],
+      "sourceUrl": "https://www.toiworld.com/product/toi-4-puzzles-in-a-box-season-paper-jigsaw-puzzle-educational-toy-for-kids.html"
+    },
+    {
+      "key": "toi-travel-around-world-board-game",
+      "brand": "TOI",
+      "name": "Travel Around the World Board Game",
+      "nameZh": "环游世界桌游",
+      "ageMinMonths": 48,
+      "ageMaxMonths": 120,
+      "category": "桌游/益智",
+      "skills": [
+        "逻辑推理",
+        "规则意识",
+        "社交互动",
+        "语言"
+      ],
+      "sourceUrl": "https://www.toiworld.com/product/toi-travel-around-the-world-board-game.html"
+    },
+    {
+      "key": "toi-leveled-puzzles-series",
+      "brand": "TOI",
+      "name": "Leveled Puzzles Series",
+      "nameZh": "分级进阶拼图系列",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "精细动作",
+        "问题解决",
+        "专注力"
+      ],
+      "sourceUrl": "https://www.toiworld.com/product/toi-leveled-puzzles-educational-toy-paper-jigsaw-puzzles-for-kids.html"
+    },
+    {
+      "key": "mideer-6in1-museum-adventures",
+      "canonicalKey": "mideer-6in1-museum-adventures",
+      "brand": "Mideer",
+      "name": "6-in-1 Portable Board Game Book: Museum Adventures",
+      "nameZh": "6合1便携桌游书：博物馆冒险",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "桌游",
+      "skills": [
+        "逻辑推理",
+        "规则意识",
+        "社交互动",
+        "专注力"
+      ],
+      "aliases": [
+        "6-in-1 Portable Board Game Book",
+        "6合1便携桌游书",
+        "Museum Adventures Board Game Book",
+        "MD3360"
+      ],
+      "sku": "MD3360",
+      "sourceUrl": "https://mideerart.com/products/6-in-1-portable-board-game-book-museum-adventures"
+    },
+    {
+      "key": "mideer-floating-ball-game",
+      "canonicalKey": "mideer-floating-ball-game",
+      "brand": "Mideer",
+      "name": "Floating Ball Game",
+      "nameZh": "悬浮吹球游戏",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "感官探索",
+      "skills": [
+        "口腔运动",
+        "专注力",
+        "手眼协调",
+        "因果关系"
+      ],
+      "sourceUrl": "https://mideerart.com/products/floating-ball-game"
+    },
+    {
+      "key": "mideer-level-up-l4-clanging-construction-48-72p",
+      "canonicalKey": "mideer-level-up-l4-clanging-construction-48-72p",
+      "brand": "Mideer",
+      "name": "Level Up! Puzzles with Storage Bag - Level 4: Clanging Construction Site 48P-72P",
+      "nameZh": "进阶拼图 Level 4：叮当建筑工地 48–72片",
+      "ageMinMonths": 48,
+      "ageMaxMonths": 96,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "问题解决",
+        "专注力",
+        "精细动作"
+      ],
+      "aliases": [
+        "MD1620"
+      ],
+      "sku": "MD1620",
+      "sourceUrl": "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-4-clanging-construction-site-48p-72p"
+    },
+    {
+      "key": "mideer-double-sided-magic-maze-ocean-md1134",
+      "brand": "Mideer",
+      "name": "Double-sided Magic Maze: Ocean Adventure",
+      "nameZh": "双面魔法迷宫：海洋冒险",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "益智类玩具",
+      "skills": [
+        "问题解决",
+        "专注力",
+        "精细动作",
+        "观察力"
+      ],
+      "sku": "MD1134",
+      "sourceUrl": "https://mideerart.com/products/double-sided-magic-maze-ocean-adventure"
+    },
+    {
+      "key": "mideer-artist-fairytale-thumbelina-66-md1494",
+      "brand": "Mideer",
+      "name": "Artist Fairytale Puzzle: Thumbelina 66P",
+      "nameZh": "艺术童话拼图：拇指姑娘66片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "拼图/配对",
+      "skills": [
+        "问题解决",
+        "视觉空间",
+        "创造力",
+        "专注力"
+      ],
+      "sku": "MD1494",
+      "sourceUrl": "https://mideerart.com/products/artist-fairytale-puzzle-thumbelina-66p"
+    },
+    {
+      "key": "mideer-artist-fairytale-red-riding-hood-59-md1492",
+      "brand": "Mideer",
+      "name": "Artist Fairytale Puzzle: Little Red Riding Hood 59P",
+      "nameZh": "艺术童话拼图：小红帽59片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "拼图/配对",
+      "skills": [
+        "问题解决",
+        "视觉空间",
+        "创造力",
+        "专注力"
+      ],
+      "sku": "MD1492",
+      "sourceUrl": "https://mideerart.com/products/artist-fairytale-puzzle-little-red-riding-hood-59p"
+    },
+    {
+      "key": "mideer-pull-string-flying-propeller-md1536",
+      "canonicalKey": "mideer-pull-string-flying-propeller-md1536",
+      "brand": "Mideer",
+      "name": "Pull String Flying Propeller",
+      "nameZh": "拉绳飞行螺旋桨",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "户外/大运动",
+      "skills": [
+        "大运动",
+        "手眼协调",
+        "因果关系"
+      ],
+      "aliases": [
+        "MD1536"
+      ],
+      "sourceUrl": "https://mideerart.com/products/pull-string-flying-propeller",
+      "catalogStatus": "official-verified-name",
+      "imageVerification": "pending-official"
+    },
+    {
+      "key": "mideer-rainbow-plus-magnetic-building-sticks-32p-md1588",
+      "canonicalKey": "mideer-rainbow-plus-magnetic-building-sticks-32p-md1588",
+      "brand": "Mideer",
+      "name": "Rainbow Plus Magnetic Building Sticks 32P",
+      "nameZh": "彩虹磁力棒32件套",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "积木/建构",
+      "skills": [
+        "创造力",
+        "空间认知",
+        "问题解决",
+        "精细动作"
+      ],
+      "aliases": [
+        "MD1588"
+      ],
+      "sourceUrl": "https://mideerart.com/products/rainbow-plus-magnetic-building-sticks-32p",
+      "catalogStatus": "official-verified-name",
+      "imageVerification": "pending-official"
+    },
+    {
+      "key": "beie-royal-rattle-gift-set-10",
+      "canonicalKey": "beie-royal-rattle-gift-set-10",
+      "brand": "贝易",
+      "name": "Royal Rattle Gift Set 10pcs",
+      "nameZh": "皇室摇铃礼盒10只装",
+      "ageMinMonths": 0,
+      "ageMaxMonths": 36,
+      "category": "感官探索",
+      "skills": [
+        "抓握能力",
+        "感官探索",
+        "手眼协调",
+        "精细动作"
+      ],
+      "aliases": [
+        "手摇铃牙胶礼盒10只装",
+        "分阶摇铃礼盒"
+      ],
+      "sourceUrl": "https://ffp.airchina.com.cn/app/store/shopall?storeClassId=20772&storeId=2224",
+      "catalogStatus": "source-verified-name",
+      "imageVerification": "pending-official"
+    },
+    {
+      "key": "beie-astronaut-play-gym-piano",
+      "canonicalKey": "beie-astronaut-play-gym-piano",
+      "brand": "贝易",
+      "name": "Astronaut Baby Play Gym with Kick Piano",
+      "nameZh": "宇航员健身架脚踏钢琴",
+      "ageMinMonths": 0,
+      "ageMaxMonths": 12,
+      "category": "感官探索",
+      "skills": [
+        "大运动",
+        "音乐启蒙",
+        "因果关系",
+        "视觉追踪"
+      ],
+      "aliases": [
+        "宇航员健身架电池款",
+        "启蒙家健身架脚踏钢琴"
+      ],
+      "sourceUrl": "https://ffp.airchina.com.cn/app/store/shopall?storeClassId=20772&storeId=2224",
+      "catalogStatus": "source-verified-name",
+      "imageVerification": "pending-official"
+    },
+    {
+      "key": "mideer-storybook-projector-flashlight-md1718",
+      "canonicalKey": "mideer-storybook-projector-flashlight-md1718",
+      "brand": "Mideer",
+      "name": "2-in-1 Storybook Projector & Flashlight",
+      "nameZh": "2合1故事投影仪/手电筒",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "语言/认知",
+      "skills": [
+        "语言",
+        "想象力",
+        "专注力",
+        "因果关系"
+      ],
+      "aliases": [
+        "MiDeer Storybook Projector",
+        "MD1718"
+      ],
+      "sourceUrl": "https://mideerart.com/en-ca/products/my-first-magic-show-36-games-copy",
+      "sku": "MD1718",
+      "imageVerified": false
+    },
+    {
+      "key": "mideer-paper-craft-windmill-kingdom-md2307",
+      "canonicalKey": "mideer-paper-craft-windmill-kingdom-md2307",
+      "brand": "Mideer",
+      "name": "Paper Craft Workshop: Windmill Kingdom",
+      "nameZh": "纸艺工坊：风车王国",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "美术/手工",
+      "skills": [
+        "创造力",
+        "精细动作",
+        "科学启蒙",
+        "想象力"
+      ],
+      "aliases": [
+        "Windmill Kingdom",
+        "MD2307"
+      ],
+      "sourceUrl": "https://mideerart.com/products/paper-craft-workshop-windmill-kingdom",
+      "sku": "MD2307",
+      "imageVerified": false
+    },
+    {
+      "key": "mideer-panoramic-puzzle-day-forest-150",
+      "canonicalKey": "mideer-panoramic-puzzle-day-forest-150",
+      "brand": "Mideer",
+      "name": "Panoramic Puzzle - A Day in the Forest 150PCS",
+      "nameZh": "全景拼图：森林的一天 150片",
+      "ageMinMonths": 60,
+      "ageMaxMonths": 144,
+      "category": "拼图/配对",
+      "skills": [
+        "视觉空间",
+        "逻辑推理",
+        "专注力",
+        "问题解决"
+      ],
+      "aliases": [
+        "A Day in the Forest 150PCS"
+      ],
+      "sourceUrl": "https://mideerart.com/collections/shop-all-puzzles/products/panoramic-puzzle-magic-ocean-150pcs-copy",
+      "imageVerified": false
+    },
+    {
+      "key": "mideer-distinctive-magnetic-tiles-100p",
+      "canonicalKey": "mideer-distinctive-magnetic-tiles-100p",
+      "brand": "Mideer",
+      "name": "Distinctive Magnetic Tiles 100P",
+      "nameZh": "特色磁力片 100片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "积木/建构",
+      "skills": [
+        "创造力",
+        "空间认知",
+        "精细动作",
+        "问题解决"
+      ],
+      "aliases": [
+        "Distinctive Magnetic Tiles 100 Pieces"
+      ],
+      "sourceUrl": "https://mideerart.com/products/distinctive-magnetic-tiles-100p",
+      "imageVerified": false,
+      "catalogStatus": "source-verified-name"
+    },
+    {
+      "key": "toi-sudoku-jungle-band",
+      "canonicalKey": "toi-sudoku-jungle-band",
+      "brand": "TOI",
+      "name": "Magnetic Sudoku: Jungle Band",
+      "nameZh": "磁性数独：丛林乐队",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "桌游/益智",
+      "skills": [
+        "逻辑推理",
+        "问题解决",
+        "专注力",
+        "分类能力"
+      ],
+      "aliases": [
+        "TOI Sudoku Jungle Band"
+      ],
+      "sourceUrl": "https://www.toiworld.com/product/toi-sudoku-game-magnetic-game-jungle-band-logic-game-educational-toy-for-kids.html",
+      "imageVerified": false,
+      "catalogStatus": "source-verified-name"
+    },
+    {
+      "key": "toi-sudoku-animal-apartment",
+      "canonicalKey": "toi-sudoku-animal-apartment",
+      "brand": "TOI",
+      "name": "Magnetic Sudoku: Animal Apartment",
+      "nameZh": "磁性数独：动物公寓",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "桌游/益智",
+      "skills": [
+        "逻辑推理",
+        "问题解决",
+        "专注力",
+        "分类能力"
+      ],
+      "aliases": [
+        "TOI Sudoku Animal Apartment"
+      ],
+      "imageVerified": false,
+      "catalogStatus": "source-verified-name"
+    },
+    {
+      "key": "toi-my-first-board-game",
+      "canonicalKey": "toi-my-first-board-game",
+      "brand": "TOI",
+      "name": "My First Board Game",
+      "nameEn": "My First Board Game",
+      "nameZh": "我的第一套桌游（喂小猪）",
+      "ageMinMonths": 18,
+      "ageMaxMonths": 48,
+      "category": "桌游",
+      "skills": [
+        "规则意识",
+        "生活技能",
+        "角色扮演",
+        "语言",
+        "手眼协调",
+        "社交互动"
+      ],
+      "aliases": [
+        "Feed the Piglet",
+        "Kiss Me",
+        "Put the Piglet to Sleep",
+        "喂小猪",
+        "我的第一套桌游"
+      ],
+      "sourceUrl": "https://kilodo.com.au/products/my-first-board-game",
+      "imageVerification": "pending-official",
+      "catalogStatus": "official-verified-name"
+    },
+    {
+      "key": "mideer-ct2283-princess-fashion-show",
+      "canonicalKey": "mideer-ct2283-princess-fashion-show",
+      "brand": "Mideer",
+      "name": "3-in-1 Dress Up Game Set: Princess Fashion Show",
+      "nameZh": "3合1公主换装游戏：公主时装秀",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "美术/创作",
+      "skills": [
+        "创造力",
+        "精细动作",
+        "角色扮演",
+        "专注力"
+      ],
+      "aliases": [
+        "CT2283",
+        "Princess Fashion Show"
+      ],
+      "sku": "CT2283",
+      "imageVerification": "pending",
+      "sourceUrl": "https://mideerart.com/products/3-in-1-dress-up-game-set-princess-fashion-show"
+    },
+    {
+      "key": "mideer-paper-craft-racing-car",
+      "canonicalKey": "mideer-paper-craft-racing-car",
+      "brand": "Mideer",
+      "name": "Paper Craft Workshop: Racing Car",
+      "nameEn": "Paper Craft Workshop: Racing Car",
+      "nameZh": "纸艺工坊：赛车",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "美术/创作",
+      "skills": [
+        "创造力",
+        "精细动作",
+        "空间认知",
+        "专注力"
+      ],
+      "aliases": [
+        "Paper Craft Racing Car",
+        "纸艺赛车"
+      ],
+      "sourceUrl": "https://mideerart.com/collections/all-products",
+      "imageVerification": "pending-official",
+      "catalogStatus": "official-verified-name"
+    },
+    {
+      "key": "mideer-racing-track-grooved-magnetic-tiles-115p-md6395",
+      "canonicalKey": "mideer-racing-track-grooved-magnetic-tiles-115p-md6395",
+      "brand": "Mideer",
+      "name": "Racing Track Grooved Magnetic Tiles 115P",
+      "nameZh": "赛车轨道凹槽磁力片 115片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "积木/建构",
+      "skills": [
+        "空间认知",
+        "创造力",
+        "问题解决",
+        "精细动作",
+        "因果关系"
+      ],
+      "aliases": [
+        "MD6395",
+        "Racing Track Magnetic Tiles 115P"
+      ],
+      "sourceUrl": "https://mideerart.com/products/racing-track-grooved-magnetic-tiles-115p",
+      "imageVerification": "pending-official",
+      "imageUrl": ""
+    },
+    {
+      "key": "mideer-creative-magnetic-building-blocks-46p",
+      "canonicalKey": "mideer-creative-magnetic-building-blocks-46p",
+      "brand": "Mideer",
+      "name": "Creative Magnetic Building Blocks 46P",
+      "nameZh": "创意磁力积木 46片",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "积木/建构",
+      "skills": [
+        "创造力",
+        "空间认知",
+        "精细动作",
+        "问题解决"
+      ],
+      "aliases": [
+        "MD1407",
+        "Creative Magnetic Building Blocks 46 Pieces"
+      ],
+      "sourceUrl": "https://mideerart.com/products/creative-magnetic-building-blocks-46p",
+      "imageVerification": "pending-official",
+      "catalogStatus": "official-verified-name"
+    },
+    {
+      "key": "mideer-magnetic-tangram-md4281",
+      "canonicalKey": "mideer-magnetic-tangram-md4281",
+      "brand": "Mideer",
+      "name": "Magnetic Tangram",
+      "nameZh": "磁性七巧板",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 120,
+      "category": "拼图/配对",
+      "skills": [
+        "空间认知",
+        "逻辑推理",
+        "创造力",
+        "问题解决"
+      ],
+      "aliases": [
+        "MD4281",
+        "磁性七巧板"
+      ],
+      "sourceUrl": "https://mideerart.com/collections/sale-under-20/products/magnetic-tangram",
+      "imageVerification": "pending-official",
+      "catalogStatus": "official-verified-name"
+    },
+    {
+      "key": "mideer-educational-balance-blocks",
+      "canonicalKey": "mideer-educational-balance-blocks",
+      "brand": "Mideer",
+      "name": "Educational Balance Blocks",
+      "nameZh": "教育平衡积木",
+      "ageMinMonths": 36,
+      "ageMaxMonths": 96,
+      "category": "积木/建构",
+      "skills": [
+        "精细动作",
+        "空间认知",
+        "问题解决",
+        "专注力",
+        "平衡能力"
+      ],
+      "aliases": [
+        "Mideer Educational Balance Blocks",
+        "Balance Blocks"
+      ],
+      "sourceUrl": "https://mideerart.com/collections/shop-all-building-blocks"
+    }
+  ]
+}
