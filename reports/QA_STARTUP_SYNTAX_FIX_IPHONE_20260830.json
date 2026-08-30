@@ -1,0 +1,19 @@
+{
+  "candidate": "Toy-Rotation-v0.11.3-Startup-Syntax-Fix-iPhone-QA-20260830",
+  "status": "targeted_qa_only",
+  "stable": false,
+  "productionWorkerDeployed": false,
+  "deviceDiagnostic": {
+    "lastSuccessfulPhase": "main_load_started",
+    "error": "Unexpected token )",
+    "persistenceStarted": false
+  },
+  "reproducibility": {
+    "exactDeviceServedMainJsAvailable": false,
+    "availableSourceAndArchivesNodeCheck": "pass",
+    "exactLineAndColumn": null
+  },
+  "runtimeJsSyntaxGate": { "passed": true, "checkedFiles": 43 },
+  "automatedRegression": { "passed": 194, "failed": 0 },
+  "schemaVersion": 12
+}
