@@ -1,0 +1,16 @@
+{
+  "candidate": "Toy-Rotation-v0.11.3-Startup-Root-Cause-iPhone-QA-20260830",
+  "status": "targeted_qa_only",
+  "stable": false,
+  "productionWorkerDeployed": false,
+  "rootCause": "main_module_graph_failure_prevented_main_js_watchdog_registration",
+  "shellWatchdog": {
+    "location": "index.html_inline_before_config_and_main",
+    "timeoutMs": 5000,
+    "failureUi": "independent_safe_mode_retry_and_startup_diagnostic"
+  },
+  "startupDiagnostic": "startup-diagnostic.html",
+  "serviceWorker": "minimal_network_first_offline_enhancement",
+  "automatedRegression": { "passed": 193, "failed": 0 },
+  "schemaVersion": 12
+}

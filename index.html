@@ -1,1 +1,38 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#875fd8"><script>(()=>{try{const current=JSON.parse(localStorage.getItem('toyRotation.cleanBaseline')||'{}');const legacy=JSON.parse(localStorage.getItem('toyRotationV04')||'{}');const preference=current.settings?.theme||legacy.settings?.theme||legacy.theme||'system';const dark=matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.dataset.theme=preference==='system'?(dark?'dark':'light'):preference;document.documentElement.dataset.themePreference=preference}catch{document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.themePreference='system'}})()</script><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./src/ui/theme.css"><link rel="stylesheet" href="./src/ui/app.css"><title>Toy Rotation</title></head><body><div id="app"><section class="startup-shell" role="status" aria-live="polite"><div class="startup-spinner" aria-hidden="true"></div><div><h1>玩具轮换正在启动…</h1><p>Toy Rotation is starting…</p></div></section></div><button id="app-scroll-top" class="scroll-top hidden" type="button">↑</button><dialog id="modal"></dialog><script src="./config.js"></script><script type="module" src="./src/main.js"></script></body></html>
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#875fd8">
+<script>
+(() => {
+  // ES2017 only: this must parse even when the module bundle contains a newer
+  // unsupported feature and never gets a chance to start itself.
+  var DIAGNOSTIC_KEY = 'toyRotation.startupDiagnostic';
+  var root = function () { return document.querySelector('#app'); };
+  var text = function (value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]; }); };
+  var state = { phase:'shell_loaded', startedAt:new Date().toISOString(), errors:[], failed:false, complete:false };
+  var persist = function () { try { var record={ phase:state.phase, startedAt:state.startedAt, lastAt:state.lastAt, errors:state.errors, failed:state.failed, complete:state.complete, url:location.href, displayMode:matchMedia('(display-mode: standalone)').matches || navigator.standalone === true, serviceWorkerControlled:!!(navigator.serviceWorker && navigator.serviceWorker.controller) }; localStorage.setItem(DIAGNOSTIC_KEY, JSON.stringify(record)); } catch (ignore) {} };
+  var mark = function (phase, detail) { state.phase=phase; state.lastAt=new Date().toISOString(); if (detail != null) state.detail=detail; persist(); };
+  var fail = function (error, phase) {
+    phase=phase || state.phase;
+    if (state.failed || state.complete) return;
+    state.failed=true; state.phase=phase; state.errors.push({ message:String((error && error.message) || error || 'Unknown startup error'), stack:String((error && error.stack) || ''), at:new Date().toISOString() }); persist();
+    var node=root(); if (!node) return;
+    var zh=(navigator.language || '').toLowerCase().indexOf('zh') === 0;
+    node.innerHTML=`<section class="startup-shell startup-safe-mode" role="alert"><div><h1>${zh ? '启动失败' : 'Startup failed'}</h1><p>${zh ? '应用未能安全启动。本机数据没有被重置或覆盖。' : 'The app could not start safely. Local data was not reset or overwritten.'}</p><p><b>${zh ? '阶段' : 'Phase'}:</b> ${text(phase)}</p><p>${text(state.errors[0].message)}</p><div class="actions"><button type="button" data-startup-retry>${zh ? '重试' : 'Retry'}</button><button type="button" data-startup-diagnostic>${zh ? '打开诊断' : 'Open Diagnostic'}</button></div></div></section>`;
+    var retry=node.querySelector('[data-startup-retry]'); var diagnostic=node.querySelector('[data-startup-diagnostic]');
+    if (retry) retry.addEventListener('click', function () { location.reload(); });
+    if (diagnostic) diagnostic.addEventListener('click', function () { location.assign('./startup-diagnostic.html'); });
+  };
+  window.__TOY_ROTATION_EARLY_STARTUP__ = { state:state, mark:mark, fail:fail, complete:function () { state.complete=true; mark('first_render_finished'); }, persist:persist };
+  window.addEventListener('error', function (event) { fail(event.error || event.message, state.phase); });
+  window.addEventListener('unhandledrejection', function (event) { fail(event.reason || 'Unhandled startup rejection', state.phase); });
+  mark('shell_loaded');
+  window.setTimeout(function () { fail('startup_watchdog_timeout', state.phase); }, 5000);
+})();
+</script>
+<script>(()=>{try{const current=JSON.parse(localStorage.getItem('toyRotation.cleanBaseline')||'{}');const legacy=JSON.parse(localStorage.getItem('toyRotationV04')||'{}');const preference=current.settings?.theme||legacy.settings?.theme||legacy.theme||'system';const dark=matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.dataset.theme=preference==='system'?(dark?'dark':'light'):preference;document.documentElement.dataset.themePreference=preference}catch{document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.themePreference='system'}})()</script>
+<link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./src/ui/theme.css"><link rel="stylesheet" href="./src/ui/app.css"><title>Toy Rotation</title></head>
+<body><div id="app"><section class="startup-shell" role="status" aria-live="polite"><div class="startup-spinner" aria-hidden="true"></div><div><h1>玩具轮换正在启动…</h1><p>Toy Rotation is starting…</p></div></section></div><button id="app-scroll-top" class="scroll-top hidden" type="button">↑</button><dialog id="modal"></dialog>
+<script src="./config.js" onload="window.__TOY_ROTATION_EARLY_STARTUP__?.mark('config_loaded')" onerror="window.__TOY_ROTATION_EARLY_STARTUP__?.fail('config_load_failed','config_load_started')"></script>
+<script>window.__TOY_ROTATION_EARLY_STARTUP__?.mark('main_load_started')</script>
+<script type="module" src="./src/main.js" onerror="window.__TOY_ROTATION_EARLY_STARTUP__?.fail('main_module_load_failed','main_load_started')"></script>
+</body></html>

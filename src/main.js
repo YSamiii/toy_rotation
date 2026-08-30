@@ -25,6 +25,12 @@ import { attachImageEditor, attachPersonalImageEditor } from './ui/personal-imag
 
 const root = document.querySelector('#app');
 const STARTUP_DIAGNOSTIC_KEY='toyRotation.startupDiagnostic';
+// This hook is installed inline in index.html, before config.js and this
+// module are requested.  It is intentionally independent of every imported
+// application module, so a failed module graph still replaces the static
+// spinner with a usable error/diagnostic screen.
+const earlyStartup=window.__TOY_ROTATION_EARLY_STARTUP__;
+earlyStartup?.mark('main_loaded');
 function recordStartupPhase(phase, details = null) {
   try { localStorage.setItem(STARTUP_DIAGNOSTIC_KEY, JSON.stringify({ phase, details, at:new Date().toISOString(), release:window.TOY_ROTATION_CONFIG?.RELEASE || null })); } catch {}
 }
@@ -36,16 +42,22 @@ window.addEventListener('pageshow', event => markStartupStage(startupTrace, 'pag
 window.addEventListener('pagehide', event => markStartupStage(startupTrace, 'pagehide', { persisted:event.persisted === true }));
 document.addEventListener('visibilitychange', () => markStartupStage(startupTrace, 'visibility_change', { visibility:document.visibilityState }));
 markStartupStage(startupTrace, 'main_js_loaded');
+earlyStartup?.mark('bootstrap_started');
 markStartupStage(startupTrace, 'image_asset_manifest_loaded');
 renderStartupShell(root, navigator.language);
 markStartupStage(startupTrace, 'app_shell_rendered');
-const startupWatchdog = installStartupWatchdog(root, startupTrace);
+const startupWatchdog = installStartupWatchdog(root, startupTrace, { delayMs:6000 });
 
 markStartupStage(startupTrace, 'store_hydration_start');
+earlyStartup?.mark('persistence_probe_started');
 recordStartupPhase('persistent-read-start');
 let store;
 try {
-  store = bootStore({ onStage:(stage, details) => markStartupStage(startupTrace, stage, details) });
+  store = bootStore({ onStage:(stage, details) => {
+    markStartupStage(startupTrace, stage, details);
+    if (stage === 'migrations_start') earlyStartup?.mark('migration_started');
+    if (stage === 'migrations_end') earlyStartup?.mark('migration_finished');
+  } });
 } catch (error) {
   // A synchronous boot exception must never strand an installed PWA on the
   // static shell. bootStore already catches persistence failures; this is the
@@ -54,6 +66,7 @@ try {
   store = bootStore({ diagnosticMode:true, onStage:(stage, details) => markStartupStage(startupTrace, stage, details) });
 }
 markStartupStage(startupTrace, 'store_hydration_end');
+earlyStartup?.mark('persistence_probe_finished', { status:store.persistence.status });
 recordStartupPhase('persistent-read-complete', { status:store.persistence.status });
 const shelfProbe = structuredClone(store.state);
 const shelfRepair = normalizeCurrentShelf(shelfProbe);
@@ -84,10 +97,12 @@ store.subscribe(render);
 systemTheme.addEventListener?.('change', () => { if (store.state.settings.theme === 'system') applyTheme(); });
 markStartupStage(startupTrace, 'ai_service_deferred', { activation:'user_action' });
 markStartupStage(startupTrace, 'home_render_start');
+earlyStartup?.mark('first_render_started');
 recordStartupPhase('render-start');
 captureLoveveryImageSweep('pre_catalog_hydrate');
 render();
 recordStartupPhase('render-complete');
+earlyStartup?.complete();
 installSingleLineEnterCompletion(document);
 setupScrollTop();
 requestAnimationFrame(() => {
