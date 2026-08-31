@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-08-31T19:26:03.976Z",
+  "generatedAt": "2026-08-31T19:39:47.300Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.3",
-    "buildName": "Local Candidate Admin Actions Fix",
+    "buildName": "Toy Rotation v0.11.3 Stable Candidate",
     "buildDate": "20260831",
-    "buildId": "local-candidate-admin-actions-fix-20260831"
+    "buildId": "toy-rotation-v0.11.3-stable-candidate-20260831"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 541,
-      "sha256": "c8f7c92408fcc1de1a5d19ff9bdb872e5bd427ec32625d55580fe73f751a3d03",
+      "bytes": 553,
+      "sha256": "def7e8af70f21cb36dc4fa7a7ca10e0cfd0e3fd8377849c02087570de013aae0",
       "importedBy": [
         "index.html"
       ],
