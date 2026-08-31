@@ -66,7 +66,7 @@ async function inspectKnownImageDatabase(database) {
     await Promise.all(stores.map(storeName=>new Promise((resolve,reject)=>{
       const request=db.transaction(storeName,'readonly').objectStore(storeName).count();
       request.onsuccess=()=>{counts[storeName]=request.result;resolve();}; request.onerror=()=>reject(request.error);
-    }))));
+    })));
     const result={ name:IMAGE_DB, present:true, version:db.version, objectStores:stores, counts };
     db.close(); return result;
   } catch (error) { return { name:IMAGE_DB, present:true, error:String(error?.message || error) }; }

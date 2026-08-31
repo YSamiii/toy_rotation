@@ -23,7 +23,11 @@
     if (diagnostic) diagnostic.addEventListener('click', function () { location.assign('./startup-diagnostic.html'); });
   };
   window.__TOY_ROTATION_EARLY_STARTUP__ = { state:state, mark:mark, fail:fail, complete:function () { state.complete=true; mark('first_render_finished'); }, persist:persist };
-  window.addEventListener('error', function (event) { fail(event.error || event.message, state.phase); });
+  window.addEventListener('error', function (event) {
+    fail(event.error || event.message, state.phase);
+    var latest=state.errors[state.errors.length-1];
+    if (latest) { latest.source=event.filename || null; latest.line=event.lineno || null; latest.column=event.colno || null; persist(); }
+  });
   window.addEventListener('unhandledrejection', function (event) { fail(event.reason || 'Unhandled startup rejection', state.phase); });
   mark('shell_loaded');
   window.setTimeout(function () { fail('startup_watchdog_timeout', state.phase); }, 5000);
@@ -33,6 +37,6 @@
 <link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./src/ui/theme.css"><link rel="stylesheet" href="./src/ui/app.css"><title>Toy Rotation</title></head>
 <body><div id="app"><section class="startup-shell" role="status" aria-live="polite"><div class="startup-spinner" aria-hidden="true"></div><div><h1>玩具轮换正在启动…</h1><p>Toy Rotation is starting…</p></div></section></div><button id="app-scroll-top" class="scroll-top hidden" type="button">↑</button><dialog id="modal"></dialog>
 <script src="./config.js" onload="window.__TOY_ROTATION_EARLY_STARTUP__?.mark('config_loaded')" onerror="window.__TOY_ROTATION_EARLY_STARTUP__?.fail('config_load_failed','config_load_started')"></script>
-<script>window.__TOY_ROTATION_EARLY_STARTUP__?.mark('main_load_started')</script>
-<script type="module" src="./src/main.js" onerror="window.__TOY_ROTATION_EARLY_STARTUP__?.fail('main_module_load_failed','main_load_started')"></script>
+<script>window.__TOY_ROTATION_EARLY_STARTUP__?.mark('main_script_requested')</script>
+<script type="module" src="./src/main.js" onload="window.__TOY_ROTATION_EARLY_STARTUP__?.mark('main_script_loaded')" onerror="window.__TOY_ROTATION_EARLY_STARTUP__?.fail('main_module_load_failed','main_script_requested')"></script>
 </body></html>

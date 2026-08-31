@@ -1,0 +1,778 @@
+{
+  "manifestVersion": 1,
+  "generatedAt": "2026-08-30T20:02:38.651Z",
+  "target": "safari16",
+  "entries": [
+    "index.html",
+    "storage-recovery-diagnostic.html",
+    "startup-diagnostic.html"
+  ],
+  "files": [
+    {
+      "path": "config.js",
+      "resolvedDeployPath": "./config.js",
+      "bytes": 370,
+      "sha256": "cf13d241eab50953649c167a4b14476425a33dd2f3791d9637be215c870f07ab",
+      "importedBy": [
+        "index.html"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/backup-service.js",
+      "resolvedDeployPath": "./src/data/backup-service.js",
+      "bytes": 18850,
+      "sha256": "fb552d179aaf89f8cd431b8731d5bfae4308f8783d60945610610ac0081e4655",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js",
+        "src/data/store.js",
+        "src/domain/duplicate-engine.js",
+        "src/domain/set-service.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-batch1.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-batch1.js",
+      "bytes": 48898,
+      "sha256": "9c7aa7334d3acf324381f57f50ead01d82c10573eac2227cdd24536949afa70c",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-batch2.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-batch2.js",
+      "bytes": 27383,
+      "sha256": "f737d0b138694a1e10cc3a5bbfb21d5b836df94707a18c921b8995d39dbaad57",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-batch3.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-batch3.js",
+      "bytes": 17714,
+      "sha256": "73c7939089384d2bd61c9fb83a0f204bd79ac9cd9e94b86d796bfdecfb609f75",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-batch4.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-batch4.js",
+      "bytes": 2503,
+      "sha256": "161433b6d16b18386d659b74a0f0caa9fa9044c95ac8e8b0967d616cd0fa9f3b",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-batch5.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-batch5.js",
+      "bytes": 8730,
+      "sha256": "7b0ed8f75c0564b8dbe279ccca06aee030d63e9e9c7692577e30c44bda08cf3d",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-batch6.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-batch6.js",
+      "bytes": 2527,
+      "sha256": "b2be6fd473c1602b2339f52d55f61d8bb0132ae35639582c94893fd8abc19f51",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-batch7.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-batch7.js",
+      "bytes": 10640,
+      "sha256": "f93f16426bd01ceb8375e73dd908c2a00e9f66a32a91cad7d7abaf60bfa87344",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-batch8.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-batch8.js",
+      "bytes": 15741,
+      "sha256": "d82aa7918ec0a37c2c17011455543b288512e672517341d6d0df0df6ee622f97",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-batch9.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-batch9.js",
+      "bytes": 1573,
+      "sha256": "e35434f8a7616068cddf5da2b2fa245d3da48942684567a1b0b1185e2ea89b3e",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-hape-batch1.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-hape-batch1.js",
+      "bytes": 4124,
+      "sha256": "9eee086e9b5f835ed2f2954c21d91c2a9f36a65cd66982683b7752eab9d9edf5",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-hape-batch2.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-hape-batch2.js",
+      "bytes": 4296,
+      "sha256": "cad4320b0715c35628907b74593fcd9ca828e3ff44eaefc5e9fc77ebb6c03efa",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets-hape-final-resolution.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets-hape-final-resolution.js",
+      "bytes": 969,
+      "sha256": "3501046ae25cef11ea6cd041b2c2aee09546355bac1b00c2a8c57e97de329ed9",
+      "importedBy": [
+        "src/data/catalog-image-assets.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/catalog-image-assets.js",
+      "resolvedDeployPath": "./src/data/catalog-image-assets.js",
+      "bytes": 12586,
+      "sha256": "fb1acf9f25cf3285233ca8cb6997e9c8ebbb53f52559c0059ea8b74bf93cab0f",
+      "importedBy": [
+        "src/domain/catalog-repository.js"
+      ],
+      "staticImports": [
+        "src/data/catalog-image-assets-batch1.js",
+        "src/data/catalog-image-assets-batch2.js",
+        "src/data/catalog-image-assets-batch3.js",
+        "src/data/catalog-image-assets-batch4.js",
+        "src/data/catalog-image-assets-batch5.js",
+        "src/data/catalog-image-assets-batch6.js",
+        "src/data/catalog-image-assets-batch7.js",
+        "src/data/catalog-image-assets-batch8.js",
+        "src/data/catalog-image-assets-batch9.js",
+        "src/data/catalog-image-assets-hape-batch1.js",
+        "src/data/catalog-image-assets-hape-batch2.js",
+        "src/data/catalog-image-assets-hape-final-resolution.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/hape-final-resolution-review.js",
+      "resolvedDeployPath": "./src/data/hape-final-resolution-review.js",
+      "bytes": 2221,
+      "sha256": "9c55e710a50f0780de0d6c1db6041f20a3bffb4e6f8583626ec1807fac57d727",
+      "importedBy": [
+        "src/domain/catalog-repository.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/image-repository.js",
+      "resolvedDeployPath": "./src/data/image-repository.js",
+      "bytes": 7521,
+      "sha256": "312f9ec517011b0fb44baba045e349c4a7f2b4854db70da02adc1ae5f64cd5f8",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/schema.js",
+      "resolvedDeployPath": "./src/data/schema.js",
+      "bytes": 14250,
+      "sha256": "6782dffa437294f191aac54e23a46be3a14932adfb892020310562fc8de8e947",
+      "importedBy": [
+        "src/data/backup-service.js",
+        "src/data/store.js",
+        "src/domain/catalog-repository.js",
+        "src/domain/duplicate-engine.js",
+        "src/domain/identity-service.js",
+        "src/domain/library-service.js",
+        "src/domain/set-service.js",
+        "src/domain/substitution-engine.js",
+        "src/features/data-repair-diagnostic.js",
+        "src/features/recognition-service.js",
+        "src/features/shared-catalog-governance.js",
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/data/store.js",
+      "resolvedDeployPath": "./src/data/store.js",
+      "bytes": 47345,
+      "sha256": "4ae38ff3c8ac61a4ee10b27d74210e0dfb7cff406c847a96f98039361e8e38d7",
+      "importedBy": [
+        "src/data/backup-service.js",
+        "src/features/persistence-diagnostic.js",
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js",
+        "src/domain/identity-service.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/catalog-presentation.js",
+      "resolvedDeployPath": "./src/domain/catalog-presentation.js",
+      "bytes": 8201,
+      "sha256": "3dba8e5443878c1ae475844a47ad071885f6ffa5cc92c606026ebb93413a83e3",
+      "importedBy": [
+        "src/domain/catalog-repository.js",
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/domain/set-service.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/catalog-repository.js",
+      "resolvedDeployPath": "./src/domain/catalog-repository.js",
+      "bytes": 21956,
+      "sha256": "7e2fe5f7ebbb794daaf7ef52cb300525288374a634669973e1b64a0809bfe8a6",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/catalog-image-assets.js",
+        "src/data/hape-final-resolution-review.js",
+        "src/data/schema.js",
+        "src/domain/catalog-presentation.js",
+        "src/domain/duplicate-engine.js",
+        "src/domain/identity-service.js",
+        "src/domain/set-service.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/duplicate-engine.js",
+      "resolvedDeployPath": "./src/domain/duplicate-engine.js",
+      "bytes": 3448,
+      "sha256": "e48c93c5634b4da0c4801f7735b3b8d9e35edf929d50b8c6fd011998940e2309",
+      "importedBy": [
+        "src/data/backup-service.js",
+        "src/domain/catalog-repository.js",
+        "src/domain/set-service.js",
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js",
+        "src/domain/identity-service.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/identity-service.js",
+      "resolvedDeployPath": "./src/domain/identity-service.js",
+      "bytes": 10605,
+      "sha256": "91807b6cd7afd4091c58d99afc83db7ee863603426199169ab0b9cec56b5a8c2",
+      "importedBy": [
+        "src/data/store.js",
+        "src/domain/catalog-repository.js",
+        "src/domain/duplicate-engine.js",
+        "src/domain/library-service.js",
+        "src/domain/set-service.js",
+        "src/features/recognition-service.js",
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/library-service.js",
+      "resolvedDeployPath": "./src/domain/library-service.js",
+      "bytes": 6334,
+      "sha256": "84a1466cac1b3ca3dcb2b4a24db0a03ff5c44a7a1fb3f92b9d9848592f23d192",
+      "importedBy": [
+        "src/features/recognition-service.js",
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js",
+        "src/domain/identity-service.js",
+        "src/domain/set-service.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/profile-service.js",
+      "resolvedDeployPath": "./src/domain/profile-service.js",
+      "bytes": 1435,
+      "sha256": "1b982481b1fbe409bf5e75a10ed0f692ae5e0f19e00006f6178ffff051783db6",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/rotation-engine.js",
+      "resolvedDeployPath": "./src/domain/rotation-engine.js",
+      "bytes": 19787,
+      "sha256": "4a3c6a4d4aca39f515c75f591b19308b6e94134dfbeae3259648eb8b837a926c",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/domain/substitution-engine.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/set-service.js",
+      "resolvedDeployPath": "./src/domain/set-service.js",
+      "bytes": 56894,
+      "sha256": "7b516f74e07e5816ffadd150e693af1f0e32c7c98fccbce3ca3e4c85d3c4abd4",
+      "importedBy": [
+        "src/data/backup-service.js",
+        "src/domain/catalog-presentation.js",
+        "src/domain/catalog-repository.js",
+        "src/domain/library-service.js",
+        "src/features/data-repair-diagnostic.js",
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js",
+        "src/domain/duplicate-engine.js",
+        "src/domain/identity-service.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/substitution-engine.js",
+      "resolvedDeployPath": "./src/domain/substitution-engine.js",
+      "bytes": 5097,
+      "sha256": "4b5c2369a5e435e342882e74993a39214117fc7eeea57ed95e40f43f1e4bd55c",
+      "importedBy": [
+        "src/domain/rotation-engine.js",
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/admin-service.js",
+      "resolvedDeployPath": "./src/features/admin-service.js",
+      "bytes": 7649,
+      "sha256": "a9e3a4ed1011d645db91a0cb05f8b961e1fd3ade5297d006669f6042479f05d4",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/data-repair-diagnostic.js",
+      "resolvedDeployPath": "./src/features/data-repair-diagnostic.js",
+      "bytes": 16199,
+      "sha256": "d65899aac3fc3e9da124671911f4a1b16b21e8ab0429f3f26ecd2b19a5367be2",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js",
+        "src/domain/set-service.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/persistence-diagnostic.js",
+      "resolvedDeployPath": "./src/features/persistence-diagnostic.js",
+      "bytes": 3815,
+      "sha256": "d252c0b40c31d380cae6c57d37f10294d97e6f841ac5ee0972b71f8e5666e949",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/store.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/recognition-service.js",
+      "resolvedDeployPath": "./src/features/recognition-service.js",
+      "bytes": 14186,
+      "sha256": "db54116e8c6c4776d3e4475abee79f4b6e6280bc83bb9e33732d9c2fed68adf6",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js",
+        "src/domain/identity-service.js",
+        "src/domain/library-service.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/restore-diagnostic.js",
+      "resolvedDeployPath": "./src/features/restore-diagnostic.js",
+      "bytes": 1545,
+      "sha256": "c59a5b6ad55a4f3d789991dee0aee9e74c59034cd064abe39122f0a886b1f347",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/runtime-image-diagnostic.js",
+      "resolvedDeployPath": "./src/features/runtime-image-diagnostic.js",
+      "bytes": 9684,
+      "sha256": "6406ed5c3a34393a1b1dc0396620110bbde8103cee7489c781f2036cca5e13ed",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/shared-catalog-governance.js",
+      "resolvedDeployPath": "./src/features/shared-catalog-governance.js",
+      "bytes": 5999,
+      "sha256": "8f08405b1e734a09d084cabb29780fd1c9b69ccfb97827444065ff0c5436e048",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/standalone-storage-diagnostic-core.js",
+      "resolvedDeployPath": "./src/features/standalone-storage-diagnostic-core.js",
+      "bytes": 3042,
+      "sha256": "7dbf6783a1d7542cb2f9705b4d63f4478d0ad08bbb988cb385940f6a1583594c",
+      "importedBy": [
+        "storage-recovery-diagnostic.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/startup-trace.js",
+      "resolvedDeployPath": "./src/features/startup-trace.js",
+      "bytes": 2953,
+      "sha256": "9010c0523f39fd13bb33681f164d86ea7c24595477ea877bd65fa8c9bb90ce70",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/main.js",
+      "resolvedDeployPath": "./src/main.js",
+      "bytes": 117473,
+      "sha256": "a329b4354fb65549689752c4caf7ceebb38bde406c439e05d4260895af233826",
+      "importedBy": [
+        "index.html"
+      ],
+      "staticImports": [
+        "src/data/backup-service.js",
+        "src/data/image-repository.js",
+        "src/data/schema.js",
+        "src/data/store.js",
+        "src/domain/catalog-presentation.js",
+        "src/domain/catalog-repository.js",
+        "src/domain/duplicate-engine.js",
+        "src/domain/identity-service.js",
+        "src/domain/library-service.js",
+        "src/domain/profile-service.js",
+        "src/domain/rotation-engine.js",
+        "src/domain/set-service.js",
+        "src/domain/substitution-engine.js",
+        "src/features/admin-service.js",
+        "src/features/data-repair-diagnostic.js",
+        "src/features/persistence-diagnostic.js",
+        "src/features/recognition-service.js",
+        "src/features/restore-diagnostic.js",
+        "src/features/runtime-image-diagnostic.js",
+        "src/features/shared-catalog-governance.js",
+        "src/features/startup-trace.js",
+        "src/ui/i18n.js",
+        "src/ui/modal-manager.js",
+        "src/ui/personal-image-editor.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/ui/i18n.js",
+      "resolvedDeployPath": "./src/ui/i18n.js",
+      "bytes": 41896,
+      "sha256": "4f66c7bb933f2c4a96bd2547f9f5ee21853e397473ea255ae2576c27b0099ba8",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/ui/modal-manager.js",
+      "resolvedDeployPath": "./src/ui/modal-manager.js",
+      "bytes": 2185,
+      "sha256": "1dd4724f024e46aac2f1946cd3c4459322b15ae119a7e868ab05e84cba8822d2",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/ui/personal-image-editor.js",
+      "resolvedDeployPath": "./src/ui/personal-image-editor.js",
+      "bytes": 6124,
+      "sha256": "611d133242933fa5fcb90f35fd1509baddd975c7adb58020fac728b555a93d7a",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "startup-diagnostic.js",
+      "resolvedDeployPath": "./startup-diagnostic.js",
+      "bytes": 4777,
+      "sha256": "955aa3bbd68fc69fe300c2ab3266af6db93b4696b23ea9af12adb6e6dac248ee",
+      "importedBy": [
+        "startup-diagnostic.html"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "storage-recovery-diagnostic.js",
+      "resolvedDeployPath": "./storage-recovery-diagnostic.js",
+      "bytes": 7311,
+      "sha256": "d1407cebb76d00c184eb2d3e1322d0332008f2e2e04bcbc59cd1e2b23c8a36ec",
+      "importedBy": [
+        "storage-recovery-diagnostic.html"
+      ],
+      "staticImports": [
+        "src/features/standalone-storage-diagnostic-core.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    }
+  ],
+  "browserTargetCompatibility": {
+    "target": "safari16",
+    "result": "pass",
+    "checkedInputs": 39
+  }
+}

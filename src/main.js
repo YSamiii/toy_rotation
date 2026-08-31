@@ -31,6 +31,7 @@ const STARTUP_DIAGNOSTIC_KEY='toyRotation.startupDiagnostic';
 // spinner with a usable error/diagnostic screen.
 const earlyStartup=window.__TOY_ROTATION_EARLY_STARTUP__;
 earlyStartup?.mark('main_loaded');
+earlyStartup?.mark('module_bootstrap_started');
 function recordStartupPhase(phase, details = null) {
   try { localStorage.setItem(STARTUP_DIAGNOSTIC_KEY, JSON.stringify({ phase, details, at:new Date().toISOString(), release:window.TOY_ROTATION_CONFIG?.RELEASE || null })); } catch {}
 }

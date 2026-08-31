@@ -8,12 +8,15 @@
     "error": "Unexpected token )",
     "persistenceStarted": false
   },
-  "reproducibility": {
-    "exactDeviceServedMainJsAvailable": false,
-    "availableSourceAndArchivesNodeCheck": "pass",
-    "exactLineAndColumn": null
+  "rootCause": {
+    "file": "src/features/persistence-diagnostic.js",
+    "line": 69,
+    "column": 8,
+    "syntax": "surplus closing parenthesis in Promise.all/stores.map/new Promise expression",
+    "importPath": ["index.html", "src/main.js", "src/features/persistence-diagnostic.js"]
   },
   "runtimeJsSyntaxGate": { "passed": true, "checkedFiles": 43 },
-  "automatedRegression": { "passed": 194, "failed": 0 },
+  "safariRuntimeCompatibilityGate": { "target": "safari16", "passed": true, "bundledInputs": 39 },
+  "automatedRegression": { "passed": 195, "failed": 0 },
   "schemaVersion": 12
 }
