@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-08-31T15:50:54.631Z",
+  "generatedAt": "2026-08-31T16:33:48.833Z",
   "target": "safari16",
   "entries": [
     "index.html",
@@ -592,8 +592,8 @@
     {
       "path": "src/features/recognition-service.js",
       "resolvedDeployPath": "./src/features/recognition-service.js",
-      "bytes": 17338,
-      "sha256": "5d2e232e0673c8398e92c1877bddabbb0615e7169796aed019dcf2449e66b1cd",
+      "bytes": 19323,
+      "sha256": "35aa25bbaa4599cd7172e9b58d79ecf0005f79f60f4a1f8d4b8636dfb31a3b30",
       "importedBy": [
         "src/main.js"
       ],
@@ -689,8 +689,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 128267,
-      "sha256": "ccec0538de3312fa757494f71fe9401e8fcbe01b47e6494db1ac60e29f7ce9cb",
+      "bytes": 128929,
+      "sha256": "3660d6888b43c0b93f11ac8167fe5727acdea686c016af8a2d4d4fa21b583655",
       "importedBy": [
         "index.html"
       ],
@@ -721,6 +721,7 @@
         "src/ui/modal-manager.js",
         "src/ui/admin-workspace-controller.js",
         "src/ui/admin-governance-child.js",
+        "src/ui/recognition-review-submit-controller.js",
         "src/ui/personal-image-editor.js"
       ],
       "dynamicImports": [],
@@ -805,6 +806,21 @@
       }
     },
     {
+      "path": "src/ui/recognition-review-submit-controller.js",
+      "resolvedDeployPath": "./src/ui/recognition-review-submit-controller.js",
+      "bytes": 1331,
+      "sha256": "9f3d1b7b7a484b94fc8dc5f5109df61aadfb3332b50ae2e306bfe5bee997b210",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "startup-diagnostic.html",
       "resolvedDeployPath": "./startup-diagnostic.html",
       "bytes": 1849,
@@ -870,6 +886,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 49
+    "checkedInputs": 50
   }
 }

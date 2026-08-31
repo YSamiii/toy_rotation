@@ -7,6 +7,7 @@
     "test:admin-workspace": "node tests/admin-workspace-controller.test.mjs && node tests/admin-workspace-production-wiring.test.mjs",
     "test:admin-governance-child": "node tests/admin-governance-child.test.mjs",
     "test:candidate-production": "node tests/candidate-production-creation.test.mjs",
+    "test:recognition-review-dom": "node tests/recognition-review-dom.test.mjs",
     "test:persistence": "node tests/persistence-fault-injection.test.mjs",
     "generate:runtime-manifest": "node scripts/generate-runtime-js-manifest.mjs",
     "scan:sensitive": "node scripts/sensitive-staging-scan.mjs .",

@@ -1,0 +1,7 @@
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+import { bindRecognitionReviewSubmit } from '../src/ui/recognition-review-submit-controller.js';
+const dom=new JSDOM('<form><button data-destination="library">Add to Toy Library</button><button data-destination="wishlist">Add to Wishlist</button><p class="error"></p></form>');const form=dom.window.document.querySelector('form');let saves=0,commits=0,closed=0;const trace=[];let resolve;
+const pending=new Promise(r=>resolve=r);bindRecognitionReviewSubmit({form,recognitionDraftId:'draft-1',saveDraft:async()=>{saves++;await pending;},confirm:async destination=>{commits++;return destination==='library'?{toy:{id:'toy-1'},candidateId:'candidate-draft-1'}:{wishlist:{id:'wish-1'}};},onComplete:()=>closed++,onError:error=>form.querySelector('.error').textContent=error.message,trace:(stage,detail)=>trace.push({stage,detail})});
+const [library,wishlist]=form.querySelectorAll('[data-destination]');assert.ok(library&&wishlist);library.click();wishlist.click();assert.equal(library.disabled,true);assert.equal(wishlist.disabled,true);resolve();await new Promise(r=>setTimeout(r,0));assert.equal(saves,1);assert.equal(commits,1);assert.equal(closed,1);assert.equal(trace.find(x=>x.stage==='destination_selected').detail.destination,'library');
+library.click();await new Promise(r=>setTimeout(r,0));assert.equal(commits,1);console.log('recognition review DOM: PASS (10 assertions)');

@@ -3,7 +3,7 @@ import { createCatalogOwnership } from '../domain/library-service.js';
 import { findOwnedToy } from '../domain/identity-service.js';
 
 export class RecognitionService {
-  #store; #images; #catalog; #base; #governance;
+  #store; #images; #catalog; #base; #governance; #submissions=new Map(); #completed=new Map();
   constructor({ store, images, catalog = null, governance = null, baseUrl = '' }) { this.#store=store; this.#images=images; this.#catalog=catalog; this.#governance=governance; this.#base=String(baseUrl || window.TOY_ROTATION_CONFIG?.API_BASE || '').replace(/\/+$/,''); }
   async createDraft(file, setMode = 'auto', { onPersisted = null } = {}) {
     if (!this.#base) throw new RecognitionError('recognitionServiceUnconfigured');
@@ -49,7 +49,16 @@ export class RecognitionService {
     catch(error){this.#setError(id,error.code || error.message || 'recognitionFailed', error.diagnostics || null);}
   }
   async confirm(id, { destination = 'library' } = {}) {
-    const draft=this.#store.state.drafts.find(item=>item.id===id); if(!draft || !String(draft.status).startsWith('ready')) return;
+    const completed=this.#completed.get(id);if(completed){recognitionTrace('duplicate_click_blocked',{recognitionDraftId:id,destination});return completed;}
+    if(this.#submissions.has(id)){recognitionTrace('inflight_reused',{recognitionDraftId:id,destination});return this.#submissions.get(id);}
+    const draft=this.#store.state.drafts.find(item=>item.id===id);if(!draft || !String(draft.status).startsWith('ready'))return;
+    const operation=(async()=>{recognitionTrace('submit_started',{recognitionDraftId:id,destination,canonicalProposal:draft.canonicalKey||null});this.#store.update(state=>{const item=state.drafts.find(entry=>entry.id===id);if(item)item.status='submitting';},'recognition-submit-started');const result=await this.#commit(draft,{destination});this.#completed.set(id,result);return result;})();
+    this.#submissions.set(id,operation);try{return await operation;}finally{this.#submissions.delete(id);}
+  }
+  async #commit(idDraft, { destination = 'library' } = {}) {
+    const draft=idDraft;
+    const id=draft.id;
+    recognitionTrace('existing_toy_lookup',{recognitionDraftId:id,destination,canonicalProposal:draft.canonicalKey||null});
     if (destination === 'wishlist') return this.#confirmWishlist(draft);
     // A person may explicitly distinguish an AI result from a merely similar
     // catalog product.  Respect that review result without changing the
@@ -72,10 +81,10 @@ export class RecognitionService {
     // Recognition review data is a local ownership override.  It deliberately
     // never writes back into CatalogRepository or shared catalog governance.
     const reviewedSource={...catalog,brand:draft.brand || catalog.brand,productName:draft.productName || catalog.productName,names:draft.names || catalog.names,sku:draft.sku || catalog.sku,categoryCode:draft.categoryCode || catalog.categoryCode,skillCodes:draft.skillCodes || catalog.skillCodes,playMechanics:draft.playMechanics || catalog.playMechanics,minAgeMonths:draft.minAgeMonths ?? catalog.minAgeMonths,maxAgeMonths:draft.maxAgeMonths ?? catalog.maxAgeMonths,rotationValue:draft.rotationValue || 'medium',notes:draft.notes || '',rotationParticipation:draft.reviewRotationState === 'paused' ? 'paused' : 'active',shelfMode:draft.reviewRotationState === 'permanent' ? 'permanent' : 'rotate',permanentSource:draft.reviewRotationState === 'permanent' ? 'user' : null,pauseReason:draft.reviewRotationState === 'paused' ? draft.pauseReason || '' : '',pauseReasonCode:draft.reviewRotationState === 'paused' ? draft.pauseReasonCode || null : null};
-    const result=createCatalogOwnership(this.#store, reviewedSource, draft.imageRef, { reason:'recognition-confirm' });
+    recognitionTrace('toy_create_started',{recognitionDraftId:id,destination});const result=createCatalogOwnership(this.#store, reviewedSource, draft.imageRef, { reason:'recognition-confirm' });
     if (!result.added) return this.#markAlreadyOwned(id, result.toy);
-    if(governanceCandidateId)this.#store.update(state=>{const toy=state.toys.find(item=>item.id===result.toy.id);if(toy)toy.governanceCandidateId=governanceCandidateId;},'recognition-governance-candidate-link');
-    if(candidatePayload){this.#governance?.createLocalCandidate({...candidatePayload,linkedLocalToyId:result.toy.id});void this.#governance?.flushOutbox();}
+    recognitionTrace('toy_created',{recognitionDraftId:id,destination,localToyId:result.toy.id});recognitionTrace('ownership_written',{recognitionDraftId:id,destination,localToyId:result.toy.id});if(governanceCandidateId)this.#store.update(state=>{const toy=state.toys.find(item=>item.id===result.toy.id);if(toy)toy.governanceCandidateId=governanceCandidateId;},'recognition-governance-candidate-link');
+    if(candidatePayload){recognitionTrace('candidate_required',{recognitionDraftId:id,destination,localToyId:result.toy.id,candidateId:governanceCandidateId});recognitionTrace('candidate_create_started',{recognitionDraftId:id,destination,localToyId:result.toy.id,candidateId:governanceCandidateId});this.#governance?.createLocalCandidate({...candidatePayload,linkedLocalToyId:result.toy.id});recognitionTrace('candidate_created',{recognitionDraftId:id,destination,localToyId:result.toy.id,candidateId:governanceCandidateId});void this.#governance?.flushOutbox();}
     this.#catalog?.ensureSetChildren();
     this.#store.update(state=>{state.drafts=state.drafts.filter(item=>item.id!==id);},'recognition-confirmed');
     return { kind:'created', toy:result.toy, catalog, learned:decision.kind !== 'catalog_match' };
@@ -119,6 +128,7 @@ export class RecognitionService {
   #setDecision(id, decision) { this.#store.update(state=>{const item=state.drafts.find(x=>x.id===id);if(!item)return;item.status=decision.kind;item.error=decision.kind === 'tombstoned' ? 'recognitionCatalogTombstoned' : null;item.duplicateCandidates=(decision.conflicts || []).map(match=>catalogSummary(match.b));},'recognition-catalog-decision'); }
   #markAlreadyOwned(id, toy) { this.#store.update(state=>{const item=state.drafts.find(x=>x.id===id);if(item){item.status='already_owned';item.ownedToyId=toy?.id || null;item.catalogMatch=catalogSummary(toy);}},'recognition-already-owned'); return { kind:'already_owned', toy }; }
 }
+function recognitionTrace(stage,detail={}){const trace=globalThis.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ ||= [];trace.push({stage,timestamp:new Date().toISOString(),...detail});if(trace.length>120)trace.splice(0,trace.length-120);}
 const DEVICE_ID_KEY = 'toyRotation.cleanBaseline.deviceId';
 const REQUEST_TIMEOUT_MS = 30000;
 

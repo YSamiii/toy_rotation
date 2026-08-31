@@ -24,6 +24,7 @@ import { createI18n, localizePlayMechanism } from './ui/i18n.js';
 import { ModalManager } from './ui/modal-manager.js';
 import { createAdminWorkspaceController } from './ui/admin-workspace-controller.js';
 import { renderAdminGovernanceChild } from './ui/admin-governance-child.js';
+import { bindRecognitionReviewSubmit } from './ui/recognition-review-submit-controller.js';
 import { attachImageEditor, attachPersonalImageEditor } from './ui/personal-image-editor.js';
 
 const root = document.querySelector('#app');
@@ -196,7 +197,7 @@ function render() {
   root.querySelectorAll('[data-view]').forEach(button => { button.onclick = () => { view = button.dataset.view; render(); }; });
   root.querySelectorAll('[data-action]').forEach(button => { button.onclick = () => action(button.dataset.action, button.dataset); });
   root.querySelectorAll('[data-draft-edit]').forEach(button => { button.onclick = () => openRecognitionReview(button.dataset.draftEdit); });
-  root.querySelectorAll('[data-draft-confirm]').forEach(button => { button.onclick = () => getRecognition().confirm(button.dataset.draftConfirm, { destination:button.dataset.destination || 'library' }); });
+  root.querySelectorAll('[data-draft-confirm]').forEach(button => { button.onclick = async () => { const buttons=[...root.querySelectorAll(`[data-draft-confirm="${button.dataset.draftConfirm}"]`)];buttons.forEach(control=>control.disabled=true);try{const result=await getRecognition().confirm(button.dataset.draftConfirm,{destination:button.dataset.destination||'library'});if(result)render();}finally{buttons.forEach(control=>control.disabled=false);} }; });
   root.querySelectorAll('[data-draft-image-consent]').forEach(input => { input.onchange=()=>store.update(state=>{const draft=state.drafts.find(item=>item.id===input.dataset.draftImageConsent);if(draft)draft.imageConsent=input.checked;},'candidate-image-consent'); });
   root.querySelectorAll('[data-draft-retry]').forEach(button => { button.onclick = () => getRecognition().analyze(button.dataset.draftRetry, { force: true }); });
   root.querySelectorAll('[data-draft-remove]').forEach(button => { button.onclick = () => getRecognition().remove(button.dataset.draftRemove); });
@@ -584,8 +585,9 @@ function openRecognitionReview(id) {
   };
   form.querySelector('[data-reanalyze]').onclick=async()=>{try{editedImageData=editedImageData||imageEditor.editedDataUrl();await saveDraft();await getRecognition().analyze(id,{force:true});dialog.close();}catch(error){form.querySelector('.form-error').textContent=messageFor(error.code||error.message);}};
   form.querySelector('[data-cancel-review]').onclick=async()=>{await getRecognition().remove(id);dialog.close();};
-  form.onsubmit=async event=>{event.preventDefault();try{await saveDraft();const destination=event.submitter?.dataset.destination || 'library';const result=await getRecognition().confirm(id,{destination});dialog.close();if(result?.toy){view='library';render();setTimeout(()=>document.querySelector(`[data-toy-id="${result.toy.id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),0);}else if(result?.wishlist){view='wishlist';render();}}catch(error){form.querySelector('.form-error').textContent=messageFor(error.code||error.message||'recognitionFailed');}};
+  recognitionSaveTrace('review_opened',{recognitionDraftId:id,canonicalProposal:draft.canonicalKey||null});bindRecognitionReviewSubmit({form,recognitionDraftId:id,saveDraft,confirm:destination=>getRecognition().confirm(id,{destination}),onComplete:result=>{dialog.close();if(result?.toy){view='library';render();setTimeout(()=>document.querySelector(`[data-toy-id="${result.toy.id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),0);}else if(result?.wishlist){view='wishlist';render();}},onError:error=>{form.querySelector('.form-error').textContent=messageFor(error.code||error.message||'recognitionFailed');},trace:recognitionSaveTrace});
 }
+function recognitionSaveTrace(stage,detail={}){const trace=window.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ ||= [];trace.push({stage,timestamp:new Date().toISOString(),...detail});if(trace.length>120)trace.splice(0,trace.length-120);}
 
 function installSingleLineEnterCompletion(scope) {
   scope.addEventListener('keydown', event => {
