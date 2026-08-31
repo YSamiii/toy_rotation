@@ -22,6 +22,7 @@ import { IMAGE_RESOLVER_BUILD_MARKER, RuntimeImageDiagnostics } from './features
 import { beginStartupTrace, completeStartupWatchdog, installStartupWatchdog, markStartupError, markStartupStage, renderStartupShell } from './features/startup-trace.js';
 import { createI18n, localizePlayMechanism } from './ui/i18n.js';
 import { ModalManager } from './ui/modal-manager.js';
+import { createAdminWorkspaceController } from './ui/admin-workspace-controller.js';
 import { attachImageEditor, attachPersonalImageEditor } from './ui/personal-image-editor.js';
 
 const root = document.querySelector('#app');
@@ -771,7 +772,7 @@ function openSettings() {
   dialog.querySelector('#restore-diagnostic-export')?.addEventListener('click', exportRestoreDiagnostic);
   dialog.querySelector('#persistence-diagnostic-export')?.addEventListener('click', exportPersistenceDiagnostic);
   dialog.querySelector('#admin-open').onclick = () => admin.enabled ? (admin.signOut(), openSettings()) : openAdminInSettings(dialog);
-  dialog.querySelector('#manager-open')?.addEventListener('click', () => openManagerDashboard({ returnToSettings:true }));
+  dialog.querySelector('#manager-open')?.addEventListener('click', () => openAdminWorkspaceInSettings(dialog));
 }
 async function readRestoreFile(file, trace) {
   try {
@@ -987,7 +988,34 @@ function openAdmin() {
 function openAdminInSettings(dialog) {
   const host=dialog.querySelector('#admin-settings'); if(!host) return;
   host.innerHTML=`<label>${t('adminPassword')}<input id="admin-password" type="password" autocomplete="current-password"></label><button type="button" id="admin-sign-in" class="primary">${t('signIn')}</button><p id="admin-error"></p>`;
-  host.querySelector('#admin-sign-in').onclick=async()=>{try{await admin.signIn(host.querySelector('#admin-password').value);host.innerHTML=`<p role="status">${t('adminMode')}</p><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge">${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>`;host.querySelector('#manager-open').onclick=()=>openManagerDashboard({ returnToSettings:true });host.querySelector('#admin-open').onclick=()=>{admin.signOut();openSettings();};}catch(error){host.querySelector('#admin-error').textContent=messageFor(error.message);}};
+  host.querySelector('#admin-sign-in').onclick=async()=>{try{await admin.signIn(host.querySelector('#admin-password').value);host.innerHTML=`<p role="status">${t('adminMode')}</p><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge">${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>`;host.querySelector('#manager-open').onclick=()=>openAdminWorkspaceInSettings(dialog);host.querySelector('#admin-open').onclick=()=>{admin.signOut();openSettings();};}catch(error){host.querySelector('#admin-error').textContent=messageFor(error.message);}};
+}
+function traceAdminWorkspace(stage, detail = {}) { const trace=window.__TOY_ROTATION_ADMIN_WORKSPACE_TRACE__ ||= []; trace.push({stage,detail,at:new Date().toISOString()}); if(trace.length>40)trace.splice(0,trace.length-40); }
+function renderAdminWorkspaceBody(dialog,{onBack,onClose}) {
+  dialog.innerHTML=`<section class="sheet admin-workspace-root" data-admin-workspace-root><header><h2>${t('managerDashboard')}</h2><button type="button" data-workspace-back>‹</button><button type="button" data-workspace-close>×</button></header><p role="status">Local Candidates: ${pendingCandidateCount(store.state)}</p><button type="button" id="workspace-local-candidates" class="primary">Local Candidates (${pendingCandidateCount(store.state)})</button><button type="button" id="workspace-governance">Catalog Governance</button></section>`;
+  dialog.querySelector('[data-workspace-back]').onclick=onBack;
+  dialog.querySelector('[data-workspace-close]').onclick=onClose;
+  dialog.querySelector('#workspace-local-candidates').onclick=()=>renderLocalCandidateQueue(dialog,{returnToSettings:true});
+  dialog.querySelector('#workspace-governance').onclick=()=>openCatalogGovernance();
+}
+function openAdminWorkspaceInSettings(dialog) {
+  const controller=createAdminWorkspaceController({
+    dialog,
+    getAdminAuthenticated:()=>admin.enabled,
+    getPendingCount:()=>pendingCandidateCount(store.state),
+    renderSettings:callbacks=>restoreSettingsFromWorkspace(dialog,callbacks),
+    renderWorkspace:callbacks=>renderAdminWorkspaceBody(dialog,callbacks),
+    closeSettingsDialog:()=>dialog.close(),
+    trace:traceAdminWorkspace
+  });
+  return controller.open();
+}
+function restoreSettingsFromWorkspace(dialog,{onOpenWorkspace,onClose}={}) {
+  if(!dialog?.open || !dialog.__settingsBody)return;
+  dialog.innerHTML=dialog.__settingsBody; dialog.__settingsView='settings';
+  dialog.querySelectorAll('[data-close]').forEach(button=>button.onclick=onClose || (()=>dialog.close()));
+  dialog.querySelector('#manager-open')?.addEventListener('click',onOpenWorkspace || (()=>openAdminWorkspaceInSettings(dialog)));
+  dialog.querySelector('#admin-open')?.addEventListener('click',()=>admin.enabled ? (admin.signOut(),openSettings()) : openAdminInSettings(dialog));
 }
 
 async function bindImages(scope = document) {
