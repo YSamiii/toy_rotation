@@ -19,12 +19,13 @@ import { buildDataRepairDiagnostic, diagnosticLifecycleSnapshot } from './featur
 import { buildPersistenceDiagnostic } from './features/persistence-diagnostic.js';
 import { buildRestoreDiagnostic } from './features/restore-diagnostic.js';
 import { IMAGE_RESOLVER_BUILD_MARKER, RuntimeImageDiagnostics } from './features/runtime-image-diagnostic.js';
+import { RecognitionDeviceDiagnostic } from './features/recognition-device-diagnostic.js';
 import { beginStartupTrace, completeStartupWatchdog, installStartupWatchdog, markStartupError, markStartupStage, renderStartupShell } from './features/startup-trace.js';
 import { createI18n, localizePlayMechanism } from './ui/i18n.js';
 import { ModalManager } from './ui/modal-manager.js';
 import { createAdminWorkspaceController } from './ui/admin-workspace-controller.js';
 import { renderAdminGovernanceChild } from './ui/admin-governance-child.js';
-import { bindRecognitionReviewSubmit } from './ui/recognition-review-submit-controller.js';
+import { openRecognitionReviewProduction } from './ui/recognition-review-production.js';
 import { attachImageEditor, attachPersonalImageEditor } from './ui/personal-image-editor.js';
 
 const root = document.querySelector('#app');
@@ -84,13 +85,15 @@ store.subscribe((state, reason) => {
 const catalog = new CatalogRepository(store, { baseUrl: window.TOY_ROTATION_CONFIG?.API_BASE });
 const images = new ImageRepository();
 const runtimeImageDiagnostics = new RuntimeImageDiagnostics({ release:window.TOY_ROTATION_CONFIG?.RELEASE });
+const recognitionDeviceDiagnostic = new RecognitionDeviceDiagnostic({build:window.TOY_ROTATION_CONFIG});
+store.attachDiagnostic(recognitionDeviceDiagnostic);
 runtimeImageDiagnostics.installCatalogLookupProbe(catalog);
 const i18n = createI18n(store);
 const substitution = new SubstitutionEngine();
 const admin = new AdminService({ store, catalog });
-const governance = new SharedCatalogGovernance({ store, catalog, baseUrl: window.TOY_ROTATION_CONFIG?.API_BASE });
+const governance = new SharedCatalogGovernance({ store, catalog, baseUrl: window.TOY_ROTATION_CONFIG?.API_BASE, diagnostic:recognitionDeviceDiagnostic });
 let recognition = null;
-const getRecognition = () => recognition ||= new RecognitionService({ store, images, catalog, governance });
+const getRecognition = () => recognition ||= new RecognitionService({ store, images, catalog, governance, diagnostic:recognitionDeviceDiagnostic });
 const modalManager = new ModalManager();
 let view = 'home';
 let onboardingQueued = false;
@@ -566,26 +569,7 @@ function recognizeToy() {
 // Recognition creates a durable local draft first.  This review surface edits
 // only that draft; no Toy Library ownership exists until confirm() succeeds.
 function openRecognitionReview(id) {
-  const draft=store.state.drafts.find(item=>item.id===id);
-  if (!draft || !String(draft.status).startsWith('ready')) return;
-  const pauseCodes=['not_interested','too_easy','too_hard','seasonal','space','later','other'];
-  const children=Array.isArray(draft.children)?draft.children:[];
-  const dialog=openModal(`<form class="form recognition-review"><header><h2>${t('recognitionReview')}</h2><button type="button" data-close>×</button></header><p>${t('localDraftOnly')}</p><label>${t('brand')}<input name="brand" value="${escape(draft.brand||'')}"></label><label>${t('name')}<input name="productName" required value="${escape(draft.productName||'')}"></label><label>${t('englishName')}<input name="nameEn" value="${escape(draft.names?.en||'')}"></label><label>${t('chineseName')}<input name="nameZh" value="${escape(draft.names?.zh||'')}"></label><label>${t('sku')}<input name="sku" value="${escape(draft.sku||'')}"></label><label>${t('allCategories')}<select name="categoryCode">${CATEGORY_CODES.map(code=>`<option value="${code}" ${draft.categoryCode===code?'selected':''}>${t(`category.${code}`)}</option>`).join('')}</select></label><label>${t('skills')}<select name="skillCodes" multiple size="6">${SKILL_CODES.map(code=>`<option value="${code}" ${(draft.skillCodes||[]).includes(code)?'selected':''}>${t(`skill.${code}`)}</option>`).join('')}</select></label><label>${t('minimumAge')}<input name="minAgeMonths" type="number" value="${draft.minAgeMonths??''}"></label><label>${t('maximumAge')}<input name="maxAgeMonths" type="number" value="${draft.maxAgeMonths??''}"></label><label>${t('rotationValue')}<select name="rotationValue">${['low','medium','high'].map(value=>`<option value="${value}" ${(draft.rotationValue||'medium')===value?'selected':''}>${value}</option>`).join('')}</select></label><label>${t('notes')}<textarea name="notes">${escape(draft.notes||'')}</textarea></label><label class="file-replace">${t('replaceImage')}<input name="image" type="file" accept="image/*" hidden></label><div data-personal-image-editor-host></div><label>${t('rotationParticipation')}<select name="rotationState"><option value="active">${t('normalRotation')}</option><option value="permanent" ${draft.reviewRotationState==='permanent'?'selected':''}>${t('draftSetPermanent')}</option><option value="paused" ${draft.reviewRotationState==='paused'?'selected':''}>${t('draftPause')}</option></select></label><label data-draft-pause-reason ${draft.reviewRotationState==='paused'?'':'hidden'}>${t('pauseReasonLabel')}<select name="pauseReasonCode">${pauseCodes.map(code=>`<option value="${code}" ${draft.pauseReasonCode===code?'selected':''}>${t(`pauseReason.${code}`)}</option>`).join('')}</select><input name="pauseReason" maxlength="240" value="${escape(draft.pauseReason||'')}"></label>${children.length?`<fieldset><legend>${t('splitSetContents')} (${children.length})</legend>${children.map((child,index)=>`<label>${index+1}. <input name="child-${index}" value="${escape(child.productName||child.name||child.names?.en||'')}"></label>`).join('')}</fieldset>`:''}<p class="form-error" aria-live="polite"></p><footer><button type="button" data-reanalyze>${t('reanalyze')}</button><button type="button" data-cancel-review>${t('cancel')}</button><button class="primary" data-destination="library">${t('addToToyLibrary')}</button><button class="primary" data-destination="wishlist">${t('addToWishlist')}</button></footer></form>`);
-  const form=dialog.querySelector('form'); const input=form.elements.image; let editedImageData=null;
-  input.addEventListener('change',()=>{editedImageData=null;});
-  const imageEditor=attachPersonalImageEditor({input,host:form.querySelector('[data-personal-image-editor-host]'),t,initialSource:images.resolve(draft.imageRef),onEdited:data=>{editedImageData=data;form.querySelector('.form-error').textContent='';}});
-  form.elements.rotationState.onchange=()=>form.querySelector('[data-draft-pause-reason]').hidden=form.elements.rotationState.value!=='paused';
-  const saveDraft=async()=>{
-    const values=new FormData(form); const file=values.get('image');
-    if(file?.size&&!editedImageData) throw new Error('finishImageEditing');
-    let imageRef=draft.imageRef; const replacedImageRef=draft.imageRef;
-    if(editedImageData){imageRef=await images.savePersonal(editedImageData);editedImageData=null;}
-    store.update(state=>{const item=state.drafts.find(entry=>entry.id===id);if(!item)return;Object.assign(item,{imageRef,brand:String(values.get('brand')||''),productName:String(values.get('productName')||''),names:{en:String(values.get('nameEn')||''),zh:String(values.get('nameZh')||'')},sku:String(values.get('sku')||'')||null,categoryCode:values.get('categoryCode'),skillCodes:values.getAll('skillCodes'),minAgeMonths:values.get('minAgeMonths')===''?null:Number(values.get('minAgeMonths')),maxAgeMonths:values.get('maxAgeMonths')===''?null:Number(values.get('maxAgeMonths')),rotationValue:values.get('rotationValue'),notes:String(values.get('notes')||''),reviewRotationState:values.get('rotationState'),pauseReasonCode:values.get('rotationState')==='paused'?String(values.get('pauseReasonCode')||''):null,pauseReason:values.get('rotationState')==='paused'?String(values.get('pauseReason')||''):''});item.children=(item.children||[]).map((child,index)=>({...child,productName:String(values.get(`child-${index}`)||child.productName||child.name||''),names:{...(child.names||{}),en:String(values.get(`child-${index}`)||child.names?.en||child.productName||'')}}));},'recognition-draft-review');
-    if(replacedImageRef?.kind==='personal'&&replacedImageRef.id!==imageRef.id)await images.removePersonal(replacedImageRef);
-  };
-  form.querySelector('[data-reanalyze]').onclick=async()=>{try{editedImageData=editedImageData||imageEditor.editedDataUrl();await saveDraft();await getRecognition().analyze(id,{force:true});dialog.close();}catch(error){form.querySelector('.form-error').textContent=messageFor(error.code||error.message);}};
-  form.querySelector('[data-cancel-review]').onclick=async()=>{await getRecognition().remove(id);dialog.close();};
-  recognitionSaveTrace('review_opened',{recognitionDraftId:id,canonicalProposal:draft.canonicalKey||null});bindRecognitionReviewSubmit({form,recognitionDraftId:id,saveDraft,confirm:destination=>getRecognition().confirm(id,{destination}),onComplete:result=>{dialog.close();if(result?.toy){view='library';render();setTimeout(()=>document.querySelector(`[data-toy-id="${result.toy.id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),0);}else if(result?.wishlist){view='wishlist';render();}},onError:error=>{form.querySelector('.form-error').textContent=messageFor(error.code||error.message||'recognitionFailed');},trace:recognitionSaveTrace});
+  return openRecognitionReviewProduction({ document, openModal, recognitionDraftId:id, getState:()=>store.state, getRecognition, updateDraft:(updater,reason)=>store.update(updater,reason), images, attachPersonalImageEditor, t, escape, categoryCodes:CATEGORY_CODES, skillCodes:SKILL_CODES, messageFor, setView:nextView=>{view=nextView;}, render, trace:recognitionSaveTrace, diagnostic:recognitionDeviceDiagnostic });
 }
 function recognitionSaveTrace(stage,detail={}){const trace=window.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ ||= [];trace.push({stage,timestamp:new Date().toISOString(),...detail});if(trace.length>120)trace.splice(0,trace.length-120);}
 function buildIdentityLabel(){const build=window.TOY_ROTATION_CONFIG||{};return [build.appVersion||build.RELEASE||'development',build.buildName,build.buildDate,build.buildId].filter(Boolean).join(' · ');}
@@ -727,7 +711,7 @@ function catalogSourceKey(source) { return ({ base:'catalogSourceBase', remote:'
 
 function openSettings() {
   const recoveryNotice=!store.canPersist ? `<p class="danger">${t('persistenceRecoverySettingsNotice')}</p>` : '';
-  const adminControls=admin.enabled ? `<button type="button" id="restore-diagnostic-export">${t('exportRestoreDiagnostic')}</button><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>` : `<button type="button" id="admin-open">${t('adminMode')}</button>`;
+  const adminControls=admin.enabled ? `<button type="button" id="restore-diagnostic-export">${t('exportRestoreDiagnostic')}</button><section class="panel"><h3>Recognition Device Diagnostics</h3><p id="recognition-trace-status">Stopped · 0 events</p><button type="button" id="recognition-trace-start">Start Recognition Trace</button><button type="button" id="recognition-trace-stop">Stop Trace</button><button type="button" id="recognition-trace-clear">Clear Trace</button><button type="button" id="recognition-trace-export">Export Recognition Trace JSON</button></section><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>` : `<button type="button" id="admin-open">${t('adminMode')}</button>`;
   const dialog = openModal(`<form class="form"><header><h2>${t('settings')}</h2><button type="button" data-close>×</button></header>${recoveryNotice}<label>${t('language')}<select name="language"><option value="system">${t('system')}</option><option value="en">${t('languageEnglish')}</option><option value="zh">${t('languageChinese')}</option></select></label><label>${t('theme')}<select name="theme"><option value="system">${t('system')}</option><option value="light">${t('light')}</option><option value="dark">${t('dark')}</option></select></label><hr>${profileSettingsFields()}<button class="primary" ${store.canPersist?'':'disabled'}>${t('save')}</button><button type="button" id="backup-export" ${store.canPersist?'':'disabled'}>${t('exportBackup')}</button><button type="button" id="persistence-diagnostic-export">${t('exportPersistenceDiagnostic')}</button><label>${t('restoreBackup')}<input id="backup-import" type="file" accept="application/json" ${store.canPersist?'':'disabled'}></label><p id="backup-restore-status" role="status" aria-live="polite"></p><section id="admin-settings">${adminControls}</section></form>`);
   const form = dialog.querySelector('form'); form.language.value = store.state.settings.language; form.theme.value = store.state.settings.theme;
   if (!store.canPersist) form.querySelectorAll('input, select, textarea').forEach(control => { if (control.id !== 'persistence-diagnostic-export') control.disabled = true; });
@@ -774,6 +758,12 @@ function openSettings() {
     }
   };
   dialog.querySelector('#restore-diagnostic-export')?.addEventListener('click', exportRestoreDiagnostic);
+  const updateRecognitionTraceStatus=()=>{const active=recognitionDeviceDiagnostic.sessions.at(-1);const status=dialog.querySelector('#recognition-trace-status');if(status)status.textContent=`${recognitionDeviceDiagnostic.recording?'Recording':'Stopped'} · ${active?.events.length||0} events · ${active?.sessionId||'no session'}`;};
+  dialog.querySelector('#recognition-trace-start')?.addEventListener('click',()=>{recognitionDeviceDiagnostic.start();updateRecognitionTraceStatus();});
+  dialog.querySelector('#recognition-trace-stop')?.addEventListener('click',()=>{recognitionDeviceDiagnostic.stop();updateRecognitionTraceStatus();});
+  dialog.querySelector('#recognition-trace-clear')?.addEventListener('click',()=>{recognitionDeviceDiagnostic.clear();updateRecognitionTraceStatus();});
+  dialog.querySelector('#recognition-trace-export')?.addEventListener('click',()=>downloadJson(recognitionDeviceDiagnostic.export(),`toy-rotation-recognition-device-trace-${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`));
+  updateRecognitionTraceStatus();
   dialog.querySelector('#persistence-diagnostic-export')?.addEventListener('click', exportPersistenceDiagnostic);
   dialog.querySelector('#admin-open').onclick = () => admin.enabled ? (admin.signOut(), openSettings()) : openAdminInSettings(dialog);
   dialog.querySelector('#manager-open')?.addEventListener('click', () => openAdminWorkspaceInSettings(dialog));
@@ -1002,7 +992,7 @@ function renderAdminWorkspaceBody(dialog,{onBack,onClose}) {
   dialog.querySelector('#workspace-local-candidates').onclick=()=>renderLocalCandidateQueue(dialog,{returnToSettings:true});
   dialog.querySelector('#workspace-governance').onclick=()=>renderAdminGovernanceChild({dialog,loadGovernance:()=>admin.governance(),onReturn:()=>renderAdminWorkspaceBody(dialog,{onBack,onClose})});
 }
-function refreshAdminCandidateBadges() { const count=pendingCandidateCount(store.state);document.querySelectorAll('[data-admin-pending-badge]').forEach(node=>node.textContent=String(count));const trace=window.__TOY_ROTATION_CANDIDATE_TRACE__ ||= [];trace.push({stage:'badge_rendered',detail:{pending_count:count},at:new Date().toISOString()});if(trace.length>80)trace.splice(0,trace.length-80); }
+function refreshAdminCandidateBadges() { const count=pendingCandidateCount(store.state); recognitionDeviceDiagnostic.badge('requested',{pendingCandidateCount:count}); recognitionDeviceDiagnostic.pendingSelector(store.state,{surface:'admin_badge'}); recognitionDeviceDiagnostic.badge('started',{pendingCandidateCount:count});document.querySelectorAll('[data-admin-pending-badge]').forEach(node=>node.textContent=String(count));recognitionDeviceDiagnostic.badge('completed',{pendingCandidateCount:count});const trace=window.__TOY_ROTATION_CANDIDATE_TRACE__ ||= [];trace.push({stage:'badge_rendered',detail:{pending_count:count},at:new Date().toISOString()});if(trace.length>80)trace.splice(0,trace.length-80); }
 window.addEventListener('toy-rotation-candidate-persisted',refreshAdminCandidateBadges);
 function openAdminWorkspaceInSettings(dialog) {
   const controller=createAdminWorkspaceController({

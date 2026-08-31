@@ -3,8 +3,8 @@ import { createCatalogOwnership } from '../domain/library-service.js';
 import { findOwnedToy } from '../domain/identity-service.js';
 
 export class RecognitionService {
-  #store; #images; #catalog; #base; #governance; #submissions=new Map(); #completed=new Map();
-  constructor({ store, images, catalog = null, governance = null, baseUrl = '' }) { this.#store=store; this.#images=images; this.#catalog=catalog; this.#governance=governance; this.#base=String(baseUrl || window.TOY_ROTATION_CONFIG?.API_BASE || '').replace(/\/+$/,''); }
+  #store; #images; #catalog; #base; #governance; #diagnostic; #submissions=new Map(); #completed=new Map();
+  constructor({ store, images, catalog = null, governance = null, baseUrl = '', diagnostic = null }) { this.#store=store; this.#images=images; this.#catalog=catalog; this.#governance=governance; this.#diagnostic=diagnostic; this.#base=String(baseUrl || window.TOY_ROTATION_CONFIG?.API_BASE || '').replace(/\/+$/,''); }
   async createDraft(file, setMode = 'auto', { onPersisted = null } = {}) {
     if (!this.#base) throw new RecognitionError('recognitionServiceUnconfigured');
     const image=await dataUrl(file);
@@ -51,8 +51,8 @@ export class RecognitionService {
   async confirm(id, { destination = 'library' } = {}) {
     const completed=this.#completed.get(id);if(completed){recognitionTrace('duplicate_click_blocked',{recognitionDraftId:id,destination});return completed;}
     if(this.#submissions.has(id)){recognitionTrace('inflight_reused',{recognitionDraftId:id,destination});return this.#submissions.get(id);}
-    const draft=this.#store.state.drafts.find(item=>item.id===id);if(!draft || !String(draft.status).startsWith('ready'))return;
-    const operation=(async()=>{recognitionTrace('submit_started',{recognitionDraftId:id,destination,canonicalProposal:draft.canonicalKey||null});this.#store.update(state=>{const item=state.drafts.find(entry=>entry.id===id);if(item)item.status='submitting';},'recognition-submit-started');const result=await this.#commit(draft,{destination});this.#completed.set(id,result);return result;})();
+    const draft=this.#store.state.drafts.find(item=>item.id===id);this.#diagnostic?.state('confirm_enter',this.#store.state,{draftId:id,destination,draftStatus:draft?.status||null});if(!draft || !String(draft.status).startsWith('ready'))return;
+    const operation=(async()=>{recognitionTrace('submit_started',{recognitionDraftId:id,destination,canonicalProposal:draft.canonicalKey||null});this.#diagnostic?.record('confirm_destination',{draftId:id,destination});this.#store.update(state=>{const item=state.drafts.find(entry=>entry.id===id);if(item)item.status='submitting';},'recognition-submit-started');this.#diagnostic?.state('draft_marked_submitting',this.#store.state,{draftId:id,destination});const result=await this.#commit(draft,{destination});this.#completed.set(id,result);this.#diagnostic?.state('confirm_commit_completed',this.#store.state,{draftId:id,destination,localToyId:result?.toy?.id||null,wishlistId:result?.wishlist?.id||null});return result;})();
     this.#submissions.set(id,operation);try{return await operation;}finally{this.#submissions.delete(id);}
   }
   async #commit(idDraft, { destination = 'library' } = {}) {
@@ -63,10 +63,10 @@ export class RecognitionService {
     // A person may explicitly distinguish an AI result from a merely similar
     // catalog product.  Respect that review result without changing the
     // identity engine's matching rules.
-    const decision=draft.resolutionOverride === 'genuinely_new'
+    this.#diagnostic?.record('identity_resolution_started',{draftId:id,destination});const decision=draft.resolutionOverride === 'genuinely_new'
       ? { kind:'genuinely_new', canonicalKey:canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`) }
       : (this.#catalog?.resolveRecognition(draft) || { kind:'genuinely_new' });
-    if (decision.kind === 'tombstoned') return this.#setDecision(id, decision);
+    this.#diagnostic?.record('identity_resolution_completed',{draftId:id,destination,kind:decision.kind,existingCatalogMatch:decision.kind==='catalog_match',ambiguous:decision.kind==='duplicate_review_required',genuinelyNew:decision.kind==='genuinely_new'});if (decision.kind === 'tombstoned') return this.#setDecision(id, decision);
     let catalog=decision.catalog, governanceCandidateId=null, candidatePayload=null;
     if (!catalog) {
       // Unknown and ambiguous products remain local provisional ownerships.
@@ -81,10 +81,10 @@ export class RecognitionService {
     // Recognition review data is a local ownership override.  It deliberately
     // never writes back into CatalogRepository or shared catalog governance.
     const reviewedSource={...catalog,brand:draft.brand || catalog.brand,productName:draft.productName || catalog.productName,names:draft.names || catalog.names,sku:draft.sku || catalog.sku,categoryCode:draft.categoryCode || catalog.categoryCode,skillCodes:draft.skillCodes || catalog.skillCodes,playMechanics:draft.playMechanics || catalog.playMechanics,minAgeMonths:draft.minAgeMonths ?? catalog.minAgeMonths,maxAgeMonths:draft.maxAgeMonths ?? catalog.maxAgeMonths,rotationValue:draft.rotationValue || 'medium',notes:draft.notes || '',rotationParticipation:draft.reviewRotationState === 'paused' ? 'paused' : 'active',shelfMode:draft.reviewRotationState === 'permanent' ? 'permanent' : 'rotate',permanentSource:draft.reviewRotationState === 'permanent' ? 'user' : null,pauseReason:draft.reviewRotationState === 'paused' ? draft.pauseReason || '' : '',pauseReasonCode:draft.reviewRotationState === 'paused' ? draft.pauseReasonCode || null : null};
-    recognitionTrace('toy_create_started',{recognitionDraftId:id,destination});const result=createCatalogOwnership(this.#store, reviewedSource, draft.imageRef, { reason:'recognition-confirm' });
+    this.#diagnostic?.state('toy_lookup_started',this.#store.state,{draftId:id});recognitionTrace('toy_create_started',{recognitionDraftId:id,destination});const result=createCatalogOwnership(this.#store, reviewedSource, draft.imageRef, { reason:'recognition-confirm' });this.#diagnostic?.state(result.added?'toy_created':'toy_existing_reused',this.#store.state,{draftId:id,localToyId:result.toy?.id||null});
     if (!result.added) return this.#markAlreadyOwned(id, result.toy);
     recognitionTrace('toy_created',{recognitionDraftId:id,destination,localToyId:result.toy.id});recognitionTrace('ownership_written',{recognitionDraftId:id,destination,localToyId:result.toy.id});if(governanceCandidateId)this.#store.update(state=>{const toy=state.toys.find(item=>item.id===result.toy.id);if(toy)toy.governanceCandidateId=governanceCandidateId;},'recognition-governance-candidate-link');
-    if(candidatePayload){recognitionTrace('candidate_required',{recognitionDraftId:id,destination,localToyId:result.toy.id,candidateId:governanceCandidateId});recognitionTrace('candidate_create_started',{recognitionDraftId:id,destination,localToyId:result.toy.id,candidateId:governanceCandidateId});this.#governance?.createLocalCandidate({...candidatePayload,linkedLocalToyId:result.toy.id});recognitionTrace('candidate_created',{recognitionDraftId:id,destination,localToyId:result.toy.id,candidateId:governanceCandidateId});void this.#governance?.flushOutbox();}
+    if(candidatePayload){this.#diagnostic?.state('candidate_required_decided',this.#store.state,{draftId:id,candidateId:governanceCandidateId,linkedLocalToyId:result.toy.id});recognitionTrace('candidate_required',{recognitionDraftId:id,destination,localToyId:result.toy.id,candidateId:governanceCandidateId});recognitionTrace('candidate_create_started',{recognitionDraftId:id,destination,localToyId:result.toy.id,candidateId:governanceCandidateId});this.#diagnostic?.record('candidate_create_requested',{draftId:id,candidateId:governanceCandidateId});this.#governance?.createLocalCandidate({...candidatePayload,linkedLocalToyId:result.toy.id});this.#diagnostic?.state('candidate_persist_completed',this.#store.state,{draftId:id,candidateId:governanceCandidateId,linkedLocalToyId:result.toy.id});recognitionTrace('candidate_created',{recognitionDraftId:id,destination,localToyId:result.toy.id,candidateId:governanceCandidateId});void this.#governance?.flushOutbox();}else this.#diagnostic?.record('candidate_create_skipped',{draftId:id,reason:'catalog_match'});
     this.#catalog?.ensureSetChildren();
     this.#store.update(state=>{state.drafts=state.drafts.filter(item=>item.id!==id);},'recognition-confirmed');
     return { kind:'created', toy:result.toy, catalog, learned:decision.kind !== 'catalog_match' };
