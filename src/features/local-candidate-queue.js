@@ -14,7 +14,9 @@ export function upsertLocalCandidate(state, payload) {
     proposedCanonicalKey:payload.proposedCanonicalKey || '', brand:payload.brand || '', productName:payload.productName || payload.nameEn || '', nameEn:payload.nameEn || payload.productName || '', nameZh:payload.nameZh || '', aliases:payload.aliases || [], sku:payload.sku || null,
     minAgeMonths:payload.minAgeMonths ?? null, maxAgeMonths:payload.maxAgeMonths ?? null, categoryCode:payload.categoryCode || 'uncategorized', skillCodes:payload.skillCodes || [], playMechanics:payload.playMechanics || [],
     recognitionConfidence:payload.recognitionConfidence ?? null, possibleMatches:payload.possibleMatches || [], imageConsent:payload.imageConsent === true,
-    reviewAttachment:payload.imageConsent === true ? (payload.reviewAttachment || payload.referenceImage || null) : null,
+    // Image bytes belong in IndexedDB through imageRef.  Canonical state only
+    // carries the typed reference needed by the local review UI.
+    reviewAttachment:payload.imageConsent === true && typeof payload.reviewAttachment === 'string' && !/^data:|^blob:/i.test(payload.reviewAttachment) ? payload.reviewAttachment : null, reviewAttachmentRef:payload.imageConsent === true ? (payload.reviewAttachmentRef || previous?.reviewAttachmentRef || null) : null,
     linkedLocalToyId:payload.linkedLocalToyId || previous?.linkedLocalToyId || null, linkedWishlistId:payload.linkedWishlistId || previous?.linkedWishlistId || null,
     syncStatus:payload.syncStatus || previous?.syncStatus || 'pending_local', mutationId:payload.mutationId || previous?.mutationId || payload.candidateId
   };

@@ -82,15 +82,15 @@ function persistState(next, storage = globalThis.localStorage) {
 }
 
 export class AppStore {
-  #state; #listeners = new Set(); #revision = 0; #persistence; #diagnostic=null;
-  constructor(state, persistence = { writable:true, status:'ready', diagnostic:null }) { this.#state = state; this.#persistence = persistence; }
+  #state; #listeners = new Set(); #revision = 0; #persistence; #diagnostic=null; #save;
+  constructor(state, persistence = { writable:true, status:'ready', diagnostic:null }, { safeSave = persistState } = {}) { this.#state = state; this.#persistence = persistence; this.#save=safeSave; }
   get state() { return this.#state; }
   get revision() { return this.#revision; }
   get persistence() { return structuredClone(this.#persistence); }
   get canPersist() { return this.#persistence.writable === true; }
   attachDiagnostic(diagnostic) { this.#diagnostic=diagnostic; }
   subscribe(listener) { this.#listeners.add(listener); return () => this.#listeners.delete(listener); }
-  update(mutator, reason = 'update') { const before=this.#state; try { const next = structuredClone(before); mutator(next); next.schemaVersion = SCHEMA_VERSION; if (!this.canPersist) throw new Error('storage_recovery_required'); this.#diagnostic?.storeUpdate(reason,before,next); persistState(next); this.#state = next; this.#revision++; for (const listener of this.#listeners) { listener(next, reason); this.#diagnostic?.subscriberFired(reason,next); } } catch(error) { this.#diagnostic?.storeUpdateFailed(reason,before,error); throw error; } }
+  update(mutator, reason = 'update') { const before=this.#state; try { const next = structuredClone(before); mutator(next); next.schemaVersion = SCHEMA_VERSION; if (!this.canPersist) throw new Error('storage_recovery_required'); this.#diagnostic?.storeUpdate(reason,before,next); this.#save(next); this.#state = next; this.#revision++; for (const listener of this.#listeners) { listener(next, reason); this.#diagnostic?.subscriberFired(reason,next); } } catch(error) { this.#diagnostic?.storeUpdateFailed(reason,before,error); throw error; } }
   replace(next, reason = 'replace') { const prepared=runMigrations(next); if (!this.canPersist) throw new Error('storage_recovery_required'); persistState(prepared); this.#state = prepared; this.#revision++; for (const listener of this.#listeners) listener(this.#state, reason); }
   // Restore uses this path so a failed persistence write cannot leave memory
   // and durable storage on different versions of the user's database.
@@ -100,7 +100,7 @@ export class AppStore {
     onStage('commit_prepare_end', { schemaVersion:prepared.schemaVersion, toyCount:(prepared.toys || []).length });
     onStage('local_storage_persistence_start');
     if (!this.canPersist) throw new Error('storage_recovery_required');
-    this.#diagnostic?.storeUpdate(reason,this.#state,prepared); persistState(prepared);
+    this.#diagnostic?.storeUpdate(reason,this.#state,prepared); this.#save(prepared);
     onStage('local_storage_persistence_end');
     onStage('store_state_replace_start');
     this.#state = prepared;

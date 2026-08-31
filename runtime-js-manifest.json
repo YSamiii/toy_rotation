@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-08-31T17:48:15.915Z",
+  "generatedAt": "2026-08-31T18:55:47.661Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.3",
-    "buildName": "Recognition iPhone Trace Diagnostic",
+    "buildName": "Storage Quota Atomic Recognition Fix",
     "buildDate": "20260831",
-    "buildId": "recognition-iphone-trace-diagnostic-20260831"
+    "buildId": "storage-quota-atomic-recognition-fix-20260831"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 547,
-      "sha256": "880c593e6c1a9f791845aef52709b5a0035d5320048bf56bb6af32593b82e8c3",
+      "bytes": 550,
+      "sha256": "7b1428caea662397905f2421aee6d43fa0b750993784bcd28cb5c4c43990e347",
       "importedBy": [
         "index.html"
       ],
@@ -332,8 +332,8 @@
     {
       "path": "src/data/store.js",
       "resolvedDeployPath": "./src/data/store.js",
-      "bytes": 47766,
-      "sha256": "8da56138bf56cea8c5c0c6d798af9e2ea6c5ae55ff30a9d61923e77f47600aad",
+      "bytes": 47824,
+      "sha256": "335c54d496df21baeef2ef74a68beace961d30d11170f829c9f2124e7c52dd84",
       "importedBy": [
         "src/data/backup-service.js",
         "src/features/persistence-diagnostic.js",
@@ -565,10 +565,11 @@
     {
       "path": "src/features/local-candidate-queue.js",
       "resolvedDeployPath": "./src/features/local-candidate-queue.js",
-      "bytes": 2693,
-      "sha256": "009c2712dd4fe831ebea973364b7a3bca544dbd42d7fff6f5b2975155ca9fdfb",
+      "bytes": 3033,
+      "sha256": "35d53ed38dbdf844c65955b9b7f09524802979e7cc4c94131d2a9f640f77fabb",
       "importedBy": [
         "src/features/recognition-device-diagnostic.js",
+        "src/features/recognition-service.js",
         "src/features/shared-catalog-governance.js",
         "src/main.js"
       ],
@@ -616,14 +617,15 @@
     {
       "path": "src/features/recognition-service.js",
       "resolvedDeployPath": "./src/features/recognition-service.js",
-      "bytes": 20879,
-      "sha256": "1c69f3be97fd2b81bd7fce452c53a2ab6d54a749289640437bcbb5f09a62b879",
+      "bytes": 26592,
+      "sha256": "13f8b1a50d304278c7a32f0e04cbd708052ae4dee1a11ba6914b36d50f79d022",
       "importedBy": [
         "src/main.js"
       ],
       "staticImports": [
         "src/data/schema.js",
         "src/domain/library-service.js",
+        "src/features/local-candidate-queue.js",
         "src/domain/identity-service.js"
       ],
       "dynamicImports": [],
@@ -711,10 +713,25 @@
       }
     },
     {
+      "path": "src/features/storage-usage-diagnostic.js",
+      "resolvedDeployPath": "./src/features/storage-usage-diagnostic.js",
+      "bytes": 1924,
+      "sha256": "7fd6cc2f89159e04bbddd7ea1cd184ff682df53bb1616fe2459df827dd568cf5",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 124967,
-      "sha256": "2541f42602d19d5f32eb07206dd1d2ba7c651dd8c85e547d8cde0bd5f4dbc755",
+      "bytes": 126295,
+      "sha256": "07f50d16ba07372269196789d47b8142ecf0418bc23ec091ccd2321835d49ccd",
       "importedBy": [
         "index.html"
       ],
@@ -741,6 +758,7 @@
         "src/features/restore-diagnostic.js",
         "src/features/runtime-image-diagnostic.js",
         "src/features/recognition-device-diagnostic.js",
+        "src/features/storage-usage-diagnostic.js",
         "src/features/startup-trace.js",
         "src/ui/i18n.js",
         "src/ui/modal-manager.js",
@@ -788,8 +806,8 @@
     {
       "path": "src/ui/i18n.js",
       "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 42360,
-      "sha256": "0ac5470bbc1f970c8c0a21c9523c329e5e1370a39591266370f7d6cfbd8a1435",
+      "bytes": 42613,
+      "sha256": "a5a0972da5cc2d71bb7046b0dc36e3fabf67d5697ebd371679514081a9c595df",
       "importedBy": [
         "src/main.js"
       ],
@@ -833,8 +851,8 @@
     {
       "path": "src/ui/recognition-review-production.js",
       "resolvedDeployPath": "./src/ui/recognition-review-production.js",
-      "bytes": 8109,
-      "sha256": "f7f2383bc894ebbccbb1d295c8baf17c3aff5e97d0f5ab62fa8f4904f6559a28",
+      "bytes": 8302,
+      "sha256": "7ea5ab27a97ce56075f4d2aa8d41e940438613aaa9e0e35aadf950de66b62b6b",
       "importedBy": [
         "src/main.js"
       ],
@@ -928,6 +946,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 52
+    "checkedInputs": 53
   }
 }

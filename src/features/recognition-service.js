@@ -1,5 +1,6 @@
-import { canonicalKey } from '../data/schema.js';
+import { canonicalKey, normalizeToy } from '../data/schema.js';
 import { createCatalogOwnership } from '../domain/library-service.js';
+import { upsertLocalCandidate } from './local-candidate-queue.js';
 import { findOwnedToy } from '../domain/identity-service.js';
 
 export class RecognitionService {
@@ -46,13 +47,13 @@ export class RecognitionService {
       const diagnostics=recognitionDiagnostics({ requestId, response, catalogMatch, catalogDecision:decision.kind, result:'received' });
       this.#store.update(state=>{const item=state.drafts.find(x=>x.id===id);if(!item)return;Object.assign(item,normalized,{status,imageRef:draft.imageRef,catalogMatch:catalogMatch ? catalogSummary(catalogMatch) : null,ownedToyId:owned?.id || null,duplicateCandidates:(decision.conflicts || []).map(match=>catalogSummary(match.b)),diagnostics});},'recognition-ready');
     }
-    catch(error){this.#setError(id,error.code || error.message || 'recognitionFailed', error.diagnostics || null);}
+    catch(error){this.#setError(id,normalizeErrorCode(error), error.diagnostics || null);}
   }
   async confirm(id, { destination = 'library' } = {}) {
     const completed=this.#completed.get(id);if(completed){recognitionTrace('duplicate_click_blocked',{recognitionDraftId:id,destination});return completed;}
     if(this.#submissions.has(id)){recognitionTrace('inflight_reused',{recognitionDraftId:id,destination});return this.#submissions.get(id);}
     const draft=this.#store.state.drafts.find(item=>item.id===id);this.#diagnostic?.state('confirm_enter',this.#store.state,{draftId:id,destination,draftStatus:draft?.status||null});if(!draft || !String(draft.status).startsWith('ready'))return;
-    const operation=(async()=>{recognitionTrace('submit_started',{recognitionDraftId:id,destination,canonicalProposal:draft.canonicalKey||null});this.#diagnostic?.record('confirm_destination',{draftId:id,destination});this.#store.update(state=>{const item=state.drafts.find(entry=>entry.id===id);if(item)item.status='submitting';},'recognition-submit-started');this.#diagnostic?.state('draft_marked_submitting',this.#store.state,{draftId:id,destination});const result=await this.#commit(draft,{destination});this.#completed.set(id,result);this.#diagnostic?.state('confirm_commit_completed',this.#store.state,{draftId:id,destination,localToyId:result?.toy?.id||null,wishlistId:result?.wishlist?.id||null});return result;})();
+    const operation=(async()=>{recognitionTrace('submit_started',{recognitionDraftId:id,destination,canonicalProposal:draft.canonicalKey||null});this.#diagnostic?.record('confirm_destination',{draftId:id,destination});try{const result=await this.#commit(draft,{destination});this.#completed.set(id,result);this.#diagnostic?.state('confirm_commit_completed',this.#store.state,{draftId:id,destination,localToyId:result?.toy?.id||null,wishlistId:result?.wishlist?.id||null});return result;}catch(error){this.#diagnostic?.record('confirm_persist_failed',{draftId:id,destination,error:normalizeErrorCode(error)});throw error;}})();
     this.#submissions.set(id,operation);try{return await operation;}finally{this.#submissions.delete(id);}
   }
   async #commit(idDraft, { destination = 'library' } = {}) {
@@ -66,7 +67,7 @@ export class RecognitionService {
     this.#diagnostic?.record('identity_resolution_started',{draftId:id,destination});const decision=draft.resolutionOverride === 'genuinely_new'
       ? { kind:'genuinely_new', canonicalKey:canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`) }
       : (this.#catalog?.resolveRecognition(draft) || { kind:'genuinely_new' });
-    this.#diagnostic?.record('identity_resolution_completed',{draftId:id,destination,kind:decision.kind,existingCatalogMatch:decision.kind==='catalog_match',ambiguous:decision.kind==='duplicate_review_required',genuinelyNew:decision.kind==='genuinely_new'});if (decision.kind === 'tombstoned') return this.#setDecision(id, decision);
+    this.#diagnostic?.record('identity_resolution_completed',{draftId:id,destination,kind:decision.kind,existingCatalogMatch:decision.kind==='catalog_match',ambiguous:decision.kind==='duplicate_review_required',genuinelyNew:decision.kind==='genuinely_new'});if (decision.kind === 'tombstoned') return this.#setDecision(id, decision); return this.#atomicLibraryCommit(draft,decision);
     let catalog=decision.catalog, governanceCandidateId=null, candidatePayload=null;
     if (!catalog) {
       // Unknown and ambiguous products remain local provisional ownerships.
@@ -74,7 +75,7 @@ export class RecognitionService {
       const key=canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`);
       catalog={...draft, canonicalKey:key, productName:draft.productName, names:draft.names, imageRef:null, catalogStatus:'provisional'};
       const candidateType=draft.candidateTypeOverride==='identity_review_candidate'||decision.kind==='duplicate_review_required'?'identity_review_candidate':'new_product_candidate';
-      const payload={candidateId:`candidate-${draft.id}`,source:'recognition',candidateType,proposedCanonicalKey:key,brand:draft.brand,productName:draft.productName,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,possibleMatches:(decision.conflicts||[]).map(match=>catalogSummary(match.b)),imageConsent:draft.imageConsent===true,reviewAttachment:draft.imageConsent===true?await this.#images.resolve(draft.imageRef):null,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''};
+      const payload={candidateId:`candidate-${draft.id}`,source:'recognition',candidateType,proposedCanonicalKey:key,brand:draft.brand,productName:draft.productName,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,possibleMatches:(decision.conflicts||[]).map(match=>catalogSummary(match.b)),imageConsent:draft.imageConsent===true,reviewAttachment:null,reviewAttachmentRef:draft.imageConsent===true?draft.imageRef:null,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''};
       governanceCandidateId=payload.candidateId;
       candidatePayload=payload;
     }
@@ -89,12 +90,28 @@ export class RecognitionService {
     this.#store.update(state=>{state.drafts=state.drafts.filter(item=>item.id!==id);},'recognition-confirmed');
     return { kind:'created', toy:result.toy, catalog, learned:decision.kind !== 'catalog_match' };
   }
+  async #atomicLibraryCommit(draft,decision) {
+    const catalog=decision.catalog || {...draft,canonicalKey:canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`),catalogStatus:'provisional'};
+    const candidateId=decision.catalog ? null : `candidate-${draft.id}`;
+    const reviewed={...catalog,brand:draft.brand||catalog.brand,productName:draft.productName||catalog.productName,names:draft.names||catalog.names,sku:draft.sku||catalog.sku,categoryCode:draft.categoryCode||catalog.categoryCode,skillCodes:draft.skillCodes||catalog.skillCodes,playMechanics:draft.playMechanics||catalog.playMechanics,minAgeMonths:draft.minAgeMonths??catalog.minAgeMonths,maxAgeMonths:draft.maxAgeMonths??catalog.maxAgeMonths,rotationValue:draft.rotationValue||'medium',notes:draft.notes||'',rotationParticipation:draft.reviewRotationState==='paused'?'paused':'active',shelfMode:draft.reviewRotationState==='permanent'?'permanent':'rotate',permanentSource:draft.reviewRotationState==='permanent'?'user':null,pauseReason:draft.reviewRotationState==='paused'?draft.pauseReason||'':'',pauseReasonCode:draft.reviewRotationState==='paused'?draft.pauseReasonCode||null:null};
+    const existing=findOwnedToy(reviewed,this.#store.state.toys||[]);if(existing)return this.#markAlreadyOwned(draft.id,existing);
+    const toy=normalizeToy({...reviewed,imageRef:draft.imageRef,governanceCandidateId:candidateId});
+    const candidate=candidateId?{candidateId,source:'recognition',candidateType:draft.candidateTypeOverride==='identity_review_candidate'||decision.kind==='duplicate_review_required'?'identity_review_candidate':'new_product_candidate',proposedCanonicalKey:catalog.canonicalKey,brand:draft.brand,productName:draft.productName,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,possibleMatches:(decision.conflicts||[]).map(match=>catalogSummary(match.b)),imageConsent:draft.imageConsent===true,reviewAttachmentRef:draft.imageConsent===true?draft.imageRef:null,linkedLocalToyId:toy.id,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''}:null;
+    this.#store.update(state=>{if(findOwnedToy(reviewed,state.toys||[]))throw new RecognitionError('recognitionAlreadyOwned');state.toys.push(toy);if(candidate)upsertLocalCandidate(state,candidate);state.drafts=state.drafts.filter(item=>item.id!==draft.id);},'recognition-atomic-confirm');
+    if(candidate){this.#diagnostic?.record('candidate_persist_completed',{draftId:draft.id,candidateId,linkedLocalToyId:toy.id});try{Promise.resolve(this.#governance?.enqueueRemoteCandidate?.(candidate)).catch(error=>this.#diagnostic?.record('remote_candidate_enqueue_failed',{message:error?.message||String(error)}));}catch(error){this.#diagnostic?.record('remote_candidate_enqueue_failed',{message:error?.message||String(error)});}}
+    this.#catalog?.ensureSetChildren();return {kind:'created',toy,catalog,learned:decision.kind!=='catalog_match'};
+  }
+  async #atomicWishlistCommit(draft,decision) {
+    const catalog=decision.catalog||null;const snapshot={...(catalog||draft),canonicalKey:catalog?.canonicalKey||canonicalKey(draft.canonicalKey||`${draft.brand}-${draft.productName}`),brand:draft.brand||catalog?.brand,productName:draft.productName||catalog?.productName,names:draft.names||catalog?.names,sku:draft.sku||catalog?.sku,categoryCode:draft.categoryCode||catalog?.categoryCode,skillCodes:draft.skillCodes||catalog?.skillCodes,playMechanics:draft.playMechanics||catalog?.playMechanics,minAgeMonths:draft.minAgeMonths??catalog?.minAgeMonths,maxAgeMonths:draft.maxAgeMonths??catalog?.maxAgeMonths,imageRef:draft.imageRef};let item=null;const candidateId=catalog?null:`candidate-${draft.id}`;
+    this.#store.update(state=>{const existing=state.wishlist.find(entry=>canonicalKey(entry.canonicalKey)===snapshot.canonicalKey);if(existing){item=existing;return;}item={id:crypto.randomUUID(),canonicalKey:snapshot.canonicalKey,catalogId:catalog?.id||null,catalogSnapshot:snapshot,status:'want',priority:draft.wishlistPriority||'medium',notes:draft.wishlistNotes||draft.notes||'',recognizedMetadata:{confidence:draft.confidence??null,diagnostics:draft.diagnostics||null},addedAt:new Date().toISOString()};state.wishlist.push(item);if(candidateId)upsertLocalCandidate(state,{candidateId,source:'recognition',candidateType:'new_product_candidate',proposedCanonicalKey:snapshot.canonicalKey,brand:draft.brand,productName:draft.productName,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,imageConsent:draft.imageConsent===true,reviewAttachmentRef:draft.imageConsent===true?draft.imageRef:null,linkedWishlistId:item.id,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''});state.drafts=state.drafts.filter(entry=>entry.id!==draft.id);},'recognition-atomic-wishlist');
+    return {kind:item?'wishlisted':'already_wishlisted',wishlist:item,catalog};
+  }
   async #confirmWishlist(draft) {
     const decision=draft.resolutionOverride === 'genuinely_new'
       ? { kind:'genuinely_new', canonicalKey:canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`) }
       : (this.#catalog?.resolveRecognition(draft) || { kind:'genuinely_new' });
     if (decision.kind === 'tombstoned') return this.#setDecision(draft.id, decision);
-    const catalog=decision.catalog || null;
+    const catalog=decision.catalog || null; return this.#atomicWishlistCommit(draft,decision);
     const snapshot={ ...(catalog || draft), canonicalKey:catalog?.canonicalKey || canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`), brand:draft.brand || catalog?.brand, productName:draft.productName || catalog?.productName, names:draft.names || catalog?.names, sku:draft.sku || catalog?.sku, categoryCode:draft.categoryCode || catalog?.categoryCode, skillCodes:draft.skillCodes || catalog?.skillCodes, playMechanics:draft.playMechanics || catalog?.playMechanics, minAgeMonths:draft.minAgeMonths ?? catalog?.minAgeMonths, maxAgeMonths:draft.maxAgeMonths ?? catalog?.maxAgeMonths, imageRef:draft.imageRef };
     let item;
     this.#store.update(state=>{
@@ -106,7 +123,7 @@ export class RecognitionService {
     },'recognition-confirm-wishlist');
     if (!catalog && item) {
       const key=canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`);
-      const payload={candidateId:`candidate-${draft.id}`,source:'recognition',candidateType:'new_product_candidate',proposedCanonicalKey:key,brand:draft.brand,productName:draft.productName,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,imageConsent:draft.imageConsent===true,reviewAttachment:draft.imageConsent===true?await this.#images.resolve(draft.imageRef):null,linkedWishlistId:item.id,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''};
+      const payload={candidateId:`candidate-${draft.id}`,source:'recognition',candidateType:'new_product_candidate',proposedCanonicalKey:key,brand:draft.brand,productName:draft.productName,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,imageConsent:draft.imageConsent===true,reviewAttachment:null,reviewAttachmentRef:draft.imageConsent===true?draft.imageRef:null,linkedWishlistId:item.id,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''};
       this.#governance?.createLocalCandidate(payload);void this.#governance?.flushOutbox();
     }
     return { kind:item ? 'wishlisted' : 'already_wishlisted', wishlist:item, catalog };
@@ -134,6 +151,11 @@ const REQUEST_TIMEOUT_MS = 30000;
 
 class RecognitionError extends Error {
   constructor(code, detail = '', diagnostics = null) { super(detail || code); this.code=code; this.diagnostics=diagnostics; }
+}
+export function normalizeErrorCode(error) {
+  const message=String(error?.message || '');
+  if (error?.name === 'QuotaExceededError' || error?.code === 22 || /quota\s+has\s+been\s+exceeded|quotaexceeded/i.test(message)) return 'storageQuotaExceeded';
+  return error?.code && typeof error.code === 'string' ? error.code : message || 'recognitionFailed';
 }
 
 function deviceId() {
