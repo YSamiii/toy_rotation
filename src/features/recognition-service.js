@@ -48,8 +48,9 @@ export class RecognitionService {
     }
     catch(error){this.#setError(id,error.code || error.message || 'recognitionFailed', error.diagnostics || null);}
   }
-  async confirm(id) {
+  async confirm(id, { destination = 'library' } = {}) {
     const draft=this.#store.state.drafts.find(item=>item.id===id); if(!draft || !String(draft.status).startsWith('ready')) return;
+    if (destination === 'wishlist') return this.#confirmWishlist(draft);
     // A person may explicitly distinguish an AI result from a merely similar
     // catalog product.  Respect that review result without changing the
     // identity engine's matching rules.
@@ -78,6 +79,23 @@ export class RecognitionService {
     this.#store.update(state=>{state.drafts=state.drafts.filter(item=>item.id!==id);},'recognition-confirmed');
     return { kind:'created', toy:result.toy, catalog, learned:decision.kind !== 'catalog_match' };
   }
+  async #confirmWishlist(draft) {
+    const decision=draft.resolutionOverride === 'genuinely_new'
+      ? { kind:'genuinely_new', canonicalKey:canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`) }
+      : (this.#catalog?.resolveRecognition(draft) || { kind:'genuinely_new' });
+    if (decision.kind === 'tombstoned') return this.#setDecision(draft.id, decision);
+    const catalog=decision.catalog || null;
+    const snapshot={ ...(catalog || draft), canonicalKey:catalog?.canonicalKey || canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`), brand:draft.brand || catalog?.brand, productName:draft.productName || catalog?.productName, names:draft.names || catalog?.names, sku:draft.sku || catalog?.sku, categoryCode:draft.categoryCode || catalog?.categoryCode, skillCodes:draft.skillCodes || catalog?.skillCodes, playMechanics:draft.playMechanics || catalog?.playMechanics, minAgeMonths:draft.minAgeMonths ?? catalog?.minAgeMonths, maxAgeMonths:draft.maxAgeMonths ?? catalog?.maxAgeMonths, imageRef:draft.imageRef };
+    let item;
+    this.#store.update(state=>{
+      const existing=state.wishlist.find(entry=>canonicalKey(entry.canonicalKey)===snapshot.canonicalKey);
+      if (existing) { item=existing; return; }
+      item={ id:crypto.randomUUID(), canonicalKey:snapshot.canonicalKey, catalogId:catalog?.id || null, catalogSnapshot:snapshot, status:'want', priority:draft.wishlistPriority || 'medium', notes:draft.wishlistNotes || draft.notes || '', recognizedMetadata:{ confidence:draft.confidence ?? null, diagnostics:draft.diagnostics || null }, addedAt:new Date().toISOString() };
+      state.wishlist.push(item);
+      state.drafts=state.drafts.filter(entry=>entry.id!==draft.id);
+    },'recognition-confirm-wishlist');
+    return { kind:item ? 'wishlisted' : 'already_wishlisted', wishlist:item, catalog };
+  }
   async resolveDuplicateReview(id, choice) {
     const draft=this.#store.state.drafts.find(item=>item.id===id); if(!draft || draft.status !== 'duplicate_review_required') return;
     if (choice === 'not_same') {
@@ -86,9 +104,9 @@ export class RecognitionService {
     }
     const candidate=this.#catalog?.getByKey(draft.duplicateCandidates?.[0]?.canonicalKey);
     if (!candidate) return this.#setError(id,'recognitionCatalogResolutionFailed');
-    const result=createCatalogOwnership(this.#store,candidate,draft.imageRef,{reason:'recognition-duplicate-review-same'});
-    if (result.added) { this.#catalog?.ensureSetChildren(); this.#store.update(state=>{state.drafts=state.drafts.filter(item=>item.id!==id);},'recognition-duplicate-review-confirmed'); return; }
-    this.#markAlreadyOwned(id,result.toy);
+    // Identity review resolves only the catalog target. It must not imply
+    // ownership: the user still chooses Toy Library or Wishlist afterward.
+    this.#store.update(state=>{const item=state.drafts.find(entry=>entry.id===id);if(item){item.status='ready';item.catalogMatch=catalogSummary(candidate);item.resolutionOverride=null;item.duplicateCandidates=[];}},'recognition-duplicate-review-resolved');
   }
   async remove(id){const draft=this.#store.state.drafts.find(item=>item.id===id);this.#store.update(state=>{state.drafts=state.drafts.filter(item=>item.id!==id);},'recognition-remove');if(draft?.imageRef?.kind==='personal')await this.#images.removePersonal(draft.imageRef);}
   #setError(id,error,diagnostics){this.#store.update(state=>{const item=state.drafts.find(x=>x.id===id);if(item){item.status='error';item.error=error;if(diagnostics)item.diagnostics=diagnostics;}},'recognition-error');}

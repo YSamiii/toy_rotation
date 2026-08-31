@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-08-30T20:02:38.651Z",
+  "generatedAt": "2026-08-31T14:09:39.9476183Z",
   "target": "safari16",
   "entries": [
     "index.html",
@@ -11,8 +11,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 370,
-      "sha256": "cf13d241eab50953649c167a4b14476425a33dd2f3791d9637be215c870f07ab",
+      "bytes": 384,
+      "sha256": "65586c8dfc175135b4cf970ffe7f82f60440f9ee1a0d6c4808afbe648dfa79ac",
       "importedBy": [
         "index.html"
       ],
@@ -284,8 +284,8 @@
     {
       "path": "src/data/schema.js",
       "resolvedDeployPath": "./src/data/schema.js",
-      "bytes": 14250,
-      "sha256": "6782dffa437294f191aac54e23a46be3a14932adfb892020310562fc8de8e947",
+      "bytes": 14566,
+      "sha256": "101ee7254baa27ef2464767ffa7363b9b8b1cdfe376f188d43c60bcbdd8c1a28",
       "importedBy": [
         "src/data/backup-service.js",
         "src/data/store.js",
@@ -559,8 +559,8 @@
     {
       "path": "src/features/recognition-service.js",
       "resolvedDeployPath": "./src/features/recognition-service.js",
-      "bytes": 14186,
-      "sha256": "db54116e8c6c4776d3e4475abee79f4b6e6280bc83bb9e33732d9c2fed68adf6",
+      "bytes": 16204,
+      "sha256": "05eeb5765d8d3d2ea5a78278c7ba4e36674caafaa1fdf63d9247eb4d1bf48de4",
       "importedBy": [
         "src/main.js"
       ],
@@ -655,8 +655,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 117473,
-      "sha256": "a329b4354fb65549689752c4caf7ceebb38bde406c439e05d4260895af233826",
+      "bytes": 121195,
+      "sha256": "a91859d1c7d8e2f2130f19c9b1eeab455b288b1442dfc2eec73009700bdd51e0",
       "importedBy": [
         "index.html"
       ],
@@ -695,8 +695,8 @@
     {
       "path": "src/ui/i18n.js",
       "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 41896,
-      "sha256": "4f66c7bb933f2c4a96bd2547f9f5ee21853e397473ea255ae2576c27b0099ba8",
+      "bytes": 42360,
+      "sha256": "0ac5470bbc1f970c8c0a21c9523c329e5e1370a39591266370f7d6cfbd8a1435",
       "importedBy": [
         "src/main.js"
       ],
