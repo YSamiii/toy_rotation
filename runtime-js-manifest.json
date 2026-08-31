@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-08-31T15:29:28.902Z",
+  "generatedAt": "2026-08-31T15:50:54.631Z",
   "target": "safari16",
   "entries": [
     "index.html",
@@ -592,8 +592,8 @@
     {
       "path": "src/features/recognition-service.js",
       "resolvedDeployPath": "./src/features/recognition-service.js",
-      "bytes": 17263,
-      "sha256": "0f83725ccded91e2c7cfdec4d28b0a43e32aa7cd4dbbc2013f4b89af7a405741",
+      "bytes": 17338,
+      "sha256": "5d2e232e0673c8398e92c1877bddabbb0615e7169796aed019dcf2449e66b1cd",
       "importedBy": [
         "src/main.js"
       ],
@@ -641,8 +641,8 @@
     {
       "path": "src/features/shared-catalog-governance.js",
       "resolvedDeployPath": "./src/features/shared-catalog-governance.js",
-      "bytes": 6140,
-      "sha256": "9ccfffe38c1fd2b22ff421f9bcbf3019b7e51cac26ddcf746cbca3fe0d655f87",
+      "bytes": 6877,
+      "sha256": "f0cca230671f3df8a1357c9cbe67bb40c02165c7c9f90798897fd8764ca7e8d8",
       "importedBy": [
         "src/main.js"
       ],
@@ -689,8 +689,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 127457,
-      "sha256": "296665b6e57a5e4c8406f1f8c767d61fb4b49a014e313cb878a65b2be41d444c",
+      "bytes": 128267,
+      "sha256": "ccec0538de3312fa757494f71fe9401e8fcbe01b47e6494db1ac60e29f7ce9cb",
       "importedBy": [
         "index.html"
       ],
@@ -720,8 +720,24 @@
         "src/ui/i18n.js",
         "src/ui/modal-manager.js",
         "src/ui/admin-workspace-controller.js",
+        "src/ui/admin-governance-child.js",
         "src/ui/personal-image-editor.js"
       ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/ui/admin-governance-child.js",
+      "resolvedDeployPath": "./src/ui/admin-governance-child.js",
+      "bytes": 1418,
+      "sha256": "a134ecdabb52ad4e9a05995911c136e1106fe777a5a564b09032e8070a8c8725",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
       "dynamicImports": [],
       "browserTargetCompatibility": {
         "target": "safari16",
@@ -854,6 +870,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 48
+    "checkedInputs": 49
   }
 }

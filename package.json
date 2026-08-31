@@ -5,6 +5,8 @@
     "test:ownership": "node tests/ownership-isolation.test.mjs",
     "test:local-candidates": "node tests/local-candidate-queue.test.mjs",
     "test:admin-workspace": "node tests/admin-workspace-controller.test.mjs && node tests/admin-workspace-production-wiring.test.mjs",
+    "test:admin-governance-child": "node tests/admin-governance-child.test.mjs",
+    "test:candidate-production": "node tests/candidate-production-creation.test.mjs",
     "test:persistence": "node tests/persistence-fault-injection.test.mjs",
     "generate:runtime-manifest": "node scripts/generate-runtime-js-manifest.mjs",
     "scan:sensitive": "node scripts/sensitive-staging-scan.mjs .",

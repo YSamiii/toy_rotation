@@ -75,7 +75,7 @@ export class RecognitionService {
     const result=createCatalogOwnership(this.#store, reviewedSource, draft.imageRef, { reason:'recognition-confirm' });
     if (!result.added) return this.#markAlreadyOwned(id, result.toy);
     if(governanceCandidateId)this.#store.update(state=>{const toy=state.toys.find(item=>item.id===result.toy.id);if(toy)toy.governanceCandidateId=governanceCandidateId;},'recognition-governance-candidate-link');
-    if(candidatePayload) void this.#governance?.submitCandidate({...candidatePayload,linkedLocalToyId:result.toy.id});
+    if(candidatePayload){this.#governance?.createLocalCandidate({...candidatePayload,linkedLocalToyId:result.toy.id});void this.#governance?.flushOutbox();}
     this.#catalog?.ensureSetChildren();
     this.#store.update(state=>{state.drafts=state.drafts.filter(item=>item.id!==id);},'recognition-confirmed');
     return { kind:'created', toy:result.toy, catalog, learned:decision.kind !== 'catalog_match' };
@@ -98,7 +98,7 @@ export class RecognitionService {
     if (!catalog && item) {
       const key=canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`);
       const payload={candidateId:`candidate-${draft.id}`,source:'recognition',candidateType:'new_product_candidate',proposedCanonicalKey:key,brand:draft.brand,productName:draft.productName,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,imageConsent:draft.imageConsent===true,reviewAttachment:draft.imageConsent===true?await this.#images.resolve(draft.imageRef):null,linkedWishlistId:item.id,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''};
-      void this.#governance?.submitCandidate(payload);
+      this.#governance?.createLocalCandidate(payload);void this.#governance?.flushOutbox();
     }
     return { kind:item ? 'wishlisted' : 'already_wishlisted', wishlist:item, catalog };
   }
