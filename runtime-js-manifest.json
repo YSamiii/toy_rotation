@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-08-31T18:55:47.661Z",
+  "generatedAt": "2026-08-31T19:26:03.976Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.3",
-    "buildName": "Storage Quota Atomic Recognition Fix",
+    "buildName": "Local Candidate Admin Actions Fix",
     "buildDate": "20260831",
-    "buildId": "storage-quota-atomic-recognition-fix-20260831"
+    "buildId": "local-candidate-admin-actions-fix-20260831"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 550,
-      "sha256": "7b1428caea662397905f2421aee6d43fa0b750993784bcd28cb5c4c43990e347",
+      "bytes": 541,
+      "sha256": "c8f7c92408fcc1de1a5d19ff9bdb872e5bd427ec32625d55580fe73f751a3d03",
       "importedBy": [
         "index.html"
       ],
@@ -730,8 +730,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 126295,
-      "sha256": "07f50d16ba07372269196789d47b8142ecf0418bc23ec091ccd2321835d49ccd",
+      "bytes": 126615,
+      "sha256": "df34c8a378bc8238356301069c376026c07faed5a63d1fa92179f007c9e123ce",
       "importedBy": [
         "index.html"
       ],
