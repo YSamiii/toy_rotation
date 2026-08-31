@@ -31,6 +31,7 @@ import { attachImageEditor, attachPersonalImageEditor } from './ui/personal-imag
 
 const root = document.querySelector('#app');
 const STARTUP_DIAGNOSTIC_KEY='toyRotation.startupDiagnostic';
+let quotaRecoveryStatus = 'idle';
 // This hook is installed inline in index.html, before config.js and this
 // module are requested.  It is intentionally independent of every imported
 // application module, so a failed module graph still replaces the static
@@ -224,10 +225,13 @@ function renderPersistenceWarning() {
   if (store.canPersist && !diagnosticMode) return '';
   const classification=store.persistence.diagnostic?.classification;
   const classificationLabel=classification ? `<p><b>${t('persistenceClassification')}:</b> ${escape(classification.code)} · ${escape(classification.label)}</p>` : '';
+  const quota=store.persistence.diagnostic?.classification?.code === 'Q';
   const staged=store.persistence.status === 'diagnostic_staged_recovery';
   const recover=staged ? `<button class="primary" data-action="persistence-recovery">${t('applyDetectedRecovery')}</button>` : '';
   const fresh=store.canPersist ? '' : `<button class="danger" data-action="persistence-start-fresh">${t('startFresh')}</button>`;
-  return `<section class="panel danger"><h2>${t('persistenceRecoveryTitle')}</h2><p>${t(diagnosticMode ? 'persistenceDiagnosticModeDetail' : 'persistenceRecoveryDetail')}</p>${classificationLabel}<div class="actions"><button data-action="persistence-diagnostic">${t('exportPersistenceDiagnostic')}</button>${recover}${fresh}</div></section>`;
+  const quotaMessage={idle:'',running:'Releasing only safe temporary storage…',success:'存储空间已安全释放，可以继续使用。',still_full:'已完成所有可安全执行的清理，但浏览器存储空间仍不足。现有数据仍受到保护，请先导出诊断/备份。',no_safe_cleanup:'No additional storage can be safely removed automatically.',error:'Safe storage recovery could not complete. Your data remains protected.'}[quotaRecoveryStatus] || '';
+  const quotaRecovery=quota ? `<button class="primary" data-action="quota-safe-recovery" ${quotaRecoveryStatus==='running'?'disabled':''}>${quotaRecoveryStatus==='running'?'Releasing safe storage…':'Try Safe Storage Recovery'}</button><button data-action="quota-safe-retry">Retry Safe Save</button>` : '';
+  return `<section class="panel danger" data-quota-recovery-status="${quotaRecoveryStatus}"><h2>${quota?'本机数据可以正常读取，但暂时无法安全保存':t('persistenceRecoveryTitle')}</h2><p>${quota?'浏览器本地存储空间不足。现有数据已进入只读保护模式，不会被覆盖。':t(diagnosticMode ? 'persistenceDiagnosticModeDetail' : 'persistenceRecoveryDetail')}</p>${classificationLabel}${quotaMessage?`<p role="status">${quotaMessage}</p>`:''}<div class="actions">${quotaRecovery}<button data-action="persistence-diagnostic">${t('exportPersistenceDiagnostic')}</button>${recover}${fresh}</div></section>`;
 }
 
 function renderHome() {
@@ -396,6 +400,8 @@ async function action(name, data) {
   if (name === 'settings') return openSettings();
   if (name === 'persistence-diagnostic') return exportPersistenceDiagnostic();
   if (name === 'persistence-recovery') return applyPersistenceRecovery();
+  if (name === 'quota-safe-recovery') return attemptQuotaSafeRecovery();
+  if (name === 'quota-safe-retry') return attemptQuotaSafeRecovery();
   if (name === 'persistence-start-fresh') return startFresh();
   if (name === 'add') return editToy();
   if (name === 'recognize') return recognizeToy();
@@ -786,6 +792,7 @@ function readFileWithReader(file) { return new Promise((resolve, reject) => { co
 function nextPaint() { return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))); }
 function exportRestoreDiagnostic() { downloadJson(buildRestoreDiagnostic({ trace:window.__TOY_ROTATION_RESTORE_TIMING__ || null, release:window.TOY_ROTATION_CONFIG?.RELEASE }), `toy-rotation-restore-diagnostic-${new Date().toISOString().replace(/[:.]/g, '-')}.json`); }
 async function exportPersistenceDiagnostic() { downloadJson(await buildPersistenceDiagnostic({ store, images, release:window.TOY_ROTATION_CONFIG?.RELEASE }), `toy-rotation-persistence-diagnostic-${new Date().toISOString().replace(/[:.]/g, '-')}.json`); }
+function attemptQuotaSafeRecovery() { quotaRecoveryStatus='running'; render(); try { const result=store.attemptSafeQuotaRecovery(); quotaRecoveryStatus=result.ok?'success':result.reason==='quota_persists'?'still_full':'no_safe_cleanup'; } catch { quotaRecoveryStatus='error'; } render(); }
 function applyPersistenceRecovery() {
   if (!confirm(t('confirmDetectedRecovery'))) return;
   try {
