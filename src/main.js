@@ -191,7 +191,7 @@ function render() {
   document.documentElement.lang = i18n.language;
   document.title = t('appName');
   root.innerHTML = `
-    <header><img src="./icons/header-logo.png" alt=""><div><h1>${t('appName')}</h1><p>${t(view)}</p><small class="build-marker">${escape(window.TOY_ROTATION_CONFIG?.RELEASE || 'development')} · ${IMAGE_RESOLVER_BUILD_MARKER}</small></div><button data-action="settings" aria-label="${t('settings')}">⚙</button></header>
+    <header><img src="./icons/header-logo.png" alt=""><div><h1>${t('appName')}</h1><p>${t(view)}</p><small class="build-marker">${escape(buildIdentityLabel())}</small></div><button data-action="settings" aria-label="${t('settings')}">⚙</button></header>
     <nav>${navButton('home', 'home')}${navButton('library', 'library')}${navButton('rotation', 'rotation')}${navButton('wishlist', 'wishlist')}</nav>
     <main>${renderPersistenceWarning()}${renderView()}</main>`;
   root.querySelectorAll('[data-view]').forEach(button => { button.onclick = () => { view = button.dataset.view; render(); }; });
@@ -241,7 +241,7 @@ function renderLibrary() {
 }
 
 function renderDrafts() {
-  const drafts = store.state.drafts || [];
+  const drafts = (store.state.drafts || []).filter(draft=>!['completed','submitting'].includes(draft.status));
   if (!drafts.length) return '';
   return `<section class="panel"><h3>${t('pendingReview')} (${drafts.length})</h3>${drafts.map(renderDraft).join('')}</section>`;
 }
@@ -588,6 +588,7 @@ function openRecognitionReview(id) {
   recognitionSaveTrace('review_opened',{recognitionDraftId:id,canonicalProposal:draft.canonicalKey||null});bindRecognitionReviewSubmit({form,recognitionDraftId:id,saveDraft,confirm:destination=>getRecognition().confirm(id,{destination}),onComplete:result=>{dialog.close();if(result?.toy){view='library';render();setTimeout(()=>document.querySelector(`[data-toy-id="${result.toy.id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),0);}else if(result?.wishlist){view='wishlist';render();}},onError:error=>{form.querySelector('.form-error').textContent=messageFor(error.code||error.message||'recognitionFailed');},trace:recognitionSaveTrace});
 }
 function recognitionSaveTrace(stage,detail={}){const trace=window.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ ||= [];trace.push({stage,timestamp:new Date().toISOString(),...detail});if(trace.length>120)trace.splice(0,trace.length-120);}
+function buildIdentityLabel(){const build=window.TOY_ROTATION_CONFIG||{};return [build.appVersion||build.RELEASE||'development',build.buildName,build.buildDate,build.buildId].filter(Boolean).join(' · ');}
 
 function installSingleLineEnterCompletion(scope) {
   scope.addEventListener('keydown', event => {

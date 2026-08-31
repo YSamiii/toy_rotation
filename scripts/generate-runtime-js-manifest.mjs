@@ -30,7 +30,9 @@ async function visit(file,importedBy=[]){
   }
 }
 for(const entry of entries)await visit(entry);
+const configSource=await readFile(path.join(root,'config.js'),'utf8');
+const configValue=name=>configSource.match(new RegExp(`${name}:\\s*["']([^"']+)["']`))?.[1] || null;
 for(const entry of files.values())entry.importedBy=[...new Set(entry.importedBy)].sort();
-const output={manifestVersion:1,generatedAt:new Date().toISOString(),target:'safari16',entries,files:[...files.values()].sort((a,b)=>a.path.localeCompare(b.path)),browserTargetCompatibility:{target:'safari16',result:'pass',checkedInputs:files.size}};
+const output={manifestVersion:1,generatedAt:new Date().toISOString(),target:'safari16',buildIdentity:{appVersion:configValue('appVersion'),buildName:configValue('buildName'),buildDate:configValue('buildDate'),buildId:configValue('buildId')},entries,files:[...files.values()].sort((a,b)=>a.path.localeCompare(b.path)),browserTargetCompatibility:{target:'safari16',result:'pass',checkedInputs:files.size}};
 await writeFile(path.join(root,'runtime-js-manifest.json'),`${JSON.stringify(output,null,2)}\n`);
 console.log(`runtime manifest: PASS (${output.files.length} runtime files)`);

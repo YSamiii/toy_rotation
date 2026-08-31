@@ -1,7 +1,13 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-08-31T16:33:48.833Z",
+  "generatedAt": "2026-08-31T16:54:12.633Z",
   "target": "safari16",
+  "buildIdentity": {
+    "appVersion": "v0.11.3",
+    "buildName": "Recognition Candidate BuildID Verified",
+    "buildDate": "20260831",
+    "buildId": "recognition-candidate-buildid-verified-20260831"
+  },
   "entries": [
     "index.html",
     "storage-recovery-diagnostic.html",
@@ -11,8 +17,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 384,
-      "sha256": "65586c8dfc175135b4cf970ffe7f82f60440f9ee1a0d6c4808afbe648dfa79ac",
+      "bytes": 556,
+      "sha256": "efcaf2281348f2b5870387db350ee941dacd2c211a76b1efd1a3f64507a7fdee",
       "importedBy": [
         "index.html"
       ],
@@ -689,8 +695,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 128929,
-      "sha256": "3660d6888b43c0b93f11ac8167fe5727acdea686c016af8a2d4d4fa21b583655",
+      "bytes": 129137,
+      "sha256": "7a748425252a44bc99225dc0fc35e6188ff9d830ea568343d566c0a7aab3084a",
       "importedBy": [
         "index.html"
       ],
