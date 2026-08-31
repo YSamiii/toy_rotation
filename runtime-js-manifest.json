@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-08-31T14:09:39.9476183Z",
+  "generatedAt": "2026-08-31T14:40:30.6475779Z",
   "target": "safari16",
   "entries": [
     "index.html",
@@ -559,8 +559,8 @@
     {
       "path": "src/features/recognition-service.js",
       "resolvedDeployPath": "./src/features/recognition-service.js",
-      "bytes": 16204,
-      "sha256": "05eeb5765d8d3d2ea5a78278c7ba4e36674caafaa1fdf63d9247eb4d1bf48de4",
+      "bytes": 17263,
+      "sha256": "0f83725ccded91e2c7cfdec4d28b0a43e32aa7cd4dbbc2013f4b89af7a405741",
       "importedBy": [
         "src/main.js"
       ],
@@ -608,8 +608,8 @@
     {
       "path": "src/features/shared-catalog-governance.js",
       "resolvedDeployPath": "./src/features/shared-catalog-governance.js",
-      "bytes": 5999,
-      "sha256": "8f08405b1e734a09d084cabb29780fd1c9b69ccfb97827444065ff0c5436e048",
+      "bytes": 6140,
+      "sha256": "9ccfffe38c1fd2b22ff421f9bcbf3019b7e51cac26ddcf746cbca3fe0d655f87",
       "importedBy": [
         "src/main.js"
       ],
@@ -655,8 +655,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 121195,
-      "sha256": "a91859d1c7d8e2f2130f19c9b1eeab455b288b1442dfc2eec73009700bdd51e0",
+      "bytes": 125143,
+      "sha256": "5cf7c9eed05c5e34d1c8fb15819bf35df285549199a5bbba4cf127bd199a6ec6",
       "importedBy": [
         "index.html"
       ],

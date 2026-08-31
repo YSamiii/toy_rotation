@@ -58,16 +58,16 @@ export class RecognitionService {
       ? { kind:'genuinely_new', canonicalKey:canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`) }
       : (this.#catalog?.resolveRecognition(draft) || { kind:'genuinely_new' });
     if (decision.kind === 'tombstoned') return this.#setDecision(id, decision);
-    let catalog=decision.catalog, governanceCandidateId=null;
+    let catalog=decision.catalog, governanceCandidateId=null, candidatePayload=null;
     if (!catalog) {
       // Unknown and ambiguous products remain local provisional ownerships.
       // They never enter the active shared catalog before an admin accepts them.
       const key=canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`);
       catalog={...draft, canonicalKey:key, productName:draft.productName, names:draft.names, imageRef:null, catalogStatus:'provisional'};
       const candidateType=draft.candidateTypeOverride==='identity_review_candidate'||decision.kind==='duplicate_review_required'?'identity_review_candidate':'new_product_candidate';
-      const payload={candidateId:`candidate-${draft.id}`,candidateType,proposedCanonicalKey:key,brand:draft.brand,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,possibleMatches:(decision.conflicts||[]).map(match=>catalogSummary(match.b)),imageConsent:draft.imageConsent===true,referenceImage:draft.imageConsent===true?await this.#images.resolve(draft.imageRef):null,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''};
+      const payload={candidateId:`candidate-${draft.id}`,source:'recognition',candidateType,proposedCanonicalKey:key,brand:draft.brand,productName:draft.productName,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,possibleMatches:(decision.conflicts||[]).map(match=>catalogSummary(match.b)),imageConsent:draft.imageConsent===true,reviewAttachment:draft.imageConsent===true?await this.#images.resolve(draft.imageRef):null,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''};
       governanceCandidateId=payload.candidateId;
-      void this.#governance?.submitCandidate(payload);
+      candidatePayload=payload;
     }
     // Recognition review data is a local ownership override.  It deliberately
     // never writes back into CatalogRepository or shared catalog governance.
@@ -75,6 +75,7 @@ export class RecognitionService {
     const result=createCatalogOwnership(this.#store, reviewedSource, draft.imageRef, { reason:'recognition-confirm' });
     if (!result.added) return this.#markAlreadyOwned(id, result.toy);
     if(governanceCandidateId)this.#store.update(state=>{const toy=state.toys.find(item=>item.id===result.toy.id);if(toy)toy.governanceCandidateId=governanceCandidateId;},'recognition-governance-candidate-link');
+    if(candidatePayload) void this.#governance?.submitCandidate({...candidatePayload,linkedLocalToyId:result.toy.id});
     this.#catalog?.ensureSetChildren();
     this.#store.update(state=>{state.drafts=state.drafts.filter(item=>item.id!==id);},'recognition-confirmed');
     return { kind:'created', toy:result.toy, catalog, learned:decision.kind !== 'catalog_match' };
@@ -94,6 +95,11 @@ export class RecognitionService {
       state.wishlist.push(item);
       state.drafts=state.drafts.filter(entry=>entry.id!==draft.id);
     },'recognition-confirm-wishlist');
+    if (!catalog && item) {
+      const key=canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`);
+      const payload={candidateId:`candidate-${draft.id}`,source:'recognition',candidateType:'new_product_candidate',proposedCanonicalKey:key,brand:draft.brand,productName:draft.productName,nameEn:draft.names?.en||draft.productName,nameZh:draft.names?.zh||'',aliases:draft.aliases||[],sku:draft.sku,minAgeMonths:draft.minAgeMonths,maxAgeMonths:draft.maxAgeMonths,categoryCode:draft.categoryCode,skillCodes:draft.skillCodes,playMechanics:draft.playMechanics,recognitionConfidence:draft.confidence,imageConsent:draft.imageConsent===true,reviewAttachment:draft.imageConsent===true?await this.#images.resolve(draft.imageRef):null,linkedWishlistId:item.id,appVersion:globalThis.TOY_ROTATION_CONFIG?.RELEASE||''};
+      void this.#governance?.submitCandidate(payload);
+    }
     return { kind:item ? 'wishlisted' : 'already_wishlisted', wishlist:item, catalog };
   }
   async resolveDuplicateReview(id, choice) {

@@ -1,4 +1,5 @@
 import { canonicalKey } from '../data/schema.js';
+import { upsertLocalCandidate } from './local-candidate-queue.js';
 
 // Local-first governance transport. It never serializes ownership, personal
 // images, Wishlist, rotation, profiles, or any other private state.
@@ -15,7 +16,7 @@ export class SharedCatalogGovernance {
     staged.catalogState.syncMetadata ||= {}; staged.catalogState.syncMetadata.lastAppliedRemoteCatalogVersion=Number(delta.currentVersion);
     this.#store.commit(staged,'shared-catalog-delta-apply'); this.#catalog.refresh(); await this.#applyCandidateResolutions(); return { current:delta.currentVersion,changed:true };
   }
-  enqueue(kind,payload) { const id=payload.candidateId||payload.reportId||crypto.randomUUID();this.#store.update(s=>{s.catalogState.syncMetadata ||= {};const o=s.catalogState.syncMetadata.governanceOutbox ||= [];if(!o.some(x=>x.id===id))o.push({id,kind,payload:{...payload,[kind==='candidate'?'candidateId':'reportId']:id},createdAt:new Date().toISOString()});},'governance-outbox-enqueue');return id; }
+  enqueue(kind,payload) { const id=payload.candidateId||payload.reportId||crypto.randomUUID();this.#store.update(s=>{s.catalogState.syncMetadata ||= {};if(kind==='candidate')upsertLocalCandidate(s,{...payload,candidateId:id});const o=s.catalogState.syncMetadata.governanceOutbox ||= [];if(!o.some(x=>x.id===id))o.push({id,kind,payload:{...payload,[kind==='candidate'?'candidateId':'reportId']:id},createdAt:new Date().toISOString()});},'governance-outbox-enqueue');return id; }
   async flushOutbox() { if(!this.#base||!navigator.onLine)return {flushed:0};const jobs=[...(this.#store.state.catalogState?.syncMetadata?.governanceOutbox||[])];let flushed=0;for(const job of jobs){try{const r=await fetch(`${this.#base}/${job.kind==='candidate'?'catalog-candidate':'catalog-report'}`,{method:'POST',headers:{'Content-Type':'application/json','X-Device-Id':deviceId()},body:JSON.stringify(job.payload)});if(!r.ok)continue;this.#store.update(s=>{s.catalogState.syncMetadata.governanceOutbox=s.catalogState.syncMetadata.governanceOutbox.filter(x=>x.id!==job.id);if(job.kind==='candidate'){s.catalogState.syncMetadata.candidateReceipts ||= [];if(!s.catalogState.syncMetadata.candidateReceipts.includes(job.id))s.catalogState.syncMetadata.candidateReceipts.push(job.id)}},'governance-outbox-sent');flushed++}catch{}}await this.#applyCandidateResolutions();return {flushed}; }
   async submitCandidate(payload){const candidateId=payload.candidateId||crypto.randomUUID();this.enqueue('candidate',{...payload,candidateId});return this.flushOutbox();}
   async submitReport(payload){const reportId=payload.reportId||crypto.randomUUID();this.enqueue('report',{...payload,reportId});return this.flushOutbox();}
