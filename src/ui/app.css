@@ -397,3 +397,19 @@ pre { max-width: 100%; overflow: auto; color: var(--text-secondary); }
   .governance-metadata { grid-template-columns: 1fr; gap: 3px; }
   .governance-metadata dd { margin-bottom: 8px; }
 }
+
+/* v0.11.4 DOM reconciliation: preserve the established visual system while
+   keeping newly added diagnostic/admin text inside the existing sheet bounds. */
+.admin-workspace-root { inline-size:100%; min-inline-size:0; }
+.admin-workspace-root > * { min-inline-size:0; overflow-wrap:anywhere; }
+.candidate-next-step { margin:4px 0 8px; color:var(--text-secondary); overflow-wrap:anywhere; }
+.recognition-diagnostic { min-inline-size:0; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:var(--surface-secondary); color:var(--text-secondary); overflow-wrap:anywhere; }
+.recognition-diagnostic summary { cursor:pointer; color:var(--text-primary); font-weight:700; }
+.recognition-diagnostic p { min-inline-size:0; overflow-wrap:anywhere; }
+.wishlist-card { min-inline-size:0; }
+.wishlist-card .wishlist-title > * { min-inline-size:0; overflow-wrap:anywhere; }
+@media (max-width: 520px) {
+  .form,.sheet { min-inline-size:0; padding:14px; }
+  .filter-actions,.actions { flex-wrap:wrap; }
+  .filter-actions button,.actions button { min-inline-size:0; }
+}

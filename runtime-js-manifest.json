@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-08-31T20:40:29.568Z",
+  "generatedAt": "2026-09-02T17:24:35.667Z",
   "target": "safari16",
   "buildIdentity": {
-    "appVersion": "v0.11.3-hotfix1",
-    "buildName": "Safe Storage Recovery Hotfix QA",
-    "buildDate": "20260831",
-    "buildId": "v0.11.3-hotfix1-safe-storage-recovery-20260831"
+    "appVersion": "v0.11.4",
+    "buildName": "Toy Rotation v0.11.4 iPhone QA Candidate",
+    "buildDate": "20260902",
+    "buildId": "v0.11.4-phase2b-iphone-qa-candidate-20260902"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 557,
-      "sha256": "025d885b44449fa4b66cdadc570f152b87b5623260699d5a06255e9f0a1bb666",
+      "bytes": 549,
+      "sha256": "ff8beaea625118bb66f7d2ba28af55b3ca8b2fbc61559476d1acbc65c2440193",
       "importedBy": [
         "index.html"
       ],
@@ -332,8 +332,8 @@
     {
       "path": "src/data/store.js",
       "resolvedDeployPath": "./src/data/store.js",
-      "bytes": 49949,
-      "sha256": "be2adac03ff426e28f7c0fa6df59a373814d20fcd998ec0bd94a4a8df48cbcca",
+      "bytes": 47824,
+      "sha256": "335c54d496df21baeef2ef74a68beace961d30d11170f829c9f2124e7c52dd84",
       "importedBy": [
         "src/data/backup-service.js",
         "src/features/persistence-diagnostic.js",
@@ -473,8 +473,8 @@
     {
       "path": "src/domain/rotation-engine.js",
       "resolvedDeployPath": "./src/domain/rotation-engine.js",
-      "bytes": 19787,
-      "sha256": "4a3c6a4d4aca39f515c75f591b19308b6e94134dfbeae3259648eb8b837a926c",
+      "bytes": 20261,
+      "sha256": "db53bc5d2d8d155509bc6d4b7f2a11fa639b327665381f57808c84c60c7565c5",
       "importedBy": [
         "src/main.js"
       ],
@@ -730,8 +730,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 128241,
-      "sha256": "8f2ecd59de17628965e5e3000d305d298a0c267c8d6b78c7ed5a9d0328658cb2",
+      "bytes": 126825,
+      "sha256": "3350c8ab8058de18f5f2279c085891ba34f36ea4a2a992686b67903b2e965fe2",
       "importedBy": [
         "index.html"
       ],
@@ -806,8 +806,8 @@
     {
       "path": "src/ui/i18n.js",
       "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 42613,
-      "sha256": "a5a0972da5cc2d71bb7046b0dc36e3fabf67d5697ebd371679514081a9c595df",
+      "bytes": 43021,
+      "sha256": "f60ac985f3ca92b60ab93fa318f863950a32302d3fddb97a34d0a0fdc1749f6b",
       "importedBy": [
         "src/main.js"
       ],

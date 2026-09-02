@@ -1,10 +1,10 @@
 // Toy Rotation backend configuration
 window.TOY_ROTATION_CONFIG = {
-  appVersion: "v0.11.3-hotfix1",
-  buildName: "Safe Storage Recovery Hotfix QA",
-  buildDate: "20260831",
-  buildId: "v0.11.3-hotfix1-safe-storage-recovery-20260831",
-  RELEASE: "v0.11.3-hotfix1 Safe Storage Recovery Hotfix QA 20260831",
+  appVersion: "v0.11.4",
+  buildName: "Toy Rotation v0.11.4 iPhone QA Candidate",
+  buildDate: "20260902",
+  buildId: "v0.11.4-phase2b-iphone-qa-candidate-20260902",
+  RELEASE: "Toy Rotation v0.11.4 iPhone QA Candidate 20260902",
   API_BASE: "https://toy-rotation-api.samanthayaosy.workers.dev",
   // The standalone storage diagnostic remains available as an emergency tool,
   // but the normal app is writable after a verified local boot.

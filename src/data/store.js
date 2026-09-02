@@ -13,20 +13,6 @@ export const STORE_SNAPSHOT_KEYS = Object.freeze([
 ]);
 export const STORE_HEALTH_KEY = 'toyRotation.cleanBaseline.persistenceHealth';
 
-// Deliberately conservative: a legacy record is removable only when every
-// user-owned component is already represented by the canonical state.
-export function classifyLegacyRedundancy(canonical = {}, legacy = {}) {
-  const same = value => JSON.stringify(value ?? null);
-  const fields=['toys','wishlist','profile','rotationHistory','settings','drafts'];
-  const mismatches=fields.filter(field=>same(canonical[field])!==same(legacy[field]));
-  const canonicalImages=new Set((canonical.toys||[]).map(toy=>JSON.stringify(toy.imageRef||null)));
-  const legacyImages=(legacy.toys||[]).map(toy=>JSON.stringify(toy.imageRef||null));
-  if (legacyImages.some(ref=>!canonicalImages.has(ref))) mismatches.push('imageRefs');
-  const extra=Object.keys(legacy).filter(key=>!['schemaVersion',...fields].includes(key));
-  if (extra.some(key=>legacy[key] != null)) mismatches.push('legacyMetadata');
-  return mismatches.length ? { classification: mismatches.length === 1 ? 'PARTIALLY_REDUNDANT' : 'HAS_UNIQUE_DATA', safeToRemove:false, mismatches } : { classification:'SAFE_TO_REMOVE', safeToRemove:true, mismatches:[] };
-}
-
 // A missing key is a legitimate first run. A storage exception or malformed
 // JSON is not.  Keeping those outcomes distinct prevents boot from replacing a
 // real library with an empty default snapshot after a failed local read.
@@ -102,16 +88,6 @@ export class AppStore {
   get revision() { return this.#revision; }
   get persistence() { return structuredClone(this.#persistence); }
   get canPersist() { return this.#persistence.writable === true; }
-  attemptSafeQuotaRecovery() {
-    const diagnostic=this.#persistence.diagnostic;
-    if (this.#persistence.status !== 'safe_commit_failure' || diagnostic?.classification?.code !== 'Q') return { ok:false, reason:'not_quota_recovery' };
-    const storage=globalThis.localStorage;
-    // Only rebuildable caches and a stale write staging record are candidates;
-    // canonical, shadow, snapshots, overrides, legacy data and IndexedDB are untouched.
-    for (const key of [STORE_COMMIT_STAGING_KEY,'toyRotationRemoteCatalogV0115','toyRotationRemoteCatalogMetaV0115','toyRotationRemoteCatalogNewKeysV0115','toyRotation.startupDiagnostic']) storage.removeItem(key);
-    try { this.#save(this.#state); this.#persistence={ writable:true,status:'ready',diagnostic:null }; return { ok:true }; }
-    catch (error) { return { ok:false, reason:'quota_persists', error:String(error?.message || error) }; }
-  }
   attachDiagnostic(diagnostic) { this.#diagnostic=diagnostic; }
   subscribe(listener) { this.#listeners.add(listener); return () => this.#listeners.delete(listener); }
   update(mutator, reason = 'update') { const before=this.#state; try { const next = structuredClone(before); mutator(next); next.schemaVersion = SCHEMA_VERSION; if (!this.canPersist) throw new Error('storage_recovery_required'); this.#diagnostic?.storeUpdate(reason,before,next); this.#save(next); this.#state = next; this.#revision++; for (const listener of this.#listeners) { listener(next, reason); this.#diagnostic?.subscriberFired(reason,next); } } catch(error) { this.#diagnostic?.storeUpdateFailed(reason,before,error); throw error; } }
@@ -193,7 +169,6 @@ export function bootStore({ onStage = () => {}, diagnosticMode = globalThis.wind
   try { persistState(state); }
   catch (error) {
     const diagnostic=buildPersistenceSnapshot({ current, legacyRecords, mode:'safe_commit_failure', hydratedState:state, recovery });
-    diagnostic.classification={ code:'Q', label:'quota_write_failure', detail:'canonical_valid_but_write_failed' };
     onStage('store_persistence_safe_mode', { ...diagnostic, error:String(error?.message || error) });
     return new AppStore(state, { writable:false, status:'safe_commit_failure', diagnostic:{ ...diagnostic, error:String(error?.message || error) }, recovery:null });
   }

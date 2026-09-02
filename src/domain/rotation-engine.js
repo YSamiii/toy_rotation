@@ -16,6 +16,7 @@ export function selectRotation({ toys = [], history = [], childAgeMonths, size =
     .map((toy, index) => ({ toy, ...baseScore(toy, childAgeMonths, now, history), index }))
     .sort((a, b) => b.score - a.score || a.toy.productName.localeCompare(b.toy.productName));
   const selected = [];
+  const selectedCandidateScores = [];
   const relations = new Map();
   const diversity = { brandPenaltyApplied:0, groupPenaltyApplied:0, recencyPenaltyApplied:0 };
 
@@ -27,6 +28,16 @@ export function selectRotation({ toys = [], history = [], childAgeMonths, size =
       })
       .sort((a, b) => b.adjusted - a.adjusted || a.entry.toy.productName.localeCompare(b.entry.toy.productName))[0];
     selected.push(next.entry.toy);
+    selectedCandidateScores.push({
+      id:next.entry.toy.id,
+      canonicalKey:next.entry.toy.canonicalKey || null,
+      brand:normalizedBrand(next.entry.toy),
+      ownershipGroup:ownershipGroupKey(next.entry.toy),
+      brandPenalty:next.adjustment.brandPenalty,
+      groupPenalty:next.adjustment.groupPenalty,
+      recencyPenalty:next.entry.recencyPenalty,
+      finalScore:next.adjusted
+    });
     diversity.brandPenaltyApplied += next.adjustment.brandPenalty;
     diversity.groupPenaltyApplied += next.adjustment.groupPenalty;
     diversity.recencyPenaltyApplied += next.entry.recencyPenalty;
@@ -55,6 +66,7 @@ export function selectRotation({ toys = [], history = [], childAgeMonths, size =
       brandDiversityPenaltyApplied:diversity.brandPenaltyApplied,
       groupDiversityPenaltyApplied:diversity.groupPenaltyApplied,
       recencyPenaltyApplied:diversity.recencyPenaltyApplied,
+      selectedCandidateScores,
       // Backwards-compatible aliases for older Admin diagnostics and backups.
       requestedCount:requestedRotationCount,
       selectedCount:selectedRotationCount,
