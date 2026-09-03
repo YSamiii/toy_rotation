@@ -497,12 +497,15 @@ function openAllSkillOverlaps(wishlistId) {
   bindImages(dialog);
 }
 
+let modalChildContext = null;
 function openModal(markup) {
-  const dialog = document.querySelector('#modal');
+  const context=modalChildContext; modalChildContext=null;
+  const dialog = context?.dialog || document.querySelector('#modal');
   dialog.innerHTML = markup;
-  modalManager.open(dialog);
+  if(!context) modalManager.open(dialog);
   prepareSingleLineInputs(dialog);
-  dialog.querySelectorAll('[data-close]').forEach(button => { button.onclick = () => dialog.close(); });
+  dialog.querySelectorAll('[data-close]').forEach(button => { button.onclick = context?.onClose || (() => dialog.close()); });
+  if(context?.onClose)dialog.addEventListener('cancel',event=>{event.preventDefault();context.onClose();},{once:true});
   const scroller = dialog.querySelector('.form,.sheet');
   if (scroller) installScrollTopButton(scroller, true);
   return dialog;
@@ -680,8 +683,9 @@ async function addFromCatalog(key) {
 }
 function addWishlist(key) { const source = catalog.getByKey(key); if (!source) return; store.update(state => { if (!findOwnedToy(source,state.toys) && !findWishlistItem(source,state.wishlist)) state.wishlist.push({ id: crypto.randomUUID(), canonicalKey: source.canonicalKey, catalogId: source.id, catalogSnapshot:source, status: 'want', addedAt: new Date().toISOString() }); }, 'wishlist-add'); }
 
-function openCatalogManager(key) {
+function openCatalogManager(key,{dialog:workspaceDialog=null,onReturn=null}={}) {
   const toy = catalog.getByKey(key); if (!toy || !admin.enabled) return;
+  if(workspaceDialog)modalChildContext={dialog:workspaceDialog,onClose:onReturn};
   const mechanics = [...new Set(catalog.active.flatMap(item => item.playMechanics || []))].sort((a,b) => mechanicLabel(a).localeCompare(mechanicLabel(b)));
   const mergeTargets = catalog.active.filter(item => item.canonicalKey !== toy.canonicalKey);
   const skillChoices = SKILL_CODES.map(code => `<label class="choice"><input type="checkbox" name="skillCodes" value="${code}" ${toy.skillCodes.includes(code) ? 'checked' : ''}><span>${t(`skill.${code}`)}</span></label>`).join('');
@@ -706,6 +710,7 @@ function openCatalogManager(key) {
   });
   void catalogImageEditor.ready;
   form.onsubmit = async event => { event.preventDefault(); try { const values = new FormData(form); const patch = { brand: values.get('brand'), productName: values.get('productName'), names: { en: values.get('productName'), zh: values.get('nameZh') }, aliases: String(values.get('aliases')).split(',').map(value => value.trim()).filter(Boolean), minAgeMonths:values.get('minAgeMonths'), maxAgeMonths:values.get('maxAgeMonths'), categoryCode:values.get('categoryCode'), skillCodes:values.getAll('skillCodes'), playMechanics:values.getAll('playMechanics') }; if (editedCatalogImageData) { const localCatalogRef=await images.saveCatalog(editedCatalogImageData,toy.canonicalKey); patch.imageRef={ ...localCatalogRef, imageOwnerCanonicalKey:toy.canonicalKey, imageSource:'admin_upload', imageSourceType:'admin_upload', verificationStatus:'manually_confirmed', updatedAt:new Date().toISOString() }; patch.imageUrl=await admin.replaceCatalogImage(toy.canonicalKey,editedCatalogImageData); } await admin.edit(toy.canonicalKey, patch); editedCatalogImageData=null; fileInput.value=''; form.querySelector('#catalog-admin-error').textContent='Saved'; } catch (error) { dialog.querySelector('#catalog-admin-error').textContent = messageFor(error.message); } };
+  if(onReturn){const saveEditor=form.onsubmit;form.onsubmit=async event=>{await saveEditor(event);if(form.querySelector('#catalog-admin-error').textContent==='Saved')onReturn();};}
   const renderMergeTargets = () => { const query=dialog.querySelector('#merge-search').value.normalize('NFKC').toLowerCase(); const target=dialog.querySelector('#merge-target'); target.innerHTML=`<option value="">${t('selectMergeTarget')}</option>`+mergeTargets.filter(item=>!query||[item.brand,item.productName,item.names?.zh,...(item.aliases||[])].join(' ').normalize('NFKC').toLowerCase().includes(query)).slice(0,150).map(mergeOption).join(''); };
   dialog.querySelector('#merge-search').oninput = renderMergeTargets;
   dialog.querySelector('#catalog-merge').onclick = async () => { const target=dialog.querySelector('#merge-target').value; if (!target || !confirm(t('confirmMerge', { source:displayName(toy), target:displayName(catalog.getByKey(target)) }))) return; try { await admin.merge(toy.canonicalKey, target); form.querySelector('#catalog-admin-error').textContent='Saved'; } catch(error) { dialog.querySelector('#catalog-admin-error').textContent=messageFor(error.message); } };
@@ -995,6 +1000,7 @@ function openAdminInSettings(dialog) {
 function traceAdminWorkspace(stage, detail = {}) { const trace=window.__TOY_ROTATION_ADMIN_WORKSPACE_TRACE__ ||= []; trace.push({stage,detail,at:new Date().toISOString()}); if(trace.length>40)trace.splice(0,trace.length-40); }
 function adminNeedsReviewCount(){return pendingCandidateCount(store.state)+getPendingCatalogReports(store.state).length;}
 function renderAdminWorkspaceBody(dialog,{onBack,onClose}) {
+  dialog.__adminWorkspaceCallbacks={onBack,onClose};
   dialog.innerHTML=`<section class="sheet admin-workspace-root" data-admin-workspace-root><header><h2>${t('managerDashboard')}</h2><button type="button" data-workspace-back>‹</button><button type="button" data-workspace-close>×</button></header><p role="status">Needs Review: <span data-admin-pending-badge>${adminNeedsReviewCount()}</span></p><section class="panel"><h3>Candidate Review</h3><p>Pending / Reviewing (${pendingCandidateCount(store.state)})</p><button type="button" id="workspace-local-candidates" class="primary">Candidate Review</button></section><section class="panel"><h3>Reported Issues</h3><p>Pending / Reviewing (${getPendingCatalogReports(store.state).length})</p><button type="button" id="workspace-reports" class="primary">Reported Issues</button></section><button type="button" id="workspace-governance">Catalog Governance</button></section>`;
   dialog.querySelector('[data-workspace-back]').onclick=onBack;
   dialog.querySelector('[data-workspace-close]').onclick=onClose;
@@ -1006,6 +1012,7 @@ function renderReportedIssuesQueue(dialog,{onBack,onClose}){const rows=getCatalo
 function renderReportReviewDetail(dialog,id,{onBack,onClose}){const report=getCatalogReportById(store.state,id);if(!report)return renderReportedIssuesQueue(dialog,{onBack,onClose});const item=catalog.getByKey(report.catalogCanonicalKey);const resolved=['resolved','dismissed'].includes(report.status);dialog.innerHTML=`<section class="sheet" data-report-detail><header><h2>Reported Issue · ${escape(report.status)}</h2><button type="button" data-report-detail-back>‹</button><button type="button" data-close>×</button></header><div class="review-body"><h3>User Report</h3><p>${escape(report.issueType)}</p><p>${escape(report.note||'Not provided')}</p><p>${escape(report.createdAt)} · ${escape(report.id)}</p><img data-image='${escapedJson(report.attachmentRef||{kind:'placeholder'})}' alt="Image unavailable"><h3>Reported Catalog Item</h3>${item?`<p>${escape(item.brand)} · ${escape(displayName(item))}</p><p>${escape(item.canonicalKey)}</p>`:`<p>Catalog item unavailable · ${escape(report.catalogCanonicalKey)}</p>`}</div><footer>${resolved?`<p>${escape(report.status)} · ${escape(report.resolutionReason||'')}</p>`:`${item?'<button type="button" data-report-action="edit">Edit Catalog Item</button>':''}<button type="button" data-report-action="resolve">Resolve</button><button type="button" data-report-action="dismiss">Dismiss</button>`}</footer></section>`;dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.querySelector('[data-report-detail-back]').onclick=()=>renderReportedIssuesQueue(dialog,{onBack,onClose});dialog.querySelector('[data-report-detail]').addEventListener('click',event=>{const button=event.target.closest('[data-report-action]');if(!button||button.disabled)return;button.disabled=true;if(button.dataset.reportAction==='edit'){dialog.close();openCatalogManager(report.catalogCanonicalKey);return;}store.update(state=>button.dataset.reportAction==='resolve'?resolveCatalogReport(state,id):dismissCatalogReport(state,id),'catalog-report-resolution');refreshAdminCandidateBadges();renderReportReviewDetail(dialog,id,{onBack,onClose});});bindImages(dialog);}
 function refreshAdminCandidateBadges() { const count=adminNeedsReviewCount(); recognitionDeviceDiagnostic.badge('requested',{pendingCandidateCount:count}); recognitionDeviceDiagnostic.pendingSelector(store.state,{surface:'admin_badge'}); recognitionDeviceDiagnostic.badge('started',{pendingCandidateCount:count});document.querySelectorAll('[data-admin-pending-badge]').forEach(node=>node.textContent=String(count));recognitionDeviceDiagnostic.badge('completed',{pendingCandidateCount:count});const trace=window.__TOY_ROTATION_CANDIDATE_TRACE__ ||= [];trace.push({stage:'badge_rendered',detail:{pending_count:count},at:new Date().toISOString()});if(trace.length>80)trace.splice(0,trace.length-80); }
 window.addEventListener('toy-rotation-candidate-persisted',refreshAdminCandidateBadges);
+document.addEventListener('click',event=>{const button=event.target.closest?.('[data-report-action="edit"]');const dialog=button?.closest('dialog');if(!button||!dialog?.querySelector('[data-report-detail]'))return;const report=getCatalogReports(store.state).find(entry=>dialog.textContent.includes(entry.id));const callbacks=dialog.__adminWorkspaceCallbacks;if(!report||!callbacks)return;event.preventDefault();event.stopImmediatePropagation();openCatalogManager(report.catalogCanonicalKey,{dialog,onReturn:()=>renderReportReviewDetail(dialog,report.id,callbacks)});},true);
 function openAdminWorkspaceInSettings(dialog) {
   const controller=createAdminWorkspaceController({
     dialog,
