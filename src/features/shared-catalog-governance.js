@@ -1,11 +1,12 @@
 import { canonicalKey } from '../data/schema.js';
 import { pendingCandidateCount, upsertLocalCandidate } from './local-candidate-queue.js';
+import { createCatalogReport, enqueueCatalogReportSyncIntent, getCatalogReportById, hasRawAttachment, legacyReportId, legacyReportPayload } from './catalog-report-store.js';
 
 // Local-first governance transport. It never serializes ownership, personal
 // images, Wishlist, rotation, profiles, or any other private state.
 export class SharedCatalogGovernance {
-  #store; #catalog; #base; #diagnostic;
-  constructor({ store, catalog, baseUrl='', diagnostic=null }) { this.#store=store;this.#catalog=catalog;this.#base=String(baseUrl||'').replace(/\/$/,'');this.#diagnostic=diagnostic; globalThis.addEventListener?.('online',()=>{void this.flushOutbox();void this.syncInBackground();}); }
+  #store; #catalog; #base; #diagnostic; #images;
+  constructor({ store, catalog, images=null, baseUrl='', diagnostic=null }) { this.#store=store;this.#catalog=catalog;this.#images=images;this.#base=String(baseUrl||'').replace(/\/$/,'');this.#diagnostic=diagnostic; globalThis.addEventListener?.('online',()=>{void this.flushOutbox();void this.syncInBackground();}); }
   async syncInBackground() {
     this.#diagnostic?.record('remote_candidate_sync_requested',{}); if (!this.#base || !navigator.onLine) { this.#diagnostic?.record('remote_candidate_sync_skipped',{baseConfigured:Boolean(this.#base),online:navigator.onLine}); return { skipped:true }; }
     this.#diagnostic?.record('remote_candidate_sync_started',{}); const local=Number(this.#store.state.catalogState?.syncMetadata?.lastAppliedRemoteCatalogVersion||0);
@@ -20,7 +21,54 @@ export class SharedCatalogGovernance {
   async flushOutbox() { if(!this.#base||!navigator.onLine)return {flushed:0};const jobs=[...(this.#store.state.catalogState?.syncMetadata?.governanceOutbox||[])];let flushed=0;for(const job of jobs){try{const r=await fetch(`${this.#base}/${job.kind==='candidate'?'catalog-candidate':'catalog-report'}`,{method:'POST',headers:{'Content-Type':'application/json','X-Device-Id':deviceId()},body:JSON.stringify(job.payload)});if(!r.ok)continue;this.#store.update(s=>{s.catalogState.syncMetadata.governanceOutbox=s.catalogState.syncMetadata.governanceOutbox.filter(x=>x.id!==job.id);if(job.kind==='candidate'){s.catalogState.syncMetadata.candidateReceipts ||= [];if(!s.catalogState.syncMetadata.candidateReceipts.includes(job.id))s.catalogState.syncMetadata.candidateReceipts.push(job.id)}},'governance-outbox-sent');flushed++}catch{}}await this.#applyCandidateResolutions();return {flushed}; }
   createLocalCandidate(payload){return this.enqueue('candidate',{...payload,candidateId:payload.candidateId||crypto.randomUUID()});}
   async submitCandidate(payload){this.createLocalCandidate(payload);return this.flushOutbox();}
-  async submitReport(payload){const reportId=payload.reportId||crypto.randomUUID();this.enqueue('report',{...payload,reportId});return this.flushOutbox();}
+  async submitReport(payload) {
+    const reportId=payload.reportId || crypto.randomUUID();
+    // The report and its retry intent are one canonical commit. A remote
+    // failure therefore cannot make a locally accepted report disappear.
+    this.#store.update(state => {
+      const report=createCatalogReport(state,{ ...payload, id:reportId, attachmentRef:payload.attachmentRef || null, syncStatus:'pending_local' });
+      enqueueCatalogReportSyncIntent(state,report);
+    },'catalog-report-create');
+    void this.flushOutbox();
+    return getCatalogReportById(this.#store.state,reportId);
+  }
+  async migrateLegacyReports() {
+    const jobs=[...(this.#store.state.catalogState?.syncMetadata?.governanceOutbox || [])].filter(job => job?.kind === 'report');
+    if (!jobs.length) return { migrated:0, pending:0, errors:[] };
+    const prepared=[]; const errors=[]; const seenIds=new Set((this.#store.state.catalogState?.catalogReports || []).map(report=>report.id));
+    for (const job of jobs) {
+      const id=legacyReportId(job); if (seenIds.has(id)) continue; seenIds.add(id);
+      const existing=getCatalogReportById(this.#store.state,id);
+      let attachmentRef=existing?.attachmentRef || job.payload?.attachmentRef || null;
+      if (existing && (!hasRawAttachment(job.payload) || attachmentRef)) { prepared.push({ job, report:existing, migrated:false, attachmentRef }); continue; }
+      if (hasRawAttachment(job.payload)) {
+        if (!this.#images) { errors.push({ id:job.id, reason:'attachment_repository_unavailable' }); continue; }
+        try { attachmentRef=await this.#images.savePersonal(job.payload.optionalAttachment); }
+        catch (error) { errors.push({ id:job.id, reason:'attachment_migration_failed', message:String(error?.message || error) }); continue; }
+      }
+      prepared.push({ job, report:existing ? { ...existing, attachmentRef } : legacyReportPayload(job,attachmentRef), migrated:!existing, attachmentRef });
+    }
+    if (prepared.length) this.#store.update(state => {
+      const outbox=state.catalogState.syncMetadata.governanceOutbox || [];
+      for (const entry of prepared) {
+        const report=createCatalogReport(state,entry.report);
+        entry.safeReport=report;
+      }
+      const migratedById=new Map(prepared.map(entry => [legacyReportId(entry.job), entry.safeReport]));
+      for (const job of outbox) {
+        const report=migratedById.get(legacyReportId(job));
+        // Clear raw bytes only after the new report was included in this
+        // verified canonical commit. This also clears duplicate retry intents
+        // for the same deterministic legacy report without removing either.
+        if (job.kind === 'report' && report && hasRawAttachment(job.payload)) {
+          const { optionalAttachment, ...safePayload }=job.payload;
+          job.payload={ ...safePayload, attachmentRef:report.attachmentRef || null, attachmentTransport:report.attachmentRef ? 'deferred_until_remote_contract_updated' : 'none' };
+        }
+      }
+      state.catalogState.syncMetadata.catalogReportMigrationV0115={ completedAt:new Date().toISOString(), pendingAttachmentMigration:errors.map(error=>error.id), errors };
+    },'catalog-report-legacy-import');
+    return { migrated:prepared.filter(item=>item.migrated).length, pending:errors.length, errors };
+  }
   async #get(path){try{const r=await fetch(`${this.#base}${path}`,{cache:'no-store'});return r.ok?await r.json():null}catch{return null}}
   async #applyCandidateResolutions(){
     const ids=[...(this.#store.state.catalogState?.syncMetadata?.candidateReceipts||[])];

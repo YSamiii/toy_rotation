@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-02T17:24:35.667Z",
+  "generatedAt": "2026-09-03T17:03:50.799Z",
   "target": "safari16",
   "buildIdentity": {
-    "appVersion": "v0.11.4",
-    "buildName": "Toy Rotation v0.11.4 iPhone QA Candidate",
-    "buildDate": "20260902",
-    "buildId": "v0.11.4-phase2b-iphone-qa-candidate-20260902"
+    "appVersion": "v0.11.5",
+    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate",
+    "buildDate": "20260903",
+    "buildId": "v0.11.5-iphone-qa-candidate-20260903"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 549,
-      "sha256": "ff8beaea625118bb66f7d2ba28af55b3ca8b2fbc61559476d1acbc65c2440193",
+      "bytes": 541,
+      "sha256": "9051c7866ff7f6162c3815af1814c6d7217e086c64a324e9c548c54219e43269",
       "importedBy": [
         "index.html"
       ],
@@ -317,6 +317,7 @@
         "src/domain/library-service.js",
         "src/domain/set-service.js",
         "src/domain/substitution-engine.js",
+        "src/features/catalog-report-store.js",
         "src/features/data-repair-diagnostic.js",
         "src/features/recognition-service.js",
         "src/features/shared-catalog-governance.js",
@@ -545,6 +546,24 @@
       }
     },
     {
+      "path": "src/features/catalog-report-store.js",
+      "resolvedDeployPath": "./src/features/catalog-report-store.js",
+      "bytes": 5323,
+      "sha256": "3e04517a8b39ee6f07084779912d54da84275f9e5beaeee5a00d66a29a923f6d",
+      "importedBy": [
+        "src/features/shared-catalog-governance.js",
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "src/features/data-repair-diagnostic.js",
       "resolvedDeployPath": "./src/features/data-repair-diagnostic.js",
       "bytes": 16199,
@@ -667,14 +686,15 @@
     {
       "path": "src/features/shared-catalog-governance.js",
       "resolvedDeployPath": "./src/features/shared-catalog-governance.js",
-      "bytes": 7963,
-      "sha256": "4b5d3e389e00e2fb1f9e6642ed02bd0b415e07f67e86634453f4e07b9c2ccb12",
+      "bytes": 11344,
+      "sha256": "f5acf85787eba6a50ecd94969db9c402ba3597bf2b253d9752a5866d5fb10f08",
       "importedBy": [
         "src/main.js"
       ],
       "staticImports": [
         "src/data/schema.js",
-        "src/features/local-candidate-queue.js"
+        "src/features/local-candidate-queue.js",
+        "src/features/catalog-report-store.js"
       ],
       "dynamicImports": [],
       "browserTargetCompatibility": {
@@ -730,8 +750,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 126825,
-      "sha256": "3350c8ab8058de18f5f2279c085891ba34f36ea4a2a992686b67903b2e965fe2",
+      "bytes": 134641,
+      "sha256": "31b1206330f2b256e6081132d236081e761edd5649c3d79563242de0b4240c76",
       "importedBy": [
         "index.html"
       ],
@@ -753,6 +773,7 @@
         "src/features/recognition-service.js",
         "src/features/shared-catalog-governance.js",
         "src/features/local-candidate-queue.js",
+        "src/features/catalog-report-store.js",
         "src/features/data-repair-diagnostic.js",
         "src/features/persistence-diagnostic.js",
         "src/features/restore-diagnostic.js",
@@ -928,8 +949,8 @@
     {
       "path": "storage-recovery-diagnostic.js",
       "resolvedDeployPath": "./storage-recovery-diagnostic.js",
-      "bytes": 7311,
-      "sha256": "d1407cebb76d00c184eb2d3e1322d0332008f2e2e04bcbc59cd1e2b23c8a36ec",
+      "bytes": 7307,
+      "sha256": "53fa14206c5519cba6800bf0304284b6cc8f577ad5a9e5ad91de29c0b2b6377a",
       "importedBy": [
         "storage-recovery-diagnostic.html"
       ],
@@ -946,6 +967,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 53
+    "checkedInputs": 54
   }
 }
