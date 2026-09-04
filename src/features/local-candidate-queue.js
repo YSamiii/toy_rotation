@@ -16,12 +16,18 @@ export function upsertLocalCandidate(state, payload) {
     recognitionConfidence:payload.recognitionConfidence ?? null, possibleMatches:payload.possibleMatches || [], imageConsent:payload.imageConsent === true,
     // Image bytes belong in IndexedDB through imageRef.  Canonical state only
     // carries the typed reference needed by the local review UI.
-    reviewAttachment:payload.imageConsent === true && typeof payload.reviewAttachment === 'string' && !/^data:|^blob:/i.test(payload.reviewAttachment) ? payload.reviewAttachment : null, reviewAttachmentRef:payload.imageConsent === true ? (payload.reviewAttachmentRef || previous?.reviewAttachmentRef || null) : null,
+    reviewAttachment:payload.imageConsent === true && typeof payload.reviewAttachment === 'string' && !/^data:|^blob:/i.test(payload.reviewAttachment) ? payload.reviewAttachment : null, reviewAttachmentRef:payload.imageConsent === true ? immutableAttachmentRef(payload.reviewAttachmentRef || previous?.reviewAttachmentRef) : null,
     linkedLocalToyId:payload.linkedLocalToyId || previous?.linkedLocalToyId || null, linkedWishlistId:payload.linkedWishlistId || previous?.linkedWishlistId || null,
     syncStatus:payload.syncStatus || previous?.syncStatus || 'pending_local', mutationId:payload.mutationId || previous?.mutationId || payload.candidateId
   };
   if(index < 0) queue.unshift(candidate); else queue[index]=candidate;
   return candidate;
+}
+function immutableAttachmentRef(ref) {
+  if (!ref || typeof ref !== 'object') return null;
+  if (ref.kind === 'remote' && typeof ref.url === 'string') return { kind:'remote', url:ref.url };
+  if ((ref.kind === 'personal' || ref.kind === 'catalog') && typeof ref.id === 'string') return { kind:ref.kind, id:ref.id };
+  return null;
 }
 export function setLocalCandidateStatus(state, candidateId, reviewStatus) {
   const candidate=localCandidates(state).find(entry=>entry.candidateId===candidateId); if(!candidate) return null;

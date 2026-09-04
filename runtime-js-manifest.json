@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-03T20:08:59.404Z",
+  "generatedAt": "2026-09-04T14:12:55.180Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.5",
-    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 3",
-    "buildDate": "20260903",
-    "buildId": "v0.11.5-iphone-qa-candidate3-20260903"
+    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 4",
+    "buildDate": "20260904",
+    "buildId": "v0.11.5-iphone-qa-candidate4-20260904"
   },
   "entries": [
     "index.html",
@@ -18,7 +18,7 @@
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
       "bytes": 546,
-      "sha256": "54c470e362aea0795998386c6430f0c530e9eef9c834ce8ff0f1d96598a08530",
+      "sha256": "cc9b04ef3e19b3f7a0b3f7443ec5d8d2b84759c8222ce8c644c9692beae605ad",
       "importedBy": [
         "index.html"
       ],
@@ -551,6 +551,7 @@
       "bytes": 5323,
       "sha256": "3e04517a8b39ee6f07084779912d54da84275f9e5beaeee5a00d66a29a923f6d",
       "importedBy": [
+        "src/features/review-count.js",
         "src/features/shared-catalog-governance.js",
         "src/main.js"
       ],
@@ -584,11 +585,12 @@
     {
       "path": "src/features/local-candidate-queue.js",
       "resolvedDeployPath": "./src/features/local-candidate-queue.js",
-      "bytes": 3033,
-      "sha256": "35d53ed38dbdf844c65955b9b7f09524802979e7cc4c94131d2a9f640f77fabb",
+      "bytes": 3380,
+      "sha256": "d3bae2d1bebf67c066c33bf394f167d78a47efc68ac9987499288c87f020f9f6",
       "importedBy": [
         "src/features/recognition-device-diagnostic.js",
         "src/features/recognition-service.js",
+        "src/features/review-count.js",
         "src/features/shared-catalog-governance.js",
         "src/main.js"
       ],
@@ -662,6 +664,24 @@
         "src/main.js"
       ],
       "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/review-count.js",
+      "resolvedDeployPath": "./src/features/review-count.js",
+      "bytes": 421,
+      "sha256": "3c3f13c75189660a357faee802ceb48099da6e4066bc4b3f5f2ca700ba16756c",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/features/local-candidate-queue.js",
+        "src/features/catalog-report-store.js"
+      ],
       "dynamicImports": [],
       "browserTargetCompatibility": {
         "target": "safari16",
@@ -750,8 +770,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 136554,
-      "sha256": "e825793bdc35502b3506c74ac580ba6ccab6cc503e574a3a913cd1ba94933467",
+      "bytes": 136747,
+      "sha256": "e707d3c3dd765d4bb3f51caea4581f6fbf2c52d2710b277f6f31b2ae08bf4c37",
       "importedBy": [
         "index.html"
       ],
@@ -774,6 +794,7 @@
         "src/features/shared-catalog-governance.js",
         "src/features/local-candidate-queue.js",
         "src/features/catalog-report-store.js",
+        "src/features/review-count.js",
         "src/features/data-repair-diagnostic.js",
         "src/features/persistence-diagnostic.js",
         "src/features/restore-diagnostic.js",
@@ -950,7 +971,7 @@
       "path": "storage-recovery-diagnostic.js",
       "resolvedDeployPath": "./storage-recovery-diagnostic.js",
       "bytes": 7309,
-      "sha256": "de0a7249b185de588d402e3d8f318446f57446d70ef5174836bfd7c373d39154",
+      "sha256": "5508ec618f3590be4869d77c230662ff6a04e16d57981e8ec8e098a782f25ec2",
       "importedBy": [
         "storage-recovery-diagnostic.html"
       ],
@@ -967,6 +988,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 54
+    "checkedInputs": 55
   }
 }
