@@ -1,7 +1,7 @@
 import { createRestoreTrace, exportBackup, restoreBackup } from './data/backup-service.js';
 import { ImageRepository } from './data/image-repository.js';
 import { CATEGORY_CODES, SKILL_CODES, canonicalKey, normalizeToy, normalizeWishlistItem } from './data/schema.js';
-import { applyDetectedLegacyRecovery, auditStandardCatalogImages, auditToyLibraryImages, bootStore, recoverLegacyPersonalImages, repairFakePersonalPlaceholderBindings, startFreshStore } from './data/store.js';
+import { applyDetectedLegacyRecovery, auditStandardCatalogImages, auditToyLibraryImages, bootStore, persistStateWithQuotaRecovery, recoverLegacyPersonalImages, repairFakePersonalPlaceholderBindings, startFreshStore } from './data/store.js';
 import { CatalogRepository } from './domain/catalog-repository.js';
 import { resolvedLibraryImageRef } from './domain/catalog-presentation.js';
 import { findDuplicates, auditIdentityRelationships, isActionableDuplicate } from './domain/duplicate-engine.js';
@@ -231,8 +231,11 @@ function renderPersistenceWarning() {
   const classificationLabel=classification ? `<p><b>${t('persistenceClassification')}:</b> ${escape(classification.code)} · ${escape(classification.label)}</p>` : '';
   const staged=store.persistence.status === 'diagnostic_staged_recovery';
   const recover=staged ? `<button class="primary" data-action="persistence-recovery">${t('applyDetectedRecovery')}</button>` : '';
+  const quotaRetry=classification === 'Q' ? `<button class="primary" data-action="persistence-quota-retry">${t('retrySafeStorageRecovery')}</button>` : '';
   const fresh=store.canPersist ? '' : `<button class="danger" data-action="persistence-start-fresh">${t('startFresh')}</button>`;
-  return `<section class="panel danger"><h2>${t('persistenceRecoveryTitle')}</h2><p>${t(diagnosticMode ? 'persistenceDiagnosticModeDetail' : 'persistenceRecoveryDetail')}</p>${classificationLabel}<div class="actions"><button data-action="persistence-diagnostic">${t('exportPersistenceDiagnostic')}</button>${recover}${fresh}</div></section>`;
+  const detailKey=diagnosticMode ? 'persistenceDiagnosticModeDetail' : classification === 'Q' ? 'persistenceQuotaRecoveryDetail' : 'persistenceRecoveryDetail';
+  const titleKey=classification === 'Q' ? 'persistenceQuotaRecoveryTitle' : 'persistenceRecoveryTitle';
+  return `<section class="panel danger"><h2>${t(titleKey)}</h2><p>${t(detailKey)}</p>${classificationLabel}<div class="actions"><button data-action="persistence-diagnostic">${t('exportPersistenceDiagnostic')}</button>${recover}${quotaRetry}${fresh}</div></section>`;
 }
 
 function renderHome() {
@@ -401,6 +404,7 @@ async function action(name, data) {
   if (name === 'settings') return openSettings();
   if (name === 'persistence-diagnostic') return exportPersistenceDiagnostic();
   if (name === 'persistence-recovery') return applyPersistenceRecovery();
+  if (name === 'persistence-quota-retry') return retryQuotaStorageRecovery();
   if (name === 'persistence-start-fresh') return startFresh();
   if (name === 'add') return editToy();
   if (name === 'recognize') return recognizeToy();
@@ -428,6 +432,10 @@ function startFresh() {
   } catch (error) {
     alert(messageFor(error?.message || 'persistenceStartFreshFailed'));
   }
+}
+function retryQuotaStorageRecovery() {
+  try { persistStateWithQuotaRecovery(store.state); location.reload(); }
+  catch (error) { alert(messageFor(error?.name === 'QuotaExceededError' ? 'storageQuotaExceeded' : error?.message || 'storageQuotaExceeded')); }
 }
 
 function togglePermanentToy(id) {

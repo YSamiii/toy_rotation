@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-03T19:27:11.244Z",
+  "generatedAt": "2026-09-03T20:08:59.404Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.5",
-    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 2",
+    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 3",
     "buildDate": "20260903",
-    "buildId": "v0.11.5-iphone-qa-candidate2-20260903"
+    "buildId": "v0.11.5-iphone-qa-candidate3-20260903"
   },
   "entries": [
     "index.html",
@@ -18,7 +18,7 @@
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
       "bytes": 546,
-      "sha256": "a844edbb554e5e79f0a7242ca3e38fa50354cd3cb774e94b6e8009dbf984bf55",
+      "sha256": "54c470e362aea0795998386c6430f0c530e9eef9c834ce8ff0f1d96598a08530",
       "importedBy": [
         "index.html"
       ],
@@ -333,8 +333,8 @@
     {
       "path": "src/data/store.js",
       "resolvedDeployPath": "./src/data/store.js",
-      "bytes": 47824,
-      "sha256": "335c54d496df21baeef2ef74a68beace961d30d11170f829c9f2124e7c52dd84",
+      "bytes": 51575,
+      "sha256": "1d1e56123a1032c74f06a3495e2f63f12a828990e17e6712a30649c94211c0dc",
       "importedBy": [
         "src/data/backup-service.js",
         "src/features/persistence-diagnostic.js",
@@ -735,8 +735,8 @@
     {
       "path": "src/features/storage-usage-diagnostic.js",
       "resolvedDeployPath": "./src/features/storage-usage-diagnostic.js",
-      "bytes": 1924,
-      "sha256": "7fd6cc2f89159e04bbddd7ea1cd184ff682df53bb1616fe2459df827dd568cf5",
+      "bytes": 2358,
+      "sha256": "ffa131d3a6c9cbaf9993348c9e3a4d82c64d4d32aa7f8d6964e7374dd58f1adc",
       "importedBy": [
         "src/main.js"
       ],
@@ -750,8 +750,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 135842,
-      "sha256": "b6d2d9c751de570929467269c0d7b22a2cdc3c78957115b3d1f1d866f8781606",
+      "bytes": 136554,
+      "sha256": "e825793bdc35502b3506c74ac580ba6ccab6cc503e574a3a913cd1ba94933467",
       "importedBy": [
         "index.html"
       ],
@@ -827,8 +827,8 @@
     {
       "path": "src/ui/i18n.js",
       "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 43021,
-      "sha256": "f60ac985f3ca92b60ab93fa318f863950a32302d3fddb97a34d0a0fdc1749f6b",
+      "bytes": 43934,
+      "sha256": "be0c0e6c72d3f5da47cb48c52d2955ea32d7ec6c713d544e880e21922369f64d",
       "importedBy": [
         "src/main.js"
       ],
@@ -950,7 +950,7 @@
       "path": "storage-recovery-diagnostic.js",
       "resolvedDeployPath": "./storage-recovery-diagnostic.js",
       "bytes": 7309,
-      "sha256": "ab914ea04f49872742bb5a6cb934d6d472f6460400590b0209d4e5029fb1850f",
+      "sha256": "de0a7249b185de588d402e3d8f318446f57446d70ef5174836bfd7c373d39154",
       "importedBy": [
         "storage-recovery-diagnostic.html"
       ],

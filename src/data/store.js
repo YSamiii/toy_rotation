@@ -47,10 +47,29 @@ function validatePersistableState(state) {
   return { serialized, parsed };
 }
 
+function storageBytes(value) { return new TextEncoder().encode(value || '').length; }
+export function isQuotaWriteFailure(error) {
+  const message=String(error?.message || '');
+  return error?.name === 'QuotaExceededError' || error?.code === 22 || /quota\s+has\s+been\s+exceeded|quotaexceeded/i.test(message);
+}
+
+function safeQuotaCompaction(storage) {
+  const current=readStoredJson(STORE_KEY, storage);
+  const shadow=readStoredJson(STORE_SHADOW_KEY, storage);
+  const snapshot1=readStoredJson(STORE_SNAPSHOT_KEYS[0], storage);
+  const hasRollback=(shadow.status === 'valid' && usableState(shadow.value)) || (snapshot1.status === 'valid' && usableState(snapshot1.value));
+  if (current.status !== 'valid' || !usableState(current.value) || !hasRollback) return { ok:false, removed:[], retainedRollback:hasRollback };
+  const removed=[];
+  for (const key of [STORE_COMMIT_STAGING_KEY, STORE_HEALTH_KEY, STORE_SNAPSHOT_KEYS[2], STORE_SNAPSHOT_KEYS[1]]) {
+    if (storage.getItem(key) != null) { storage.removeItem(key); removed.push(key); }
+  }
+  return { ok:true, removed, retainedRollback:true };
+}
+
 // LocalStorage has no multi-key transaction. This protocol therefore never
 // destroys the last readable current state before a fully validated staging
 // payload exists, and keeps three independent last-known-good generations.
-function persistState(next, storage = globalThis.localStorage) {
+export function persistState(next, storage = globalThis.localStorage, { compact=false } = {}) {
   const { serialized, parsed }=validatePersistableState(next);
   const before=readStoredJson(STORE_KEY, storage);
   const generation=Date.now();
@@ -62,10 +81,12 @@ function persistState(next, storage = globalThis.localStorage) {
   // Rotate only validated snapshots. Never promote malformed state into the
   // recovery ring. Existing current becomes snapshot-1 before current moves.
   if (before.status === 'valid' && usableState(before.value)) {
-    const snapshot2=readStoredJson(STORE_SNAPSHOT_KEYS[1], storage);
-    const snapshot1=readStoredJson(STORE_SNAPSHOT_KEYS[0], storage);
-    if (snapshot2.status === 'valid' && usableState(snapshot2.value)) storage.setItem(STORE_SNAPSHOT_KEYS[2], snapshot2.raw);
-    if (snapshot1.status === 'valid' && usableState(snapshot1.value)) storage.setItem(STORE_SNAPSHOT_KEYS[1], snapshot1.raw);
+    if (!compact) {
+      const snapshot2=readStoredJson(STORE_SNAPSHOT_KEYS[1], storage);
+      const snapshot1=readStoredJson(STORE_SNAPSHOT_KEYS[0], storage);
+      if (snapshot2.status === 'valid' && usableState(snapshot2.value)) storage.setItem(STORE_SNAPSHOT_KEYS[2], snapshot2.raw);
+      if (snapshot1.status === 'valid' && usableState(snapshot1.value)) storage.setItem(STORE_SNAPSHOT_KEYS[1], snapshot1.raw);
+    }
     storage.setItem(STORE_SNAPSHOT_KEYS[0], before.raw);
     if (populated(before.value)) storage.setItem(STORE_SHADOW_KEY, before.raw);
   }
@@ -79,11 +100,29 @@ function persistState(next, storage = globalThis.localStorage) {
       persistenceHealth:'healthy', activeSnapshotGeneration:generation
     }));
   } catch { /* state is already verified; health telemetry never invalidates it */ }
+  // The staging record protects the in-progress write only.  Once current has
+  // been read back it is a redundant full-state copy and must not consume the
+  // device's local-storage quota between sessions.
+  try { storage.removeItem(STORE_COMMIT_STAGING_KEY); } catch { /* safe state is already verified */ }
+}
+
+export function persistStateWithQuotaRecovery(next, storage = globalThis.localStorage) {
+  try { persistState(next, storage); return { quotaRecovery:null }; }
+  catch (error) {
+    if (!isQuotaWriteFailure(error)) throw error;
+    const recovery=safeQuotaCompaction(storage);
+    if (!recovery.ok) throw error;
+    try { persistState(next, storage, { compact:true }); return { quotaRecovery:recovery }; }
+    catch (retryError) {
+      retryError.quotaRecovery=recovery;
+      throw retryError;
+    }
+  }
 }
 
 export class AppStore {
   #state; #listeners = new Set(); #revision = 0; #persistence; #diagnostic=null; #save;
-  constructor(state, persistence = { writable:true, status:'ready', diagnostic:null }, { safeSave = persistState } = {}) { this.#state = state; this.#persistence = persistence; this.#save=safeSave; }
+  constructor(state, persistence = { writable:true, status:'ready', diagnostic:null }, { safeSave = persistStateWithQuotaRecovery } = {}) { this.#state = state; this.#persistence = persistence; this.#save=safeSave; }
   get state() { return this.#state; }
   get revision() { return this.#revision; }
   get persistence() { return structuredClone(this.#persistence); }
@@ -91,7 +130,7 @@ export class AppStore {
   attachDiagnostic(diagnostic) { this.#diagnostic=diagnostic; }
   subscribe(listener) { this.#listeners.add(listener); return () => this.#listeners.delete(listener); }
   update(mutator, reason = 'update') { const before=this.#state; try { const next = structuredClone(before); mutator(next); next.schemaVersion = SCHEMA_VERSION; if (!this.canPersist) throw new Error('storage_recovery_required'); this.#diagnostic?.storeUpdate(reason,before,next); this.#save(next); this.#state = next; this.#revision++; for (const listener of this.#listeners) { listener(next, reason); this.#diagnostic?.subscriberFired(reason,next); } } catch(error) { this.#diagnostic?.storeUpdateFailed(reason,before,error); throw error; } }
-  replace(next, reason = 'replace') { const prepared=runMigrations(next); if (!this.canPersist) throw new Error('storage_recovery_required'); persistState(prepared); this.#state = prepared; this.#revision++; for (const listener of this.#listeners) listener(this.#state, reason); }
+  replace(next, reason = 'replace') { const prepared=runMigrations(next); if (!this.canPersist) throw new Error('storage_recovery_required'); this.#save(prepared); this.#state = prepared; this.#revision++; for (const listener of this.#listeners) listener(this.#state, reason); }
   // Restore uses this path so a failed persistence write cannot leave memory
   // and durable storage on different versions of the user's database.
   commit(next, reason = 'commit', { onStage = () => {} } = {}) {
@@ -166,13 +205,14 @@ export function bootStore({ onStage = () => {}, diagnosticMode = globalThis.wind
   // A normal migration is safe to persist only after a valid source was read,
   // or after a populated legacy state was staged.  First run still writes one
   // default state; it never overwrites a malformed/unavailable source.
-  try { persistState(state); }
+  let quotaRecovery=null;
+  try { quotaRecovery=persistStateWithQuotaRecovery(state).quotaRecovery; }
   catch (error) {
-    const diagnostic=buildPersistenceSnapshot({ current, legacyRecords, mode:'safe_commit_failure', hydratedState:state, recovery });
+    const diagnostic=buildPersistenceSnapshot({ current, legacyRecords, mode:'safe_commit_failure', hydratedState:state, recovery, writeFailure:error });
     onStage('store_persistence_safe_mode', { ...diagnostic, error:String(error?.message || error) });
     return new AppStore(state, { writable:false, status:'safe_commit_failure', diagnostic:{ ...diagnostic, error:String(error?.message || error) }, recovery:null });
   }
-  const diagnostic=buildPersistenceSnapshot({ current, legacyRecords, mode:recovery ? 'legacy_recovered' : 'ready', hydratedState:state });
+  const diagnostic=buildPersistenceSnapshot({ current, legacyRecords, mode:recovery ? 'legacy_recovered' : 'ready', hydratedState:state, quotaRecovery });
   return new AppStore(state, { writable:true, status:recovery ? 'legacy_recovered' : 'ready', recovery, diagnostic });
 }
 
@@ -188,27 +228,41 @@ export function startFreshStore({ storage = globalThis.localStorage } = {}) {
   return state;
 }
 
-export function buildPersistenceSnapshot({ current = readStoredJson(STORE_KEY), legacyRecords = LEGACY_KEYS.map(key => readStoredJson(key)), mode='ready', hydratedState=null, recovery=null } = {}) {
+export function buildPersistenceSnapshot({ current = readStoredJson(STORE_KEY), legacyRecords = LEGACY_KEYS.map(key => readStoredJson(key)), mode='ready', hydratedState=null, recovery=null, quotaRecovery=null, writeFailure=null } = {}) {
   const shadow=readStoredJson(STORE_SHADOW_KEY);
   const staging=readStoredJson(STORE_RECOVERY_STAGING_KEY);
-  const classification=classifyPersistence({ current, legacyRecords, hydratedState, recovery });
+  const commitStaging=readStoredJson(STORE_COMMIT_STAGING_KEY);
+  const snapshots=STORE_SNAPSHOT_KEYS.map(key => readStoredJson(key));
+  const health=readStoredJson(STORE_HEALTH_KEY);
+  const classification=classifyPersistence({ current, legacyRecords, hydratedState, recovery, writeFailure });
+  const byteAccounting={
+    current:storageBytes(current.raw), shadow:storageBytes(shadow.raw), recoveryStaging:storageBytes(staging.raw), commitStaging:storageBytes(commitStaging.raw), snapshots:snapshots.map(record=>({ key:record.key, bytes:storageBytes(record.raw) })), health:storageBytes(health.raw)
+  };
+  byteAccounting.total=byteAccounting.current+byteAccounting.shadow+byteAccounting.recoveryStaging+byteAccounting.commitStaging+byteAccounting.snapshots.reduce((total,item)=>total+item.bytes,0)+byteAccounting.health;
   return {
     diagnosticVersion:1,
     capturedAt:new Date().toISOString(),
     currentOrigin:globalThis.location?.origin || null,
     persistence:{ key:STORE_KEY, status:current.status, rawBytes:current.raw?.length || 0, counts:stateCounts(current.value), error:current.error || null },
+    status:{ readStatus:current.status, hydrationStatus:hydratedState ? 'success' : 'not_attempted', writeStatus:isQuotaWriteFailure(writeFailure) ? 'quota_failed' : quotaRecovery ? 'recovered' : 'not_attempted', writable:!writeFailure },
     shadow:{ key:STORE_SHADOW_KEY, status:shadow.status, rawBytes:shadow.raw?.length || 0, counts:stateCounts(shadow.value), error:shadow.error || null },
     recoveryStaging:{ key:STORE_RECOVERY_STAGING_KEY, status:staging.status, sourceKey:staging.value?.sourceKey || null, stagedAt:staging.value?.stagedAt || null, counts:stateCounts(staging.value?.state), error:staging.error || null },
+    commitStaging:{ key:STORE_COMMIT_STAGING_KEY, status:commitStaging.status, rawBytes:commitStaging.raw?.length || 0, error:commitStaging.error || null },
+    snapshots:snapshots.map(record => ({ key:record.key, status:record.status, rawBytes:record.raw?.length || 0, counts:stateCounts(record.value), error:record.error || null })),
+    health:{ key:STORE_HEALTH_KEY, status:health.status, rawBytes:health.raw?.length || 0, error:health.error || null },
+    byteAccounting,
     legacy:legacyRecords.map(record => ({ key:record.key, status:record.status, rawBytes:record.raw?.length || 0, counts:stateCounts(record.value), error:record.error || null })),
     hydrated:hydratedState ? { counts:stateCounts(hydratedState), schemaVersion:hydratedState.schemaVersion || null } : null,
     recovery,
+    quotaRecovery,
     recoveryExecuted:staging.status === 'valid' && !!staging.value?.sourceKey && current.status === 'valid' && populated(current.value),
     classification,
     mode
   };
 }
 
-function classifyPersistence({ current, legacyRecords, hydratedState, recovery }) {
+function classifyPersistence({ current, legacyRecords, hydratedState, recovery, writeFailure }) {
+  if (isQuotaWriteFailure(writeFailure)) return { code:'Q', label:'quota_write_failure', actionable:true, sourceKey:STORE_KEY };
   const legacy=legacyRecords.find(record=>record.status === 'valid' && usableState(record.value) && populated(record.value));
   if (recovery || (current.status === 'missing' || (current.status === 'valid' && !populated(current.value))) && legacy) {
     return { code:'B', label:'legacy_data_detected_current_empty', actionable:true, sourceKey:legacy?.key || recovery?.sourceKey || null };
