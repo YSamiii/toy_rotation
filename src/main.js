@@ -1049,6 +1049,7 @@ async function bindImages(scope = document) {
   const targets=[...scope.querySelectorAll('img[data-image]')];
   runtimeImageDiagnostics.mark('bind_images_start', { targetCount:targets.length, runtimeToyImageCount:targets.filter(image=>image.dataset.runtimeImageToyId).length });
   await Promise.all(targets.map(async image => {
+    if (image.closest('[data-candidate-detail]')) image.classList.add('candidate-review-image-preview');
     image.loading = 'lazy'; image.decoding = 'async';
     const toyId=image.dataset.runtimeImageToyId || null;
     let rendererImageRef=null;
