@@ -368,6 +368,7 @@ pre { max-width: 100%; overflow: auto; color: var(--text-secondary); }
   border-radius: 14px;
   background: var(--surface-secondary);
 }
+.sheet[data-candidate-detail] .review-body > img[data-image] { display:block; inline-size:100%; max-inline-size:100%; block-size:auto; max-block-size:320px; margin:0 auto 12px; object-fit:contain; overflow:hidden; border:1px solid var(--border); border-radius:14px; background:var(--surface-secondary); }
 .governance-metadata {
   display: grid;
   grid-template-columns: minmax(110px, .8fr) minmax(0, 1.2fr);
@@ -396,6 +397,7 @@ pre { max-width: 100%; overflow: auto; color: var(--text-secondary); }
   .home-actions,.library-filters,.wishlist-filters { grid-template-columns:1fr; }
   .governance-metadata { grid-template-columns: 1fr; gap: 3px; }
   .governance-metadata dd { margin-bottom: 8px; }
+  .sheet[data-candidate-detail] .review-body > img[data-image] { max-block-size:240px; }
 }
 
 /* v0.11.4 DOM reconciliation: preserve the established visual system while

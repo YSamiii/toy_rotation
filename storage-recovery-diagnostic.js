@@ -1,7 +1,7 @@
 import { IMAGE_DB, LEGACY_KEYS, PRIMARY_KEY, RECOVERY_STAGING_KEY, STARTUP_MARKER_KEY, classifyRawPersistence, inspectRawPersistence } from './src/features/standalone-storage-diagnostic-core.js';
 
 const startedAt=Date.now();
-const diagnostic={ format:'toy-rotation-standalone-persistence-diagnostic', diagnosticVersion:2, exportedAt:null, startedAt:new Date().toISOString(), origin:location.origin, appBuild:'v0.11.5 iPhone QA Candidate 4 20260904', cacheMarker:null, recoveryExecuted:false, writes:{ localStorage:0, indexedDb:0, catalog:0, worker:0 }, phases:[], current:null, legacy:[], recoveryStaging:null, classification:null, indexedDb:null, cache:null, startupMarker:null, errors:[] };
+const diagnostic={ format:'toy-rotation-standalone-persistence-diagnostic', diagnosticVersion:2, exportedAt:null, startedAt:new Date().toISOString(), origin:location.origin, appBuild:'v0.11.5 iPhone QA Candidate 5 20260904', cacheMarker:null, recoveryExecuted:false, writes:{ localStorage:0, indexedDb:0, catalog:0, worker:0 }, phases:[], current:null, legacy:[], recoveryStaging:null, classification:null, indexedDb:null, cache:null, startupMarker:null, errors:[] };
 const phaseNode=document.querySelector('#phase'), elapsedNode=document.querySelector('#elapsed'), summaryNode=document.querySelector('#summary'), classificationNode=document.querySelector('#classification'), fatalNode=document.querySelector('#fatal');
 const tick=setInterval(()=>{ elapsedNode.textContent=`Elapsed: ${((Date.now()-startedAt)/1000).toFixed(1)}s`; },100);
 

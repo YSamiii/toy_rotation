@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-04T14:12:55.180Z",
+  "generatedAt": "2026-09-04T14:46:39.056Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.5",
-    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 4",
+    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 5",
     "buildDate": "20260904",
-    "buildId": "v0.11.5-iphone-qa-candidate4-20260904"
+    "buildId": "v0.11.5-iphone-qa-candidate5-20260904"
   },
   "entries": [
     "index.html",
@@ -18,7 +18,7 @@
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
       "bytes": 546,
-      "sha256": "cc9b04ef3e19b3f7a0b3f7443ec5d8d2b84759c8222ce8c644c9692beae605ad",
+      "sha256": "338f2d646f8d1f5a7f1c8390de850791b4d1756988ae91da45af0601685dcdf7",
       "importedBy": [
         "index.html"
       ],
@@ -971,7 +971,7 @@
       "path": "storage-recovery-diagnostic.js",
       "resolvedDeployPath": "./storage-recovery-diagnostic.js",
       "bytes": 7309,
-      "sha256": "5508ec618f3590be4869d77c230662ff6a04e16d57981e8ec8e098a782f25ec2",
+      "sha256": "29eb15501d36f4a323c20fd29237c1b59c6d7b64840adfe5e3d6a048c78001af",
       "importedBy": [
         "storage-recovery-diagnostic.html"
       ],
