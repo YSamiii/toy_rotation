@@ -87,6 +87,8 @@ export const CATALOG_IMAGE_ASSETS = Object.freeze({
   "lovevery-inspector": remote("https://media.johnlewiscontent.com/i/JohnLewis/114262273?%24background-off-white%24=&%24rsp-pdp-port-640%24=&fmt=auto", "https://lovevery.com/products/the-play-kits-the-inspector", "stable_retailer"),
   "lovevery-explorer": remote("https://media.johnlewiscontent.com/i/JohnLewis/114262271?%24background-off-white%24=&%24rsp-pdp-port-640%24=&fmt=auto", "https://lovevery.com/products/the-play-kits-the-explorer", "stable_retailer"),
   "lovevery-thinker": remote("https://media.johnlewiscontent.com/i/JohnLewis/114262282?%24background-off-white%24=&%24rsp-pdp-port-640%24=&fmt=auto", "https://lovevery.com/products/the-play-kits-the-thinker", "stable_retailer"),
+  "mideer-my-first-animal-family-6in1": remote("https://mideer.store/wp-content/uploads/2025/01/4feea2da3990e75917faf4dbdf87ff47.webp", "https://mideer.store/en/product/my-first-pieces-animal-family-6-in-1/", 'stable_retailer'),
+  "mideer-my-first-construction-6in1": remote("https://mideer.store/wp-content/uploads/2025/01/0dafc3f81f68ef0ab4a49d4a2d91dcfb_4460e93b-5e45-4e1e-9d4b-5f9a4182a94d.webp", "https://mideer.store/en/product/my-first-pieces-6-in-1-construction-machines/", 'stable_retailer'),
   "hape-jungle-musical-railway": remote("https://eurekakids.com.hk/cdn/shop/files/E3825-jpg.webp?v=1773987744", "https://eurekakids.com.hk/products/music-and-monkey-railway", "stable_retailer"),
   "bduck-bounce-catch-game": remote("./catalog-assets/bduck-bounce-catch-game.webp", "bundled:catalog-assets/bduck-bounce-catch-game.webp", "manually_confirmed"),
   ...BATCH1_OFFICIAL_IMAGE_ASSETS,

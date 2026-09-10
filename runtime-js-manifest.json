@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-10T17:13:12.796Z",
+  "generatedAt": "2026-09-10T20:36:26.522Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.5",
-    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 7",
+    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 9",
     "buildDate": "20260910",
-    "buildId": "v0.11.5-iphone-qa-candidate7-20260910"
+    "buildId": "v0.11.5-iphone-qa-candidate9-20260910"
   },
   "entries": [
     "index.html",
@@ -18,7 +18,7 @@
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
       "bytes": 546,
-      "sha256": "ac7df3e64afc9762137213445bc0b35aad9ddf1094aef5a0ec77b8a4c5de1d9f",
+      "sha256": "4321a07371ee7fe464d6c21f0cedd175ca7616c1260b45e9d7fa9bb9bd13faf9",
       "importedBy": [
         "index.html"
       ],
@@ -248,8 +248,8 @@
     {
       "path": "src/data/catalog-image-assets.js",
       "resolvedDeployPath": "./src/data/catalog-image-assets.js",
-      "bytes": 12586,
-      "sha256": "fb1acf9f25cf3285233ca8cb6997e9c8ebbb53f52559c0059ea8b74bf93cab0f",
+      "bytes": 13088,
+      "sha256": "811bf05d0dca5a7575bc28fcbe7eea189088c6b5c50f3048afae89931463e492",
       "importedBy": [
         "src/domain/catalog-repository.js"
       ],
@@ -416,8 +416,8 @@
     {
       "path": "src/domain/identity-service.js",
       "resolvedDeployPath": "./src/domain/identity-service.js",
-      "bytes": 10605,
-      "sha256": "91807b6cd7afd4091c58d99afc83db7ee863603426199169ab0b9cec56b5a8c2",
+      "bytes": 12410,
+      "sha256": "c3ffdc87649d7b63575bf2239b361ffa9206d40757dca5872de067090e9f8947",
       "importedBy": [
         "src/data/store.js",
         "src/domain/catalog-repository.js",
@@ -600,8 +600,8 @@
     {
       "path": "src/features/local-candidate-queue.js",
       "resolvedDeployPath": "./src/features/local-candidate-queue.js",
-      "bytes": 3380,
-      "sha256": "d3bae2d1bebf67c066c33bf394f167d78a47efc68ac9987499288c87f020f9f6",
+      "bytes": 5244,
+      "sha256": "7c39fcf612859353a5f48383ba0f5501cc238f2d82300b8ee239a286e595477f",
       "importedBy": [
         "src/features/recognition-device-diagnostic.js",
         "src/features/recognition-service.js",
@@ -785,8 +785,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 141393,
-      "sha256": "38d4301efaa53a2ac406ad461a66138afd52d21824d469189d0236b847cbeddf",
+      "bytes": 143906,
+      "sha256": "56e8096a3317334d07c1e20a4e3f6306b6cbe30e33988eaac31f9b3d3694d036",
       "importedBy": [
         "index.html"
       ],
@@ -864,8 +864,8 @@
     {
       "path": "src/ui/i18n.js",
       "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 44026,
-      "sha256": "b015a0a79bf9398d43b75409b50f65c538f8457be6c91b5c01ecb2d6aa7f2021",
+      "bytes": 44883,
+      "sha256": "c146c522f93dc332978683644efc4cd7dda6ea75b0bcde73432ef1557e496c01",
       "importedBy": [
         "src/main.js"
       ],

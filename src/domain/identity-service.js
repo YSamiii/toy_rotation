@@ -2,11 +2,11 @@ import { canonicalKey, unique } from '../data/schema.js';
 
 export function identityTokens(toy = {}) {
   const keys = unique([toy.canonicalKey, toy.catalogKey, toy.catalogId, toy.key].map(canonicalKey));
+  const brand = normalizeBrand(toy.brand);
   const names = unique([
     toy.productName, toy.name, toy.nameEn, toy.nameZh, toy.names?.en, toy.names?.zh,
     ...(toy.aliases || [])
-  ].flatMap(identityNameForms).map(normalizeName));
-  const brand = normalizeBrand(toy.brand);
+  ].flatMap(identityNameForms).map(normalizeName).filter(name => isUsableProductIdentity(name, brand)));
   return { keys, names, brand, brandedNames:names.map(name => `${brand}|${name}`) };
 }
 
@@ -25,17 +25,26 @@ function identityNameForms(value) {
   // Do not emit a numeric-only “Chinese” alias. Product series such as
   // “6-in-1” otherwise collapse unrelated exact identities to the same `61`
   // token (for example Mideer Animal Family, Construction, and Dinosaurs).
-  const chinese = /[\u4e00-\u9fff]/.test(text) ? (text.match(/[\u4e00-\u9fff0-9]+/g) || []) : [];
+  const chinese = /[\u4e00-\u9fff]/.test(text) ? (text.match(/[\u4e00-\u9fff0-9]+/g) || []).filter(part => /[\u4e00-\u9fff]/.test(part)) : [];
   return [text, latin.join(' ').trim(), chinese.join('').trim()].filter(Boolean);
 }
 
 export function sameCatalogIdentity(a, b) {
-  if (differentSetEntities(a, b)) return false;
-  const left = identityTokens(a); const right = identityTokens(b);
-  if (left.keys.some(key => right.keys.includes(key))) return true;
-  if (distinctSku(a, b)) return false;
-  if (!left.brand || left.brand !== right.brand) return false;
-  return left.names.some(name => right.names.includes(name));
+  return Boolean(catalogOwnershipMatch(a, b));
+}
+
+// Ownership has a deliberately narrower contract than search, substitution,
+// or recommendation. A Catalog card is owned only by a durable Catalog link
+// or a complete, non-generic same-brand product identity.
+export function catalogOwnershipMatch(source = {}, toy = {}) {
+  if (differentSetEntities(source, toy)) return null;
+  if (shared(canonicalOwnershipKeys(source), canonicalOwnershipKeys(toy))) return { kind:'canonicalKey' };
+  if (shared(stableCatalogIds(source, true), stableCatalogIds(toy))) return { kind:'catalogId' };
+  if (distinctSku(source, toy)) return null;
+  const left = identityTokens(source); const right = identityTokens(toy);
+  if (!left.brand || left.brand !== right.brand) return null;
+  const identity = left.names.find(name => right.names.includes(name));
+  return identity ? { kind:'fallbackIdentity', identity } : null;
 }
 
 export function distinctSku(a = {}, b = {}) {
@@ -90,7 +99,15 @@ function sharesParentIdentity(a, b) {
 }
 
 export function findOwnedToy(source, toys = []) {
-  return toys.find(toy => sameCatalogIdentity(source, toy)) || null;
+  return findOwnedToyMatch(source, toys)?.toy || null;
+}
+
+export function findOwnedToyMatch(source, toys = []) {
+  for (const toy of toys) {
+    const match = catalogOwnershipMatch(source, toy);
+    if (match) return { toy, ...match };
+  }
+  return null;
 }
 
 export function findWishlistItem(source, wishlist = []) {
@@ -171,5 +188,18 @@ function imageRank(ref) { return { personal:4, catalog:3, remote:2, placeholder:
 function normalizeName(value) { return String(value || '').normalize('NFKC').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, ''); }
 function normalizeBrand(value) { return String(value === 'other_unspecified' ? '' : value || '').normalize('NFKC').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, ''); }
 function normalizedSku(toy) { return String(toy?.sku || toy?.productCode || toy?.modelNumber || toy?.variantCode || '').normalize('NFKC').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, ''); }
+function canonicalOwnershipKeys(toy = {}) { return unique([toy.canonicalKey, toy.catalogKey, toy.key, ...(toy.legacyCanonicalKeys || [])].map(canonicalKey)); }
+function stableCatalogIds(toy = {}, includeRecordId = false) { return unique([toy.catalogId, toy.catalogSourceId, toy.sourceCatalogId, toy.sourceId, toy.catalogSnapshot?.id, includeRecordId ? toy.id : null].map(canonicalKey)); }
+function shared(left, right) { return left.some(value => value && right.includes(value)); }
+function isUsableProductIdentity(name, brand) {
+  if (!name || !/[a-z\u4e00-\u9fff]/.test(name)) return false;
+  const product = brand ? name.split(brand).join('') : name;
+  if (!product || product === brand) return false;
+  return !GENERIC_PRODUCT_IDENTITIES.has(product);
+}
+const GENERIC_PRODUCT_IDENTITIES = new Set([
+  'toy','toys','learning','learn','activity','truck','drop','go','smart','baby',
+  '玩具','学习','活动','卡车','翻斗车','车辆','音乐','益智'
+]);
 function latest(a,b){return !a?b:!b?a:new Date(a)>new Date(b)?a:b;}
 function earliest(a,b){return !a?b:!b?a:new Date(a)<new Date(b)?a:b;}

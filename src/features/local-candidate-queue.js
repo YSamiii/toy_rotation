@@ -3,6 +3,8 @@
 export function localCandidates(state) { return state?.catalogState?.syncMetadata?.localCandidates || []; }
 export function pendingCandidates(state) { return localCandidates(state).filter(candidate => ['pending','reviewing'].includes(candidate.reviewStatus)); }
 export function pendingCandidateCount(state) { return pendingCandidates(state).length; }
+export function archivedCandidates(state) { return localCandidates(state).filter(candidate => Boolean(candidate.archivedAt)); }
+export function visibleCandidates(state, { archived = false } = {}) { return localCandidates(state).filter(candidate => archived ? Boolean(candidate.archivedAt) : !candidate.archivedAt); }
 export function upsertLocalCandidate(state, payload) {
   state.catalogState ||= {}; state.catalogState.syncMetadata ||= {};
   const queue=state.catalogState.syncMetadata.localCandidates ||= [];
@@ -18,6 +20,7 @@ export function upsertLocalCandidate(state, payload) {
     // carries the typed reference needed by the local review UI.
     reviewAttachment:payload.imageConsent === true && typeof payload.reviewAttachment === 'string' && !/^data:|^blob:/i.test(payload.reviewAttachment) ? payload.reviewAttachment : null, reviewAttachmentRef:payload.imageConsent === true ? immutableAttachmentRef(payload.reviewAttachmentRef || previous?.reviewAttachmentRef) : null,
     linkedLocalToyId:payload.linkedLocalToyId || previous?.linkedLocalToyId || null, linkedWishlistId:payload.linkedWishlistId || previous?.linkedWishlistId || null,
+    archivedAt:previous?.archivedAt || null, reviewHistory:previous?.reviewHistory || [],
     syncStatus:payload.syncStatus || previous?.syncStatus || 'pending_local', mutationId:payload.mutationId || previous?.mutationId || payload.candidateId
   };
   if(index < 0) queue.unshift(candidate); else queue[index]=candidate;
@@ -31,5 +34,25 @@ function immutableAttachmentRef(ref) {
 }
 export function setLocalCandidateStatus(state, candidateId, reviewStatus) {
   const candidate=localCandidates(state).find(entry=>entry.candidateId===candidateId); if(!candidate) return null;
-  candidate.reviewStatus=reviewStatus; candidate.updatedAt=new Date().toISOString(); return candidate;
+  const now=new Date().toISOString();
+  candidate.reviewStatus=reviewStatus; candidate.updatedAt=now;
+  if(['approved','linked','rejected'].includes(reviewStatus))candidate.reviewedAt=now;
+  return candidate;
+}
+export function archiveLocalCandidate(state, candidateId, now = new Date().toISOString()) {
+  const candidate=localCandidates(state).find(entry=>entry.candidateId===candidateId);
+  if(!candidate||!['approved','linked','rejected'].includes(candidate.reviewStatus))return null;
+  candidate.archivedAt=now;candidate.updatedAt=now;return candidate;
+}
+export function unarchiveLocalCandidate(state, candidateId, now = new Date().toISOString()) {
+  const candidate=localCandidates(state).find(entry=>entry.candidateId===candidateId);
+  if(!candidate?.archivedAt)return null;
+  candidate.archivedAt=null;candidate.updatedAt=now;return candidate;
+}
+export function reopenLocalCandidateReview(state, candidateId, now = new Date().toISOString()) {
+  const candidate=localCandidates(state).find(entry=>entry.candidateId===candidateId);
+  if(!candidate||!['approved','linked','rejected'].includes(candidate.reviewStatus))return null;
+  candidate.reviewHistory ||= [];
+  candidate.reviewHistory.push({ previousStatus:candidate.reviewStatus, reviewedAt:candidate.reviewedAt || candidate.updatedAt || candidate.createdAt || null, reopenedAt:now, linkedCanonicalKey:candidate.linkedCanonicalKey || null, resolutionReason:candidate.resolutionReason || null });
+  candidate.reviewStatus='reviewing';candidate.archivedAt=null;candidate.updatedAt=now;return candidate;
 }

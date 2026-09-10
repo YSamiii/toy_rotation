@@ -216,8 +216,13 @@ dialog::backdrop { background: var(--overlay); }
   gap: 12px;
   padding: 18px;
   max-height: calc(100dvh - max(20px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
-  overflow: auto;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow-x: clip;
+  overflow-y: auto;
   overscroll-behavior: contain;
+  overscroll-behavior-x: contain;
+  touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -371,6 +376,7 @@ pre { max-width: 100%; overflow: auto; color: var(--text-secondary); }
 .candidate-review-image-preview { display:block; width:auto; max-width:min(100%, 220px); height:auto; max-height:180px; margin:0 auto 12px; object-fit:contain; overflow:hidden; border:1px solid var(--border); border-radius:14px; background:var(--surface-secondary); }
 .candidate-review-image-placeholder { display:grid; place-items:center; width:112px; height:112px; max-width:100%; margin:0 auto 12px; padding:12px; box-sizing:border-box; color:var(--text-secondary); font-size:.82rem; line-height:1.25; text-align:center; border:1px solid var(--border); border-radius:14px; background:var(--surface-secondary); }
 .candidate-review-help { max-width:100%; min-width:0; white-space:normal; overflow-wrap:anywhere; }
+.candidate-review-filter-actions { display:flex; flex-wrap:wrap; gap:8px; min-width:0; }
 .candidate-review-list { min-width:0; overflow-x:hidden; }
 .candidate-review-card { display:flex; align-items:flex-start; gap:12px; min-width:0; overflow:hidden; }
 .candidate-review-thumbnail { flex:0 0 104px; width:104px; height:104px; max-width:104px; max-height:104px; object-fit:contain; border-radius:12px; background:var(--surface-secondary); }
