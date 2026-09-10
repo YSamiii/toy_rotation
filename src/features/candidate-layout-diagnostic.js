@@ -69,3 +69,15 @@ export function exportCandidateLayoutDiagnostic(detail, options = {}) {
   link.href=url; link.download=fileName; link.style.display='none'; documentRef.body.appendChild(link); link.click(); link.remove(); setTimeoutRef(() => urlRef.revokeObjectURL(url), 1000);
   return { diagnostic, fileName };
 }
+
+export function mountCandidateLayoutDiagnostic(detail, { documentRef=document, onExport=target => exportCandidateLayoutDiagnostic(target) } = {}) {
+  const image=detail?.querySelector('.review-body > img[data-image]');
+  if (!image || detail.querySelector('[data-candidate-layout-export]')) return null;
+  const button=documentRef.createElement('button');
+  button.type='button';
+  button.dataset.candidateLayoutExport='';
+  button.textContent='Export Layout Diagnostic';
+  button.onclick=()=>onExport(detail);
+  image.insertAdjacentElement('afterend', button);
+  return button;
+}

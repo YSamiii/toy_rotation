@@ -23,7 +23,7 @@ import { buildRestoreDiagnostic } from './features/restore-diagnostic.js';
 import { IMAGE_RESOLVER_BUILD_MARKER, RuntimeImageDiagnostics } from './features/runtime-image-diagnostic.js';
 import { RecognitionDeviceDiagnostic } from './features/recognition-device-diagnostic.js';
 import { buildStorageUsageDiagnostic } from './features/storage-usage-diagnostic.js';
-import { captureCandidateLayoutDiagnostic, exportCandidateLayoutDiagnostic } from './features/candidate-layout-diagnostic.js';
+import { mountCandidateLayoutDiagnostic } from './features/candidate-layout-diagnostic.js';
 import { beginStartupTrace, completeStartupWatchdog, installStartupWatchdog, markStartupError, markStartupStage, renderStartupShell } from './features/startup-trace.js';
 import { createI18n, localizePlayMechanism } from './ui/i18n.js';
 import { ModalManager } from './ui/modal-manager.js';
@@ -1065,22 +1065,8 @@ async function bindImages(scope = document) {
 }
 function installCandidateLayoutDiagnostic(scope) {
   const detail=scope.querySelector?.('[data-candidate-detail]');
-  if (!admin.enabled || !detail || detail.querySelector('[data-candidate-layout-diagnostic]')) return;
-  const footer=detail.querySelector('footer');
-  if (!footer) return;
-  const panel=document.createElement('details');
-  panel.dataset.candidateLayoutDiagnostic='admin-only';
-  panel.innerHTML='<summary>Candidate Review Layout Diagnostic</summary><p>Read-only geometry capture. No image bytes or Candidate text are exported.</p><button type="button" data-candidate-layout-refresh>Refresh geometry</button><button type="button" data-candidate-layout-export>Export Candidate Layout Diagnostic JSON</button><pre data-candidate-layout-summary></pre>';
-  const summary=panel.querySelector('[data-candidate-layout-summary]');
-  const refresh=()=>{
-    const diagnostic=captureCandidateLayoutDiagnostic(detail);
-    summary.textContent=JSON.stringify({ viewport:diagnostic.viewport, image:diagnostic.hierarchy.image, imageParent:diagnostic.hierarchy.imageParent, reviewBody:diagnostic.hierarchy.reviewBody, dialog:diagnostic.hierarchy.dialog, duplicateVisualElements:diagnostic.duplicateVisualElements.length, metadataGap:diagnostic.metadataGap }, null, 2);
-    return diagnostic;
-  };
-  panel.querySelector('[data-candidate-layout-refresh]').onclick=refresh;
-  panel.querySelector('[data-candidate-layout-export]').onclick=()=>exportCandidateLayoutDiagnostic(detail);
-  panel.addEventListener('toggle',()=>{if(panel.open)refresh();});
-  footer.append(panel);
+  if (!admin.enabled || !detail) return;
+  mountCandidateLayoutDiagnostic(detail);
 }
 function applyTheme() {
   const configured = store.state.settings.theme;

@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-04T19:50:18.847Z",
+  "generatedAt": "2026-09-10T13:31:43.690Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.5",
-    "buildName": "Toy Rotation v0.11.5 Candidate Layout Diagnostic",
-    "buildDate": "20260904",
-    "buildId": "v0.11.5-candidate-layout-diagnostic-20260904"
+    "buildName": "Toy Rotation v0.11.5 Candidate Layout Diagnostic 2",
+    "buildDate": "20260910",
+    "buildId": "v0.11.5-candidate-layout-diagnostic2-20260910"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 565,
-      "sha256": "2d987498a0a0a5bb4e79955957f80948c9dd602f5fce0c7a85b9a5b2d9f96d7e",
+      "bytes": 570,
+      "sha256": "31a94def869aef25b5fe863e78ec7842c99e31a87fa5e068e95c68b49afa31e2",
       "importedBy": [
         "index.html"
       ],
@@ -548,8 +548,8 @@
     {
       "path": "src/features/candidate-layout-diagnostic.js",
       "resolvedDeployPath": "./src/features/candidate-layout-diagnostic.js",
-      "bytes": 5619,
-      "sha256": "48f2e900d3c950eae992679d61fbf133096594dbb796b89d9736aaf9ea204f76",
+      "bytes": 6201,
+      "sha256": "dfd26150131ec6a72d180645baa6369efe231e4c2f48594ccd8cf9de2caf2713",
       "importedBy": [
         "src/main.js"
       ],
@@ -785,8 +785,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 138596,
-      "sha256": "7726b1de285c1404448c590526db8b15e0af1bceb5e179f5ef614e199b2b39a3",
+      "bytes": 137188,
+      "sha256": "203d34b9c13de5f05e7f061aeea2f9c574f6931f09df5290c7e9ed18f256a3b3",
       "importedBy": [
         "index.html"
       ],
