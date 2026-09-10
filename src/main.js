@@ -942,8 +942,12 @@ function renderCandidateReviewDetail(dialog,id,{returnToSettings=false}={}) {
   const matches=catalog.active.filter(item=>canonicalKey(item.canonicalKey)===canonicalKey(row.proposedCanonicalKey)||(`${item.brand} ${item.productName} ${(item.aliases||[]).join(' ')}`).toLowerCase().includes(String(row.productName||'').toLowerCase())).slice(0,5);
   const missing=value=>value==null||value===''?'Not provided':escape(Array.isArray(value)?value.join(', '):value);
   const resolved=['approved','linked','rejected'].includes(row.reviewStatus);
+  const reviewImageRef=row.reviewAttachmentRef;
+  const reviewImage=reviewImageRef?.kind&&reviewImageRef.kind!=='placeholder'
+    ? `<img class="candidate-review-image-preview" data-candidate-review-preview data-image='${escapedJson(reviewImageRef)}' alt="${escape(t('candidateImageUnavailable'))}">`
+    : `<div class="candidate-review-image-placeholder" data-candidate-review-placeholder role="img" aria-label="${escape(t('candidateImageUnavailable'))}">${escape(t('candidateImageUnavailable'))}</div>`;
   const diagnosticAction=admin.enabled?'<section data-candidate-layout-diagnostic><button type="button" data-candidate-layout-export>Export Layout Diagnostic</button><button type="button" data-candidate-layout-copy hidden>Copy Layout Diagnostic JSON</button><p data-candidate-layout-status role="status" aria-live="polite" hidden></p></section>':'';
-  dialog.innerHTML=`<section class="sheet" data-candidate-detail><header><h2>Candidate Review · ${escape(row.reviewStatus)}</h2><button type="button" data-candidate-back>‹</button><button type="button" data-close>×</button></header>${diagnosticAction}<div class="review-body"><img data-image='${escapedJson(row.reviewAttachmentRef||{kind:'placeholder'})}' alt="Image unavailable"><dl><dt>Brand</dt><dd>${missing(row.brand)}</dd><dt>Product Name</dt><dd>${missing(row.productName)}</dd><dt>Chinese Name</dt><dd>${missing(row.nameZh)}</dd><dt>English Name</dt><dd>${missing(row.nameEn)}</dd><dt>Aliases</dt><dd>${missing(row.aliases)}</dd><dt>Suggested Age</dt><dd>${missing(row.minAgeMonths)}–${missing(row.maxAgeMonths)}</dd><dt>Category</dt><dd>${missing(row.categoryCode)}</dd><dt>Skills</dt><dd>${missing(row.skillCodes)}</dd><dt>Core Mechanism</dt><dd>${missing(row.playMechanics)}</dd><dt>Submission Source</dt><dd>${missing(row.source)}</dd><dt>Submitted At</dt><dd>${missing(row.createdAt)}</dd></dl><details><summary>Technical Details</summary><p>${escape(row.candidateId)} · ${escape(row.proposedCanonicalKey)} · ${escape(row.reviewAttachmentRef?.id||'Not provided')}</p></details><h3>Potential Existing Matches</h3>${matches.map(item=>`<button type="button" data-candidate-target="${escape(item.canonicalKey)}">${escape(item.brand)} · ${escape(displayName(item))} · ${escape(item.canonicalKey)}</button>`).join('')||'<p>No likely matches</p>'}</div><footer>${resolved?`<p>${escape(row.reviewStatus)} ${escape(row.resolutionReason||'')}</p>`:`<button type="button" data-candidate-action="approved">Approve New</button><button type="button" data-candidate-action="link">Link Existing</button><button type="button" data-candidate-action="rejected">Reject</button>`}</footer></section>`;
+  dialog.innerHTML=`<section class="sheet" data-candidate-detail><header><h2>Candidate Review · ${escape(row.reviewStatus)}</h2><button type="button" data-candidate-back>‹</button><button type="button" data-close>×</button></header>${diagnosticAction}<div class="review-body">${reviewImage}<dl><dt>Brand</dt><dd>${missing(row.brand)}</dd><dt>Product Name</dt><dd>${missing(row.productName)}</dd><dt>Chinese Name</dt><dd>${missing(row.nameZh)}</dd><dt>English Name</dt><dd>${missing(row.nameEn)}</dd><dt>Aliases</dt><dd>${missing(row.aliases)}</dd><dt>Suggested Age</dt><dd>${missing(row.minAgeMonths)}–${missing(row.maxAgeMonths)}</dd><dt>Category</dt><dd>${missing(row.categoryCode)}</dd><dt>Skills</dt><dd>${missing(row.skillCodes)}</dd><dt>Core Mechanism</dt><dd>${missing(row.playMechanics)}</dd><dt>Submission Source</dt><dd>${missing(row.source)}</dd><dt>Submitted At</dt><dd>${missing(row.createdAt)}</dd></dl><details><summary>Technical Details</summary><p>${escape(row.candidateId)} · ${escape(row.proposedCanonicalKey)} · ${escape(row.reviewAttachmentRef?.id||'Not provided')}</p></details><h3>Potential Existing Matches</h3>${matches.map(item=>`<button type="button" data-candidate-target="${escape(item.canonicalKey)}">${escape(item.brand)} · ${escape(displayName(item))} · ${escape(item.canonicalKey)}</button>`).join('')||'<p>No likely matches</p>'}</div><footer>${resolved?`<p>${escape(row.reviewStatus)} ${escape(row.resolutionReason||'')}</p>`:`<button type="button" data-candidate-action="approved">Approve New</button><button type="button" data-candidate-action="link">Link Existing</button><button type="button" data-candidate-action="rejected">Reject</button>`}</footer></section>`;
   dialog.querySelector('[data-close]').onclick=()=>dialog.close();
   dialog.querySelector('[data-candidate-back]').onclick=()=>renderLocalCandidateQueue(dialog,{returnToSettings});
   let target='';
@@ -1127,10 +1131,28 @@ async function bindImages(scope = document) {
     try { rendererImageRef=JSON.parse(image.dataset.image); } catch { /* recorded below */ }
     const record=(state,error=null)=>runtimeImageDiagnostics.recordDom({ toyId, rendererImageRef, src:image.getAttribute('src'), currentSrc:image.currentSrc || image.src, complete:image.complete, naturalWidth:image.naturalWidth, state, error });
     if (toyId) { image.addEventListener('load',()=>record('loaded'),{once:true}); image.addEventListener('error',()=>record('error','image_element_error'),{once:true}); }
-    try { image.src = await images.resolve(rendererImageRef) || './icons/icon-192.png'; record('assigned'); }
-    catch (error) { image.src = './icons/icon-192.png'; record('resolve_error',error?.message || String(error)); }
+    try {
+      const resolvedImage=await images.resolve(rendererImageRef);
+      if(!resolvedImage&&replaceCandidateReviewPreviewWithUnavailable(image)){record('unavailable');return;}
+      image.src=resolvedImage || './icons/icon-192.png'; record('assigned');
+    }
+    catch (error) {
+      if(replaceCandidateReviewPreviewWithUnavailable(image)){record('resolve_error',error?.message || String(error));return;}
+      image.src='./icons/icon-192.png'; record('resolve_error',error?.message || String(error));
+    }
   }));
   runtimeImageDiagnostics.mark('bind_images_complete', { targetCount:targets.length, runtimeToyImageCount:targets.filter(image=>image.dataset.runtimeImageToyId).length });
+}
+function replaceCandidateReviewPreviewWithUnavailable(image) {
+  if(!image.matches('[data-candidate-review-preview]'))return false;
+  const placeholder=document.createElement('div');
+  placeholder.className='candidate-review-image-placeholder';
+  placeholder.dataset.candidateReviewPlaceholder='';
+  placeholder.setAttribute('role','img');
+  placeholder.setAttribute('aria-label',t('candidateImageUnavailable'));
+  placeholder.textContent=t('candidateImageUnavailable');
+  image.replaceWith(placeholder);
+  return true;
 }
 function applyTheme() {
   const configured = store.state.settings.theme;

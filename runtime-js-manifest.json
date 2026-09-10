@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-10T16:05:15.660Z",
+  "generatedAt": "2026-09-10T17:13:12.796Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.5",
-    "buildName": "Toy Rotation v0.11.5 Candidate Layout Diagnostic 4",
+    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 7",
     "buildDate": "20260910",
-    "buildId": "v0.11.5-candidate-layout-diagnostic4-20260910"
+    "buildId": "v0.11.5-iphone-qa-candidate7-20260910"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 570,
-      "sha256": "2a883a4bf080eeaa0e41271a6d659890340d8f682f5767699b972b3003664eba",
+      "bytes": 546,
+      "sha256": "ac7df3e64afc9762137213445bc0b35aad9ddf1094aef5a0ec77b8a4c5de1d9f",
       "importedBy": [
         "index.html"
       ],
@@ -785,8 +785,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 140162,
-      "sha256": "aa6b413d2d404ab68cbfe613da340c33addde4b48433a8947bfb61c9537137ba",
+      "bytes": 141393,
+      "sha256": "38d4301efaa53a2ac406ad461a66138afd52d21824d469189d0236b847cbeddf",
       "importedBy": [
         "index.html"
       ],
@@ -864,8 +864,8 @@
     {
       "path": "src/ui/i18n.js",
       "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 43934,
-      "sha256": "be0c0e6c72d3f5da47cb48c52d2955ea32d7ec6c713d544e880e21922369f64d",
+      "bytes": 44026,
+      "sha256": "b015a0a79bf9398d43b75409b50f65c538f8457be6c91b5c01ecb2d6aa7f2021",
       "importedBy": [
         "src/main.js"
       ],

@@ -368,7 +368,8 @@ pre { max-width: 100%; overflow: auto; color: var(--text-secondary); }
   border-radius: 14px;
   background: var(--surface-secondary);
 }
-.candidate-review-image-preview { display:block; width:100%; max-width:100%; height:auto; max-height:320px; margin:0 auto 12px; object-fit:contain; overflow:hidden; border:1px solid var(--border); border-radius:14px; background:var(--surface-secondary); }
+.candidate-review-image-preview { display:block; width:auto; max-width:min(100%, 220px); height:auto; max-height:180px; margin:0 auto 12px; object-fit:contain; overflow:hidden; border:1px solid var(--border); border-radius:14px; background:var(--surface-secondary); }
+.candidate-review-image-placeholder { display:grid; place-items:center; width:112px; height:112px; max-width:100%; margin:0 auto 12px; padding:12px; box-sizing:border-box; color:var(--text-secondary); font-size:.82rem; line-height:1.25; text-align:center; border:1px solid var(--border); border-radius:14px; background:var(--surface-secondary); }
 .candidate-review-help { max-width:100%; min-width:0; white-space:normal; overflow-wrap:anywhere; }
 .candidate-review-list { min-width:0; overflow-x:hidden; }
 .candidate-review-card { display:flex; align-items:flex-start; gap:12px; min-width:0; overflow:hidden; }
@@ -406,7 +407,8 @@ pre { max-width: 100%; overflow: auto; color: var(--text-secondary); }
   .home-actions,.library-filters,.wishlist-filters { grid-template-columns:1fr; }
   .governance-metadata { grid-template-columns: 1fr; gap: 3px; }
   .governance-metadata dd { margin-bottom: 8px; }
-  .candidate-review-image-preview { max-height:240px; }
+  .candidate-review-image-preview { max-width:200px; max-height:160px; }
+  .candidate-review-image-placeholder { width:96px; height:96px; }
   .candidate-review-card { gap:10px; }
   .candidate-review-thumbnail { flex-basis:96px; width:96px; height:96px; max-width:96px; max-height:96px; }
 }
