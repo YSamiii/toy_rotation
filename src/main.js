@@ -23,7 +23,7 @@ import { buildRestoreDiagnostic } from './features/restore-diagnostic.js';
 import { IMAGE_RESOLVER_BUILD_MARKER, RuntimeImageDiagnostics } from './features/runtime-image-diagnostic.js';
 import { RecognitionDeviceDiagnostic } from './features/recognition-device-diagnostic.js';
 import { buildStorageUsageDiagnostic } from './features/storage-usage-diagnostic.js';
-import { exportCandidateLayoutDiagnostic } from './features/candidate-layout-diagnostic.js';
+import { candidateLayoutDiagnosticFileName, captureCandidateLayoutDiagnostic } from './features/candidate-layout-diagnostic.js';
 import { beginStartupTrace, completeStartupWatchdog, installStartupWatchdog, markStartupError, markStartupStage, renderStartupShell } from './features/startup-trace.js';
 import { createI18n, localizePlayMechanism } from './ui/i18n.js';
 import { ModalManager } from './ui/modal-manager.js';
@@ -923,9 +923,15 @@ function renderStructureDamageCandidate(candidate) {
   if (!parent) return '';
   return `<article class="panel structure-repair-candidate"><b>${escape(displayName(parent))}</b><p>${t('structureDamageCurrent',{children:candidate.currentChildCount})}</p><p>${t('structureDamageExpected',{children:candidate.expectedChildCount})}</p><p>${t('structureDamageNoDeletion')}</p><p>${t('structureDamageExplanation')}</p><small>${t('needsConfirmation')}</small><button class="primary" data-restore-structure-children="${escape(candidate.parentId)}">${t('restoreMissingChildren')}</button></article>`;
 }
+function candidateReviewSummaryTime(value) {
+  const date=new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not provided';
+  const pad=part=>String(part).padStart(2,'0');
+  return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())} · ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 function renderLocalCandidateQueue(dialog, { returnToSettings = false } = {}) {
   const rows=localCandidates(store.state);
-  dialog.innerHTML=`<section class="sheet" data-local-candidates-root><header><h2>Candidate Review (${pendingCandidateCount(store.state)})</h2><button type="button" data-local-back>‹</button><button type="button" data-close>×</button></header><p>Needs Review includes Pending and Reviewing.</p><div class="list">${rows.map(row=>`<article class="panel"><img data-image='${escapedJson(row.reviewAttachmentRef||{kind:'placeholder'})}' alt=""><b>${escape(row.productName || row.nameEn || row.proposedCanonicalKey)}</b><p>${escape(row.brand||'Not provided')} · ${escape(row.createdAt||'Not provided')} · ${escape(row.reviewStatus)}</p><button type="button" data-local-open="${escape(row.candidateId)}">${row.reviewStatus==='pending'?'Start Review':row.reviewStatus==='reviewing'?'Continue Review':'View Result'}</button></article>`).join('') || '<p>No local candidates.</p>'}</div></section>`;
+  dialog.innerHTML=`<section class="sheet" data-local-candidates-root><header><h2>Candidate Review (${pendingCandidateCount(store.state)})</h2><button type="button" data-local-back>‹</button><button type="button" data-close>×</button></header><p class="candidate-review-help">Needs Review includes Pending and Reviewing.</p><div class="list candidate-review-list">${rows.map(row=>`<article class="panel candidate-review-card"><img class="candidate-review-thumbnail" data-image='${escapedJson(row.reviewAttachmentRef||{kind:'placeholder'})}' alt=""><div class="candidate-review-summary"><b class="candidate-review-name">${escape(row.productName || row.nameEn || row.proposedCanonicalKey)}</b><p class="candidate-review-meta"><span>${escape(row.brand||'Not provided')}</span><span>${escape(candidateReviewSummaryTime(row.createdAt))}</span><span>${escape(row.reviewStatus)}</span></p><button type="button" data-local-open="${escape(row.candidateId)}">${row.reviewStatus==='pending'?'Start Review':row.reviewStatus==='reviewing'?'Continue Review':'View Result'}</button></div></article>`).join('') || '<p>No local candidates.</p>'}</div></section>`;
   dialog.querySelector('[data-close]').onclick=()=>dialog.close();
   dialog.querySelector('[data-local-back]').onclick=()=>openManagerDashboard({returnToSettings});
   dialog.querySelector('[data-local-candidates-root]').addEventListener('click',event=>{const button=event.target.closest('[data-local-open]');if(!button||button.disabled)return;button.disabled=true;const id=button.dataset.localOpen;const current=localCandidates(store.state).find(row=>row.candidateId===id);try{if(current?.reviewStatus==='pending')store.update(state=>setLocalCandidateStatus(state,id,'reviewing'),'local-candidate-reviewing');refreshAdminCandidateBadges();renderCandidateReviewDetail(dialog,id,{returnToSettings});}catch(error){button.disabled=false;}});bindImages(dialog);
@@ -936,14 +942,48 @@ function renderCandidateReviewDetail(dialog,id,{returnToSettings=false}={}) {
   const matches=catalog.active.filter(item=>canonicalKey(item.canonicalKey)===canonicalKey(row.proposedCanonicalKey)||(`${item.brand} ${item.productName} ${(item.aliases||[]).join(' ')}`).toLowerCase().includes(String(row.productName||'').toLowerCase())).slice(0,5);
   const missing=value=>value==null||value===''?'Not provided':escape(Array.isArray(value)?value.join(', '):value);
   const resolved=['approved','linked','rejected'].includes(row.reviewStatus);
-  const diagnosticAction=admin.enabled?'<button type="button" data-candidate-layout-export>Export Layout Diagnostic</button>':'';
+  const diagnosticAction=admin.enabled?'<section data-candidate-layout-diagnostic><button type="button" data-candidate-layout-export>Export Layout Diagnostic</button><button type="button" data-candidate-layout-copy hidden>Copy Layout Diagnostic JSON</button><p data-candidate-layout-status role="status" aria-live="polite" hidden></p></section>':'';
   dialog.innerHTML=`<section class="sheet" data-candidate-detail><header><h2>Candidate Review · ${escape(row.reviewStatus)}</h2><button type="button" data-candidate-back>‹</button><button type="button" data-close>×</button></header>${diagnosticAction}<div class="review-body"><img data-image='${escapedJson(row.reviewAttachmentRef||{kind:'placeholder'})}' alt="Image unavailable"><dl><dt>Brand</dt><dd>${missing(row.brand)}</dd><dt>Product Name</dt><dd>${missing(row.productName)}</dd><dt>Chinese Name</dt><dd>${missing(row.nameZh)}</dd><dt>English Name</dt><dd>${missing(row.nameEn)}</dd><dt>Aliases</dt><dd>${missing(row.aliases)}</dd><dt>Suggested Age</dt><dd>${missing(row.minAgeMonths)}–${missing(row.maxAgeMonths)}</dd><dt>Category</dt><dd>${missing(row.categoryCode)}</dd><dt>Skills</dt><dd>${missing(row.skillCodes)}</dd><dt>Core Mechanism</dt><dd>${missing(row.playMechanics)}</dd><dt>Submission Source</dt><dd>${missing(row.source)}</dd><dt>Submitted At</dt><dd>${missing(row.createdAt)}</dd></dl><details><summary>Technical Details</summary><p>${escape(row.candidateId)} · ${escape(row.proposedCanonicalKey)} · ${escape(row.reviewAttachmentRef?.id||'Not provided')}</p></details><h3>Potential Existing Matches</h3>${matches.map(item=>`<button type="button" data-candidate-target="${escape(item.canonicalKey)}">${escape(item.brand)} · ${escape(displayName(item))} · ${escape(item.canonicalKey)}</button>`).join('')||'<p>No likely matches</p>'}</div><footer>${resolved?`<p>${escape(row.reviewStatus)} ${escape(row.resolutionReason||'')}</p>`:`<button type="button" data-candidate-action="approved">Approve New</button><button type="button" data-candidate-action="link">Link Existing</button><button type="button" data-candidate-action="rejected">Reject</button>`}</footer></section>`;
   dialog.querySelector('[data-close]').onclick=()=>dialog.close();
   dialog.querySelector('[data-candidate-back]').onclick=()=>renderLocalCandidateQueue(dialog,{returnToSettings});
   let target='';
   const detail=dialog.querySelector('[data-candidate-detail]');
   detail.addEventListener('click',event=>{
-    if(event.target.closest('[data-candidate-layout-export]')){exportCandidateLayoutDiagnostic(detail);return;}
+    if(event.target.closest('[data-candidate-layout-export]')){
+      const status=detail.querySelector('[data-candidate-layout-status]');
+      const copyButton=detail.querySelector('[data-candidate-layout-copy]');
+      const setDiagnosticStatus=message=>{status.hidden=false;status.textContent=message;};
+      setDiagnosticStatus('CLICK RECEIVED');
+      try {
+        const diagnostic=captureCandidateLayoutDiagnostic(detail);
+        detail.__candidateLayoutDiagnosticJson=JSON.stringify(diagnostic,null,2);
+        setDiagnosticStatus('PAYLOAD BUILT');
+        downloadJson(diagnostic,candidateLayoutDiagnosticFileName());
+        copyButton.hidden=false;
+        setDiagnosticStatus('EXPORT TRIGGERED — if no file appears, use Copy Layout Diagnostic JSON.');
+      } catch(error) {
+        copyButton.hidden=false;
+        setDiagnosticStatus(`EXPORT FAILED: ${error?.message||'unknown error'}`);
+      }
+      return;
+    }
+    if(event.target.closest('[data-candidate-layout-copy]')){
+      const status=detail.querySelector('[data-candidate-layout-status]');
+      const payload=detail.__candidateLayoutDiagnosticJson;
+      if(!payload){status.hidden=false;status.textContent='COPY FAILED: export payload is unavailable.';return;}
+      const fallbackCopy=()=>{
+        const textarea=document.createElement('textarea');
+        textarea.value=payload;textarea.readOnly=true;textarea.style.position='fixed';textarea.style.opacity='0';
+        document.body.appendChild(textarea);textarea.select();
+        const copied=document.execCommand?.('copy')===true;
+        textarea.remove();
+        return copied;
+      };
+      if(navigator.clipboard?.writeText){
+        navigator.clipboard.writeText(payload).then(()=>{status.hidden=false;status.textContent='COPY READY';}).catch(()=>{status.hidden=false;status.textContent=fallbackCopy()?'COPY READY':'COPY FAILED: select and copy the JSON from a supported browser.';});
+      } else {status.hidden=false;status.textContent=fallbackCopy()?'COPY READY':'COPY FAILED: select and copy the JSON from a supported browser.';}
+      return;
+    }
     const match=event.target.closest('[data-candidate-target]');
     if(match){target=match.dataset.candidateTarget;return;}
     const button=event.target.closest('[data-candidate-action]');

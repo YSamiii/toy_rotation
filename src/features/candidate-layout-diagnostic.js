@@ -59,13 +59,6 @@ export function captureCandidateLayoutDiagnostic(detail, { windowRef=window, doc
   };
 }
 
-export function exportCandidateLayoutDiagnostic(detail, options = {}) {
-  const { documentRef=document, now=Date.now, urlRef=URL, blobRef=Blob, setTimeoutRef=setTimeout, ...captureOptions }=options;
-  const diagnostic=captureCandidateLayoutDiagnostic(detail, { documentRef, ...captureOptions });
-  const fileName=`candidate-layout-diagnostic-${new Date(now).toISOString().replace(/[:.]/g, '-').replace('Z', '')}.json`;
-  const blob=new blobRef([JSON.stringify(diagnostic, null, 2)], { type:'application/json' });
-  const url=urlRef.createObjectURL(blob);
-  const link=documentRef.createElement('a');
-  link.href=url; link.download=fileName; link.style.display='none'; documentRef.body.appendChild(link); link.click(); link.remove(); setTimeoutRef(() => urlRef.revokeObjectURL(url), 1000);
-  return { diagnostic, fileName };
+export function candidateLayoutDiagnosticFileName(now=Date.now) {
+  return `candidate-layout-diagnostic-${new Date(now).toISOString().replace(/[:.]/g, '-').replace('Z', '')}.json`;
 }
