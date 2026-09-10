@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-04T19:15:43.505Z",
+  "generatedAt": "2026-09-04T19:50:18.847Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.5",
-    "buildName": "Toy Rotation v0.11.5 iPhone QA Candidate 6",
+    "buildName": "Toy Rotation v0.11.5 Candidate Layout Diagnostic",
     "buildDate": "20260904",
-    "buildId": "v0.11.5-iphone-qa-candidate6-20260904"
+    "buildId": "v0.11.5-candidate-layout-diagnostic-20260904"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 546,
-      "sha256": "07e0659a123481fdd75b434646b0643d3132c06aa632424d406017a40400fbdb",
+      "bytes": 565,
+      "sha256": "2d987498a0a0a5bb4e79955957f80948c9dd602f5fce0c7a85b9a5b2d9f96d7e",
       "importedBy": [
         "index.html"
       ],
@@ -546,6 +546,21 @@
       }
     },
     {
+      "path": "src/features/candidate-layout-diagnostic.js",
+      "resolvedDeployPath": "./src/features/candidate-layout-diagnostic.js",
+      "bytes": 5619,
+      "sha256": "48f2e900d3c950eae992679d61fbf133096594dbb796b89d9736aaf9ea204f76",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "src/features/catalog-report-store.js",
       "resolvedDeployPath": "./src/features/catalog-report-store.js",
       "bytes": 5323,
@@ -770,8 +785,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 136852,
-      "sha256": "062ccea699b1fb94d3ae268303a432c23700903b7702d4eed9d1660ce17ecff4",
+      "bytes": 138596,
+      "sha256": "7726b1de285c1404448c590526db8b15e0af1bceb5e179f5ef614e199b2b39a3",
       "importedBy": [
         "index.html"
       ],
@@ -801,6 +816,7 @@
         "src/features/runtime-image-diagnostic.js",
         "src/features/recognition-device-diagnostic.js",
         "src/features/storage-usage-diagnostic.js",
+        "src/features/candidate-layout-diagnostic.js",
         "src/features/startup-trace.js",
         "src/ui/i18n.js",
         "src/ui/modal-manager.js",
@@ -988,6 +1004,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 55
+    "checkedInputs": 56
   }
 }
