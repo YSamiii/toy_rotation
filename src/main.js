@@ -23,7 +23,6 @@ import { buildRestoreDiagnostic } from './features/restore-diagnostic.js';
 import { IMAGE_RESOLVER_BUILD_MARKER, RuntimeImageDiagnostics } from './features/runtime-image-diagnostic.js';
 import { RecognitionDeviceDiagnostic } from './features/recognition-device-diagnostic.js';
 import { buildStorageUsageDiagnostic } from './features/storage-usage-diagnostic.js';
-import { candidateLayoutDiagnosticFileName, captureCandidateLayoutDiagnostic } from './features/candidate-layout-diagnostic.js';
 import { beginStartupTrace, completeStartupWatchdog, installStartupWatchdog, markStartupError, markStartupStage, renderStartupShell } from './features/startup-trace.js';
 import { createI18n, localizePlayMechanism } from './ui/i18n.js';
 import { ModalManager } from './ui/modal-manager.js';
@@ -949,9 +948,8 @@ function renderCandidateReviewDetail(dialog,id,{returnToSettings=false,returnVie
   const reviewImage=reviewImageRef?.kind&&reviewImageRef.kind!=='placeholder'
     ? `<img class="candidate-review-image-preview" data-candidate-review-preview data-image='${escapedJson(reviewImageRef)}' alt="${escape(t('candidateImageUnavailable'))}">`
     : `<div class="candidate-review-image-placeholder" data-candidate-review-placeholder role="img" aria-label="${escape(t('candidateImageUnavailable'))}">${escape(t('candidateImageUnavailable'))}</div>`;
-  const diagnosticAction=admin.enabled?'<section data-candidate-layout-diagnostic><button type="button" data-candidate-layout-export>Export Layout Diagnostic</button><button type="button" data-candidate-layout-copy hidden>Copy Layout Diagnostic JSON</button><p data-candidate-layout-status role="status" aria-live="polite" hidden></p></section>':'';
   const history=(row.reviewHistory||[]).map(item=>`<li>${escape(item.previousStatus)} · ${escape(candidateReviewSummaryTime(item.reviewedAt))}${item.linkedCanonicalKey?` · ${escape(item.linkedCanonicalKey)}`:''}${item.resolutionReason?` · ${escape(item.resolutionReason)}`:''}</li>`).join('');
-  dialog.innerHTML=`<section class="sheet" data-candidate-detail><header><h2>Candidate Review · ${escape(row.reviewStatus)}</h2><button type="button" data-candidate-back>‹</button><button type="button" data-close>×</button></header>${diagnosticAction}<div class="review-body">${reviewImage}<dl><dt>Brand</dt><dd>${missing(row.brand)}</dd><dt>Product Name</dt><dd>${missing(row.productName)}</dd><dt>Chinese Name</dt><dd>${missing(row.nameZh)}</dd><dt>English Name</dt><dd>${missing(row.nameEn)}</dd><dt>Aliases</dt><dd>${missing(row.aliases)}</dd><dt>Suggested Age</dt><dd>${missing(row.minAgeMonths)}–${missing(row.maxAgeMonths)}</dd><dt>Category</dt><dd>${missing(row.categoryCode)}</dd><dt>Skills</dt><dd>${missing(row.skillCodes)}</dd><dt>Core Mechanism</dt><dd>${missing(row.playMechanics)}</dd><dt>Submission Source</dt><dd>${missing(row.source)}</dd><dt>Submitted At</dt><dd>${missing(row.createdAt)}</dd></dl><details><summary>Technical Details</summary><p>${escape(row.candidateId)} · ${escape(row.proposedCanonicalKey)} · ${escape(row.reviewAttachmentRef?.id||'Not provided')}</p></details>${history?`<details data-candidate-review-history><summary>${escape(t('candidateReviewHistory'))}</summary><ul>${history}</ul></details>`:''}<h3>Potential Existing Matches</h3>${matches.map(item=>`<button type="button" data-candidate-target="${escape(item.canonicalKey)}">${escape(item.brand)} · ${escape(displayName(item))} · ${escape(item.canonicalKey)}</button>`).join('')||'<p>No likely matches</p>'}</div><footer>${resolved?`<p>${escape(row.reviewStatus)} ${escape(row.resolutionReason||'')}</p>`:`<button type="button" data-candidate-action="approved">Approve New</button><button type="button" data-candidate-action="link">Link Existing</button><button type="button" data-candidate-action="rejected">Reject</button>`}</footer></section>`;
+  dialog.innerHTML=`<section class="sheet" data-candidate-detail><header><h2>Candidate Review · ${escape(row.reviewStatus)}</h2><button type="button" data-candidate-back>‹</button><button type="button" data-close>×</button></header><div class="review-body">${reviewImage}<dl><dt>Brand</dt><dd>${missing(row.brand)}</dd><dt>Product Name</dt><dd>${missing(row.productName)}</dd><dt>Chinese Name</dt><dd>${missing(row.nameZh)}</dd><dt>English Name</dt><dd>${missing(row.nameEn)}</dd><dt>Aliases</dt><dd>${missing(row.aliases)}</dd><dt>Suggested Age</dt><dd>${missing(row.minAgeMonths)}–${missing(row.maxAgeMonths)}</dd><dt>Category</dt><dd>${missing(row.categoryCode)}</dd><dt>Skills</dt><dd>${missing(row.skillCodes)}</dd><dt>Core Mechanism</dt><dd>${missing(row.playMechanics)}</dd><dt>Submission Source</dt><dd>${missing(row.source)}</dd><dt>Submitted At</dt><dd>${missing(row.createdAt)}</dd></dl><details><summary>Technical Details</summary><p>${escape(row.candidateId)} · ${escape(row.proposedCanonicalKey)} · ${escape(row.reviewAttachmentRef?.id||'Not provided')}</p></details>${history?`<details data-candidate-review-history><summary>${escape(t('candidateReviewHistory'))}</summary><ul>${history}</ul></details>`:''}<h3>Potential Existing Matches</h3>${matches.map(item=>`<button type="button" data-candidate-target="${escape(item.canonicalKey)}">${escape(item.brand)} · ${escape(displayName(item))} · ${escape(item.canonicalKey)}</button>`).join('')||'<p>No likely matches</p>'}</div><footer>${resolved?`<p>${escape(row.reviewStatus)} ${escape(row.resolutionReason||'')}</p>`:`<button type="button" data-candidate-action="approved">Approve New</button><button type="button" data-candidate-action="link">Link Existing</button><button type="button" data-candidate-action="rejected">Reject</button>`}</footer></section>`;
   if(resolved)dialog.querySelector('footer').insertAdjacentHTML('beforeend',`<button type="button" data-candidate-archive>${escape(t(row.archivedAt?'candidateReviewUnarchive':'candidateReviewArchive'))}</button><button type="button" data-candidate-reopen>${escape(t('candidateReviewReopen'))}</button>`);
   dialog.querySelector('[data-close]').onclick=()=>dialog.close();
   dialog.querySelector('[data-candidate-back]').onclick=()=>renderLocalCandidateQueue(dialog,{returnToSettings,view:returnView});
@@ -960,41 +958,6 @@ function renderCandidateReviewDetail(dialog,id,{returnToSettings=false,returnVie
   detail.addEventListener('click',event=>{
     if(event.target.closest('[data-candidate-archive]')){const wasArchived=Boolean(row.archivedAt);store.update(state=>wasArchived?unarchiveLocalCandidate(state,id):archiveLocalCandidate(state,id),wasArchived?'local-candidate-unarchive':'local-candidate-archive');return renderLocalCandidateQueue(dialog,{returnToSettings,view:wasArchived?'completed':returnView});}
     if(event.target.closest('[data-candidate-reopen]')){if(!confirm(t('candidateReviewReopenConfirm')))return;store.update(state=>reopenLocalCandidateReview(state,id),'local-candidate-reopen');refreshAdminCandidateBadges();return renderCandidateReviewDetail(dialog,id,{returnToSettings,returnView:'needs'});}
-    if(event.target.closest('[data-candidate-layout-export]')){
-      const status=detail.querySelector('[data-candidate-layout-status]');
-      const copyButton=detail.querySelector('[data-candidate-layout-copy]');
-      const setDiagnosticStatus=message=>{status.hidden=false;status.textContent=message;};
-      setDiagnosticStatus('CLICK RECEIVED');
-      try {
-        const diagnostic=captureCandidateLayoutDiagnostic(detail);
-        detail.__candidateLayoutDiagnosticJson=JSON.stringify(diagnostic,null,2);
-        setDiagnosticStatus('PAYLOAD BUILT');
-        downloadJson(diagnostic,candidateLayoutDiagnosticFileName());
-        copyButton.hidden=false;
-        setDiagnosticStatus('EXPORT TRIGGERED — if no file appears, use Copy Layout Diagnostic JSON.');
-      } catch(error) {
-        copyButton.hidden=false;
-        setDiagnosticStatus(`EXPORT FAILED: ${error?.message||'unknown error'}`);
-      }
-      return;
-    }
-    if(event.target.closest('[data-candidate-layout-copy]')){
-      const status=detail.querySelector('[data-candidate-layout-status]');
-      const payload=detail.__candidateLayoutDiagnosticJson;
-      if(!payload){status.hidden=false;status.textContent='COPY FAILED: export payload is unavailable.';return;}
-      const fallbackCopy=()=>{
-        const textarea=document.createElement('textarea');
-        textarea.value=payload;textarea.readOnly=true;textarea.style.position='fixed';textarea.style.opacity='0';
-        document.body.appendChild(textarea);textarea.select();
-        const copied=document.execCommand?.('copy')===true;
-        textarea.remove();
-        return copied;
-      };
-      if(navigator.clipboard?.writeText){
-        navigator.clipboard.writeText(payload).then(()=>{status.hidden=false;status.textContent='COPY READY';}).catch(()=>{status.hidden=false;status.textContent=fallbackCopy()?'COPY READY':'COPY FAILED: select and copy the JSON from a supported browser.';});
-      } else {status.hidden=false;status.textContent=fallbackCopy()?'COPY READY':'COPY FAILED: select and copy the JSON from a supported browser.';}
-      return;
-    }
     const match=event.target.closest('[data-candidate-target]');
     if(match){target=match.dataset.candidateTarget;return;}
     const button=event.target.closest('[data-candidate-action]');
