@@ -1,6 +1,6 @@
 // Offline enhancement only. The page starts without this worker: failed
 // install/activation/cache work must never gate first paint or startup.
-const CACHE = 'toy-rotation-v0.11.5-stable-20260911';
+const CACHE = 'toy-rotation-v0.11.6-iphone-qa-candidate1-20260911';
 const FALLBACK_ASSETS = [
   './index.html', './config.js', './src/main.js', './src/ui/theme.css', './src/ui/app.css',
   './manifest.webmanifest', './storage-recovery-diagnostic.html', './storage-recovery-diagnostic.js',

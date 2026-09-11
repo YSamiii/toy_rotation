@@ -7,6 +7,10 @@ import { BATCH6_OFFICIAL_IMAGE_ROWS } from './catalog-image-assets-batch6.js';
 import { BATCH7_OFFICIAL_IMAGE_ROWS } from './catalog-image-assets-batch7.js';
 import { BATCH8_OFFICIAL_IMAGE_ROWS } from './catalog-image-assets-batch8.js';
 import { BATCH9_OFFICIAL_IMAGE_ROWS } from './catalog-image-assets-batch9.js';
+import { BATCH10_OFFICIAL_IMAGE_ROWS } from './catalog-image-assets-batch10.js';
+import { BATCH11_OFFICIAL_IMAGE_ROWS } from './catalog-image-assets-batch11.js';
+import { BATCH12_OFFICIAL_IMAGE_ROWS } from './catalog-image-assets-batch12.js';
+import { BATCH13_OFFICIAL_IMAGE_ROWS } from './catalog-image-assets-batch13.js';
 import { HAPE_PRIORITY_BATCH1_IMAGE_ROWS } from './catalog-image-assets-hape-batch1.js';
 import { HAPE_PRIORITY_BATCH2_IMAGE_ROWS } from './catalog-image-assets-hape-batch2.js';
 import { HAPE_FINAL_RESOLUTION_IMAGE_ROWS } from './catalog-image-assets-hape-final-resolution.js';
@@ -25,6 +29,10 @@ const BATCH6_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH6_OFFICIAL_IMAGE_RO
 const BATCH7_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH7_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, 'official_cdn'), imageOwnerCanonicalKey:key, updatedAt:'2026-08-27T00:00:00.000Z' }]));
 const BATCH8_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH8_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, 'official_cdn'), imageOwnerCanonicalKey:key, updatedAt:'2026-08-27T00:00:00.000Z' }]));
 const BATCH9_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH9_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, 'official_cdn'), imageOwnerCanonicalKey:key, updatedAt:'2026-08-28T00:00:00.000Z' }]));
+const BATCH10_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH10_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, 'official_cdn'), imageOwnerCanonicalKey:key, updatedAt:'2026-09-11T00:00:00.000Z' }]));
+const BATCH11_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH11_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, 'official_cdn'), imageOwnerCanonicalKey:key, updatedAt:'2026-09-11T00:00:00.000Z' }]));
+const BATCH12_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH12_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, 'official_cdn'), imageOwnerCanonicalKey:key, updatedAt:'2026-09-11T00:00:00.000Z' }]));
+const BATCH13_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH13_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, 'official_cdn'), imageOwnerCanonicalKey:key, updatedAt:'2026-09-11T00:00:00.000Z' }]));
 const HAPE_PRIORITY_BATCH1_IMAGE_ASSETS = Object.fromEntries(HAPE_PRIORITY_BATCH1_IMAGE_ROWS.map(row => [row.canonicalKey, {
   ...remote(row.imageRef, row.imageSource, row.imageSourceType),
   imageOwnerCanonicalKey:row.canonicalKey,
@@ -100,6 +108,10 @@ export const CATALOG_IMAGE_ASSETS = Object.freeze({
   ...BATCH7_OFFICIAL_IMAGE_ASSETS,
   ...BATCH8_OFFICIAL_IMAGE_ASSETS,
   ...BATCH9_OFFICIAL_IMAGE_ASSETS,
+  ...BATCH10_OFFICIAL_IMAGE_ASSETS,
+  ...BATCH11_OFFICIAL_IMAGE_ASSETS,
+  ...BATCH12_OFFICIAL_IMAGE_ASSETS,
+  ...BATCH13_OFFICIAL_IMAGE_ASSETS,
   ...HAPE_PRIORITY_BATCH1_IMAGE_ASSETS,
   ...HAPE_PRIORITY_BATCH2_IMAGE_ASSETS,
   ...HAPE_FINAL_RESOLUTION_IMAGE_ASSETS,
