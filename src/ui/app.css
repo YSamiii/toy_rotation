@@ -290,6 +290,16 @@ dialog::backdrop { background: var(--overlay); }
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
+.catalog-filter-group { min-inline-size:0; margin:0; padding:8px; border:1px solid var(--border); border-radius:12px; }
+.catalog-filter-group legend { font-weight:700; padding:0 4px; }
+.catalog-filter-options { display:flex; flex-wrap:wrap; gap:6px; }
+.catalog-filter-options label,.catalog-fit-current { display:flex; align-items:center; gap:5px; min-inline-size:0; font-size:.9rem; }
+.catalog-filter-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.catalog-filter-chips button { min-height:32px; font-size:.85rem; }
+.development-feedback { display:grid; gap:7px; margin:10px 0; }
+.development-reason { margin:0; }
+.development-feedback-options { display:grid; gap:8px; }
+.development-feedback-options button,.development-feedback button { min-height:44px; }
 
 .draft {
   display: flex;

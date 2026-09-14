@@ -10,6 +10,8 @@ import { findOwnedToy, findWishlistItem, mergePersonalToyPair } from './domain/i
 import { auditSetIntegrity, classifyStructureMigrationDamage, repairStructureMigrationDamage } from './domain/set-service.js';
 import { childAgeMonths as calculateChildAgeMonths, reassessmentState, saveProfileAndRotationSettings } from './domain/profile-service.js';
 import { clearManualShelfOverrides, currentShelfCollections, isRotationPaused, isUserCustomPermanent, normalizeCurrentShelf, persistRotationSelection, selectRotation, setCustomPermanent, setManualShelfState, setRotationParticipation } from './domain/rotation-engine.js';
+import { developmentMechanics, recordDevelopmentFeedback } from './domain/development-fit.js';
+import { challengeLabelKey, filterCatalogDevelopment, recommendationReason } from './domain/development-presentation.js';
 import { SubstitutionEngine } from './domain/substitution-engine.js';
 import { AdminService } from './features/admin-service.js';
 import { RecognitionService } from './features/recognition-service.js';
@@ -22,6 +24,7 @@ import { buildPersistenceDiagnostic } from './features/persistence-diagnostic.js
 import { buildRestoreDiagnostic } from './features/restore-diagnostic.js';
 import { IMAGE_RESOLVER_BUILD_MARKER, RuntimeImageDiagnostics } from './features/runtime-image-diagnostic.js';
 import { RecognitionDeviceDiagnostic } from './features/recognition-device-diagnostic.js';
+import { AdminCatalogSaveDiagnostic, adminCatalogSaveErrorType } from './features/admin-catalog-save-diagnostic.js';
 import { buildStorageUsageDiagnostic } from './features/storage-usage-diagnostic.js';
 import { beginStartupTrace, completeStartupWatchdog, installStartupWatchdog, markStartupError, markStartupStage, renderStartupShell } from './features/startup-trace.js';
 import { createI18n, localizePlayMechanism } from './ui/i18n.js';
@@ -94,6 +97,7 @@ runtimeImageDiagnostics.installCatalogLookupProbe(catalog);
 const i18n = createI18n(store);
 const substitution = new SubstitutionEngine();
 const admin = new AdminService({ store, catalog });
+const adminCatalogSaveDiagnostic = new AdminCatalogSaveDiagnostic();
 const governance = new SharedCatalogGovernance({ store, catalog, images, baseUrl: window.TOY_ROTATION_CONFIG?.API_BASE, diagnostic:recognitionDeviceDiagnostic });
 let recognition = null;
 const getRecognition = () => recognition ||= new RecognitionService({ store, images, catalog, governance, diagnostic:recognitionDeviceDiagnostic });
@@ -104,7 +108,11 @@ const libraryFilters = { query:'', brand:'', categoryCode:'', skillCode:'', play
 const wishlistFilters = { query:'', brand:'', categoryCode:'', skillCode:'', playMechanic:'', priority:'', status:'', ageFit:'', sort:'priority' };
 const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 
-store.subscribe(render);
+store.subscribe((state, reason) => {
+  // Feedback is intentionally a local Current Shelf interaction. Its success
+  // updates only that card so a tap never redraws the page or resets context.
+  if (reason !== 'development-feedback') render();
+});
 systemTheme.addEventListener?.('change', () => { if (store.state.settings.theme === 'system') applyTheme(); });
 markStartupStage(startupTrace, 'ai_service_deferred', { activation:'user_action' });
 markStartupStage(startupTrace, 'home_render_start');
@@ -266,7 +274,7 @@ function renderDraft(draft) {
   return `<div class="draft"><img data-image='${escapedJson(draft.imageRef)}' alt=""><div><b>${escape(draft.productName || t('pendingReview'))}</b><small>${t(statusKey)}${draft.error ? ` · ${escape(messageFor(draft.error))}` : ''}</small>${actions}${draft.status === 'error' ? `<button data-draft-retry="${draft.id}">${t('retryRecognition')}</button>` : ''}<button data-draft-remove="${draft.id}">${t('remove')}</button></div></div>`;
 }
 
-function renderToyCard(toy) {
+function renderToyCard(toy, { showDevelopment = false } = {}) {
   const ageUnit = t('monthUnit');
   const customPermanent = isUserCustomPermanent(toy);
   const paused = isRotationPaused(toy);
@@ -277,7 +285,28 @@ function renderToyCard(toy) {
   const manualControl = toy.set?.kind === 'parent' || customPermanent || paused ? '' : `<button data-action="manual-shelf" data-mode="${onShelf ? 'stored' : 'on_shelf'}" data-id="${toy.id}">${t(onShelf ? 'storeAway' : 'putOnShelf')}</button>`;
   const pauseControl = toy.set?.kind === 'parent' ? '' : `<button data-action="toggle-pause" data-id="${toy.id}">${t(paused ? 'resumeRotation' : 'pauseRotation')}</button>`;
   const runtimeImageRef = libraryImageRef(toy, 'toy_library_card_render');
-  return `<article class="card" data-toy-id="${escape(toy.id)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes||[]).join('|'))}" data-mechanics="${escape((toy.playMechanics||[]).join('|'))}" data-status="${toy.archived?'archived':toy.hidden?'hidden':paused?'paused':customPermanent?'permanent':onShelf?'active':'stored'}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t('permanentBadge')}</span>` : ''}</h3><p>${escape(brandLabel(toy.brand))} · ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map(code => `<span>${t(`skill.${code}`)}</span>`).join('')}</div><p>${toy.minAgeMonths ?? '?'}–${toy.maxAgeMonths ?? '?'} ${ageUnit} · ${t(paused ? 'paused' : customPermanent ? 'customPermanent' : onShelf ? 'onShelf' : 'stored')}</p><div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === 'like' ? 'selected' : ''}">${t('liked')}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === 'neutral' ? 'selected' : ''}">${t('neutral')}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === 'dislike' ? 'selected' : ''}">${t('disliked')}</button>${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t('edit')}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t('remove')}</button></div></div></article>`;
+  const development = showDevelopment ? renderDevelopmentFeedback(toy) : '';
+  return `<article class="card" data-toy-id="${escape(toy.id)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes||[]).join('|'))}" data-mechanics="${escape((toy.playMechanics||[]).join('|'))}" data-status="${toy.archived?'archived':toy.hidden?'hidden':paused?'paused':customPermanent?'permanent':onShelf?'active':'stored'}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t('permanentBadge')}</span>` : ''}</h3><p>${escape(brandLabel(toy.brand))} · ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map(code => `<span>${t(`skill.${code}`)}</span>`).join('')}</div><p>${toy.minAgeMonths ?? '?'}–${toy.maxAgeMonths ?? '?'} ${ageUnit} · ${t(paused ? 'paused' : customPermanent ? 'customPermanent' : onShelf ? 'onShelf' : 'stored')}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === 'like' ? 'selected' : ''}">${t('liked')}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === 'neutral' ? 'selected' : ''}">${t('neutral')}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === 'dislike' ? 'selected' : ''}">${t('disliked')}</button>${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t('edit')}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t('remove')}</button></div></div></article>`;
+}
+
+function renderDevelopmentFeedback(toy) {
+  const cycle = store.state.rotationHistory?.[0]?.id || null;
+  const feedback = (store.state.developmentFeedbackHistory || []).find(item => item.id === `${toy.id}:${cycle || 'current'}`);
+  const rotation = currentShelfCollections(store.state).rotation;
+  const diversityPreferred = developmentMechanics(toy).some(mechanic => rotation.filter(item => developmentMechanics(item).includes(mechanic)).length === 1);
+  const reason = recommendationReason(toy, { profile:store.state.profile?.developmentProfile || {}, history:store.state.developmentFeedbackHistory || [], recentIds:(store.state.rotationHistory || []).slice(1, 4).flatMap(item => item.toyIds || []), diversityPreferred });
+  const feedbackText = feedback ? t(`developmentFeedback.${feedback.interestFeedback || feedback.difficultyFeedback}`) : t('developmentFeedbackPrompt');
+  return `<section class="development-feedback"><p class="development-reason">${t(reason.key)}</p><button data-action="development-feedback" data-id="${toy.id}">${escape(feedbackText)}</button></section>`;
+}
+
+function refreshDevelopmentFeedbackCard(id) {
+  const card = [...root.querySelectorAll('[data-toy-id]')].find(item => item.dataset.toyId === id);
+  const toy = store.state.toys.find(item => item.id === id);
+  const previous = card?.querySelector('.development-feedback');
+  if (!card || !toy || !previous) return;
+  previous.outerHTML = renderDevelopmentFeedback(toy);
+  const button = card.querySelector('[data-action="development-feedback"]');
+  if (button) button.onclick = () => action(button.dataset.action, button.dataset);
 }
 
 function librarySearchText(toy) {
@@ -342,7 +371,7 @@ function renderRotation() {
   const latest = store.state.rotationHistory?.[0]?.rotationDiagnostics;
   const shortage = latest?.shortageCount ? `<p class="panel">${t('rotationShortage',{selected:latest.selectedRotationCount ?? latest.selectedCount, requested:latest.requestedRotationCount ?? latest.requestedCount})}</p>` : '';
   const manual = shelf.manual.length ? `<section class="rotation-section"><h3>${t('manuallyOnShelf')} · ${shelf.manual.length}</h3><div class="list">${shelf.manual.map(renderToyCard).join('')}</div></section>` : '';
-  return `<section class="head"><h2>${t('rotation')}</h2><button class="primary" data-action="generate">${t('generate')}</button></section><section class="panel shelf-total"><b>${t('currentShelfTotal',{count:shelf.totalShelfCount})}</b><p>${t('thisRotation')} ${shelf.rotation.length} · ${t('customPermanent')} ${shelf.permanent.length} · ${t('paused')} ${pausedCount}</p><p>${t('permanentTargetHint')}</p></section>${shortage}<section class="rotation-section"><h3>${t('customPermanent')} · ${shelf.permanent.length} <button data-action="toggle-permanent-collapse" aria-expanded="${!collapsed}">${collapsed?'▸':'▾'}</button></h3>${collapsed?'':`<div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join('') : `<p class="panel">${t('noCustomPermanent')}</p>`}</div>`}</section>${manual}<section class="rotation-section"><h3>${t('thisRotation')} · ${shelf.rotation.length}</h3><div class="list">${shelf.rotation.length ? shelf.rotation.map(renderToyCard).join('') : renderEmpty()}</div></section>`;
+  return `<section class="head"><h2>${t('rotation')}</h2><button class="primary" data-action="generate">${t('generate')}</button></section><section class="panel shelf-total"><b>${t('currentShelfTotal',{count:shelf.totalShelfCount})}</b><p>${t('thisRotation')} ${shelf.rotation.length} · ${t('customPermanent')} ${shelf.permanent.length} · ${t('paused')} ${pausedCount}</p><p>${t('permanentTargetHint')}</p></section>${shortage}<section class="rotation-section"><h3>${t('customPermanent')} · ${shelf.permanent.length} <button data-action="toggle-permanent-collapse" aria-expanded="${!collapsed}">${collapsed?'▸':'▾'}</button></h3>${collapsed?'':`<div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join('') : `<p class="panel">${t('noCustomPermanent')}</p>`}</div>`}</section>${manual}<section class="rotation-section"><h3>${t('thisRotation')} · ${shelf.rotation.length}</h3><div class="list">${shelf.rotation.length ? shelf.rotation.map(toy => renderToyCard(toy, { showDevelopment:true })).join('') : renderEmpty()}</div></section>`;
 }
 
 function renderWishlist() {
@@ -411,6 +440,7 @@ async function action(name, data) {
   if (name === 'recognize') return recognizeToy();
   if (name === 'edit') return editToy(data.id);
   if (name === 'interest') return setToyInterest(store, data.id, data.value);
+  if (name === 'development-feedback') return openDevelopmentFeedback(data.id);
   if (name === 'remove-toy') return removeToy(data.id);
   if (name === 'toggle-permanent') return togglePermanentToy(data.id);
   if (name === 'manual-shelf') return setManualShelf(data.id, data.mode);
@@ -450,6 +480,26 @@ function togglePermanentToy(id) {
 function setManualShelf(id, mode) {
   const age = childAgeMonths();
   store.update(state => { setManualShelfState(state, id, mode, { childAgeMonths:age }); }, `manual-shelf-${mode}`);
+}
+function openDevelopmentFeedback(id) {
+  const shelf = currentShelfCollections(store.state);
+  const toy = shelf.rotation.find(item => item.id === id);
+  if (!toy) return;
+  const choices = [
+    ['too_easy','difficultyFeedback'], ['just_right','difficultyFeedback'], ['good_challenge','difficultyFeedback'], ['too_hard','difficultyFeedback'], ['not_interested','interestFeedback']
+  ];
+  const dialog = openModal(`<section class="sheet development-feedback-sheet"><header><h2>${t('developmentFeedbackTitle')}</h2><button data-close>×</button></header><p>${t('developmentFeedbackPrompt')}</p><div class="development-feedback-options">${choices.map(([value, field]) => `<button data-feedback-value="${value}" data-feedback-field="${field}">${t(`developmentFeedback.${value}`)}</button>`).join('')}</div><p class="form-error" role="alert" aria-live="assertive"></p></section>`);
+  dialog.querySelectorAll('[data-feedback-value]').forEach(button => { button.onclick = () => {
+    const error = dialog.querySelector('.form-error');
+    try {
+      const cycle = store.state.rotationHistory?.[0]?.id || null;
+      store.update(state => { recordDevelopmentFeedback(state, toy, { [button.dataset.feedbackField]:button.dataset.feedbackValue, rotationCycleId:cycle }); }, 'development-feedback');
+      refreshDevelopmentFeedbackCard(id);
+      dialog.close();
+    } catch (failure) {
+      error.textContent = messageFor(failure?.message || 'storageQuotaExceeded');
+    }
+  }; });
 }
 function togglePauseToy(id) {
   const toy=store.state.toys.find(item=>item.id===id); if(!toy)return;
@@ -632,7 +682,7 @@ function chooseParentDeleteMode(parent) {
 function generateNewRotation() {
   const planning = structuredClone(store.state);
   clearManualShelfOverrides(planning);
-  const result = selectRotation({ toys: planning.toys, history: planning.rotationHistory, childAgeMonths: childAgeMonths(), size: planning.settings.rotationSize });
+  const result = selectRotation({ toys: planning.toys, history: planning.rotationHistory, childAgeMonths: childAgeMonths(), size: planning.settings.rotationSize, childDevelopmentProfile:planning.profile?.developmentProfile || {}, developmentFeedbackHistory:planning.developmentFeedbackHistory || [] });
   store.update(state => {
     persistRotationSelection(state, { selected:result.selected, diagnostics:result.diagnostics });
   }, 'rotation');
@@ -644,20 +694,22 @@ function openCatalog() {
   const catalogRows = () => catalog.search({ includeReview });
   const brands = [...new Set(catalogRows().map(toy => toy.brand))].sort((a, b) => brandLabel(a).localeCompare(brandLabel(b)));
   const skills = [...new Set(catalogRows().flatMap(toy => toy.skillCodes))].sort((a, b) => t(`skill.${a}`).localeCompare(t(`skill.${b}`)));
-  const mechanics = [...new Set(catalogRows().flatMap(toy => toy.playMechanics || []))].sort();
-  const dialog = openModal(`<section class="sheet"><header><h2>${t('standardCatalog')}</h2><button data-close>×</button></header><input id="catalog-search" type="search" enterkeyhint="search" placeholder="${t('search')}"><div class="compact-filter-actions"><button id="catalog-filter-toggle">${t('filters')}</button><button id="catalog-clear">${t('clearFilters')}</button></div><div class="catalog-filters hidden"><select id="catalog-brand"><option value="">${t('allBrands')}</option>${brands.map(brand => `<option value="${escape(brand)}">${escape(brandLabel(brand))}</option>`).join('')}</select><select id="catalog-category"><option value="">${t('allCategories')}</option>${CATEGORY_CODES.map(code => `<option value="${code}">${t(`category.${code}`)}</option>`).join('')}</select><select id="catalog-skill"><option value="">${t('allSkills')}</option>${skills.map(code => `<option value="${code}">${t(`skill.${code}`)}</option>`).join('')}</select><select id="catalog-mechanic"><option value="">${t('allMechanics')}</option>${mechanics.map(code => `<option value="${code}">${escape(mechanicLabel(code))}</option>`).join('')}</select></div><p id="catalog-meta"></p><div id="catalog-rows" class="list"></div><button id="catalog-load-more" class="hidden">${t('loadMore')}</button></section>`);
+  const mechanics = [...new Set(catalogRows().flatMap(toy => developmentMechanics(toy)))].sort((a,b) => mechanicLabel(a).localeCompare(mechanicLabel(b)));
+  const filters = { query:'', brands:[], categories:[], skills:[], mechanics:[], challenges:[], age:'all', fitCurrent:false };
+  const checkboxes = (group, values, label) => `<fieldset class="catalog-filter-group"><legend>${label}</legend><div class="catalog-filter-options">${values.map(([value, text]) => `<label><input type="checkbox" data-catalog-filter="${group}" value="${escape(value)}">${escape(text)}</label>`).join('')}</div></fieldset>`;
+  const dialog = openModal(`<section class="sheet"><header><h2>${t('standardCatalog')}</h2><button data-close>×</button></header><input id="catalog-search" type="search" enterkeyhint="search" placeholder="${t('search')}"><div class="compact-filter-actions"><button id="catalog-filter-toggle">${t('filters')}</button><button id="catalog-clear">${t('clearFilters')}</button></div><div class="catalog-filters hidden">${checkboxes('brands', brands.map(value => [value, brandLabel(value)]), t('allBrands'))}${checkboxes('categories', CATEGORY_CODES.map(value => [value, t(`category.${value}`)]), t('allCategories'))}${checkboxes('skills', skills.map(value => [value, t(`skill.${value}`)]), t('allSkills'))}${checkboxes('mechanics', mechanics.map(value => [value, mechanicLabel(value)]), t('allMechanics'))}${checkboxes('challenges', [['1',t('developmentChallenge.1')],['2',t('developmentChallenge.2')],['3',t('developmentChallenge.3')],['4',t('developmentChallenge.4')],['5',t('developmentChallenge.5')]], t('challengeFilter'))}<fieldset class="catalog-filter-group"><legend>${t('ageFilter')}</legend><select id="catalog-age"><option value="all">${t('allAgeFits')}</option><option value="current">${t('ageCurrent')}</option><option value="later">${t('ageLater')}</option></select></fieldset><label class="catalog-fit-current"><input id="catalog-fit-current" type="checkbox">${t('fitCurrentChild')}</label></div><div id="catalog-filter-chips" class="catalog-filter-chips"></div><p id="catalog-meta"></p><div id="catalog-rows" class="list"></div><button id="catalog-load-more" class="hidden">${t('loadMore')}</button></section>`);
   let catalogLimit = 40;
-  const renderCatalogRows = () => { const matches=catalog.search({ query: dialog.querySelector('#catalog-search').value, brand: dialog.querySelector('#catalog-brand').value, categoryCode: dialog.querySelector('#catalog-category').value, skillCode:dialog.querySelector('#catalog-skill').value, playMechanic:dialog.querySelector('#catalog-mechanic').value, includeReview }); dialog.querySelector('#catalog-meta').textContent=t('catalogResultCount',{shown:Math.min(catalogLimit,matches.length),total:matches.length,catalog:catalogRows().length}); dialog.querySelector('#catalog-rows').innerHTML = matches.slice(0,catalogLimit).map(renderCatalogCard).join('') || renderEmpty(); dialog.querySelector('#catalog-load-more').classList.toggle('hidden',catalogLimit>=matches.length); wireCatalog(dialog); };
+  const renderCatalogRows = () => { const matches=filterCatalogDevelopment(catalogRows(), filters, { childAgeMonths:childAgeMonths(), profile:store.state.profile?.developmentProfile || {}, history:store.state.developmentFeedbackHistory || [] }); dialog.querySelector('#catalog-meta').textContent=t('catalogResultCount',{shown:Math.min(catalogLimit,matches.length),total:matches.length,catalog:catalogRows().length}); dialog.querySelector('#catalog-rows').innerHTML = matches.slice(0,catalogLimit).map(renderCatalogCard).join('') || `<p class="panel">${t('noCatalogResults')}</p>`; dialog.querySelector('#catalog-load-more').classList.toggle('hidden',catalogLimit>=matches.length); renderCatalogFilterChips(); wireCatalog(dialog); };
+  const renderCatalogFilterChips = () => { const chips=[]; for (const [group, values] of Object.entries(filters)) { if (!Array.isArray(values)) continue; values.forEach(value => chips.push(`<button data-catalog-chip="${group}" data-catalog-value="${escape(value)}">${escape(catalogFilterLabel(group, value))} ×</button>`)); } if (filters.age !== 'all') chips.push(`<button data-catalog-chip="age">${t(`age${filters.age === 'current' ? 'Current' : 'Later'}`)} ×</button>`); if (filters.fitCurrent) chips.push(`<button data-catalog-chip="fitCurrent">${t('fitCurrentChild')} ×</button>`); dialog.querySelector('#catalog-filter-chips').innerHTML=chips.join(''); dialog.querySelectorAll('[data-catalog-chip]').forEach(button => { button.onclick=()=>{ const group=button.dataset.catalogChip; if (Array.isArray(filters[group])) filters[group]=filters[group].filter(value=>value!==button.dataset.catalogValue); else filters[group]=group==='age'?'all':false; const selector=`[data-catalog-filter="${group}"][value="${button.dataset.catalogValue}"]`; dialog.querySelector(selector)?.removeAttribute('checked'); if(group==='age')dialog.querySelector('#catalog-age').value='all'; if(group==='fitCurrent')dialog.querySelector('#catalog-fit-current').checked=false; resetCatalogRows(); }; }); };
   const resetCatalogRows = () => { catalogLimit=40; renderCatalogRows(); };
   wireCatalog(dialog);
-  dialog.querySelector('#catalog-search').oninput = resetCatalogRows;
-  dialog.querySelector('#catalog-brand').onchange = resetCatalogRows;
-  dialog.querySelector('#catalog-category').onchange = resetCatalogRows;
-  dialog.querySelector('#catalog-skill').onchange = resetCatalogRows;
-  dialog.querySelector('#catalog-mechanic').onchange = resetCatalogRows;
+  dialog.querySelector('#catalog-search').oninput = event => { filters.query=event.target.value; resetCatalogRows(); };
+  dialog.querySelectorAll('[data-catalog-filter]').forEach(input => { input.onchange=event => { const group=event.target.dataset.catalogFilter; filters[group]=[...dialog.querySelectorAll(`[data-catalog-filter="${group}"]:checked`)].map(item=>item.value); resetCatalogRows(); }; });
+  dialog.querySelector('#catalog-age').onchange = event => { filters.age=event.target.value; resetCatalogRows(); };
+  dialog.querySelector('#catalog-fit-current').onchange = event => { filters.fitCurrent=event.target.checked; resetCatalogRows(); };
   dialog.querySelector('#catalog-filter-toggle').onclick=()=>dialog.querySelector('.catalog-filters').classList.toggle('hidden');
   dialog.querySelector('#catalog-load-more').onclick = () => { catalogLimit += 40; renderCatalogRows(); };
-  dialog.querySelector('#catalog-clear').onclick = () => { dialog.querySelector('#catalog-search').value = ''; dialog.querySelectorAll('.catalog-filters select').forEach(select => { select.value = ''; }); resetCatalogRows(); };
+  dialog.querySelector('#catalog-clear').onclick = () => { Object.assign(filters,{query:'',brands:[],categories:[],skills:[],mechanics:[],challenges:[],age:'all',fitCurrent:false}); dialog.querySelector('#catalog-search').value = ''; dialog.querySelectorAll('[data-catalog-filter], #catalog-fit-current').forEach(input => { input.checked=false; }); dialog.querySelector('#catalog-age').value='all'; resetCatalogRows(); };
   const unsubscribeCatalog = store.subscribe(() => { if (dialog.open) renderCatalogRows(); });
   dialog.addEventListener('close', unsubscribeCatalog, { once:true });
   renderCatalogRows();
@@ -669,8 +721,10 @@ function renderCatalogCard(toy) {
   const wishlistState = owned ? '' : wished ? `<button disabled aria-label="${t('alreadyWishlisted')}">✓ ${t('alreadyWishlisted')}</button>` : `<button data-wish="${toy.canonicalKey}">${t('wishlist')}</button>`;
   const review=catalog.reviewMetadata(toy);
   const reviewBadge=admin.enabled && review ? `<p class="catalog-review-status">${t(`catalogReview.${review.status}`)}</p>` : '';
-  return `<article class="card"><img data-image='${escapedJson(toy.imageRef)}' alt=""><div><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))} · ${t(`category.${toy.categoryCode}`)}</p>${reviewBadge}${ownership}${wishlistState}<button data-report="${toy.canonicalKey}">Report an issue</button>${admin.enabled ? `<button data-manage="${toy.canonicalKey}">${t('edit')}</button>` : ''}</div></article>`;
+  const mechanics=developmentMechanics(toy).slice(0,2).map(code=>`<span>${escape(mechanicLabel(code))}</span>`).join('');
+  return `<article class="card"><img data-image='${escapedJson(toy.imageRef)}' alt=""><div><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))} · ${t(`category.${toy.categoryCode}`)}</p><div class="chips" aria-label="${t('mechanicsReference')}"><span>${t(challengeLabelKey(toy))}</span>${mechanics}</div>${reviewBadge}${ownership}${wishlistState}<button data-report="${toy.canonicalKey}">Report an issue</button>${admin.enabled ? `<button data-manage="${toy.canonicalKey}">${t('edit')}</button>` : ''}</div></article>`;
 }
+function catalogFilterLabel(group, value) { return group === 'brands' ? brandLabel(value) : group === 'categories' ? t(`category.${value}`) : group === 'skills' ? t(`skill.${value}`) : group === 'mechanics' ? mechanicLabel(value) : t(`developmentChallenge.${value}`); }
 function wireCatalog(scope) {
   scope.querySelectorAll('[data-add]').forEach(button => { button.onclick = () => addFromCatalog(button.dataset.add); });
   scope.querySelectorAll('[data-wish]').forEach(button => { button.onclick = () => addWishlist(button.dataset.wish); });
@@ -718,7 +772,7 @@ function openCatalogManager(key,{dialog:workspaceDialog=null,onReturn=null}={}) 
     }
   });
   void catalogImageEditor.ready;
-  form.onsubmit = async event => { event.preventDefault(); try { const values = new FormData(form); const patch = { brand: values.get('brand'), productName: values.get('productName'), names: { en: values.get('productName'), zh: values.get('nameZh') }, aliases: String(values.get('aliases')).split(',').map(value => value.trim()).filter(Boolean), minAgeMonths:values.get('minAgeMonths'), maxAgeMonths:values.get('maxAgeMonths'), categoryCode:values.get('categoryCode'), skillCodes:values.getAll('skillCodes'), playMechanics:values.getAll('playMechanics') }; if (editedCatalogImageData) { const localCatalogRef=await images.saveCatalog(editedCatalogImageData,toy.canonicalKey); patch.imageRef={ ...localCatalogRef, imageOwnerCanonicalKey:toy.canonicalKey, imageSource:'admin_upload', imageSourceType:'admin_upload', verificationStatus:'manually_confirmed', updatedAt:new Date().toISOString() }; patch.imageUrl=await admin.replaceCatalogImage(toy.canonicalKey,editedCatalogImageData); } await admin.edit(toy.canonicalKey, patch); editedCatalogImageData=null; fileInput.value=''; form.querySelector('#catalog-admin-error').textContent='Saved'; } catch (error) { dialog.querySelector('#catalog-admin-error').textContent = messageFor(error.message); } };
+  form.onsubmit = async event => { event.preventDefault(); const attemptId=adminCatalogSaveDiagnostic.begin({ editedImagePresent:Boolean(editedCatalogImageData) }); const trace=(stage,details)=>adminCatalogSaveDiagnostic.record(attemptId,stage,details); try { const values = new FormData(form); const patch = { brand: values.get('brand'), productName: values.get('productName'), names: { en: values.get('productName'), zh: values.get('nameZh') }, aliases: String(values.get('aliases')).split(',').map(value => value.trim()).filter(Boolean), minAgeMonths:values.get('minAgeMonths'), maxAgeMonths:values.get('maxAgeMonths'), categoryCode:values.get('categoryCode'), skillCodes:values.getAll('skillCodes'), playMechanics:values.getAll('playMechanics') }; if (editedCatalogImageData) { trace('local_catalog_save_started'); let localCatalogRef; try { localCatalogRef=await images.saveCatalog(editedCatalogImageData,toy.canonicalKey); } catch (error) { trace('local_catalog_save_failed',{errorType:adminCatalogSaveErrorType(error)}); throw error; } trace('local_catalog_save_succeeded'); patch.imageRef={ ...localCatalogRef, imageOwnerCanonicalKey:toy.canonicalKey, imageSource:'admin_upload', imageSourceType:'admin_upload', verificationStatus:'manually_confirmed', updatedAt:new Date().toISOString() }; patch.imageUrl=await admin.replaceCatalogImage(toy.canonicalKey,editedCatalogImageData,{trace}); } await admin.edit(toy.canonicalKey, patch,{trace}); editedCatalogImageData=null; fileInput.value=''; form.querySelector('#catalog-admin-error').textContent='Saved'; trace('final_ui_state',{modalOpen:dialog.open,errorRendered:true,editorRetained:false}); } catch (error) { const errorNode=dialog.querySelector('#catalog-admin-error'); errorNode.textContent = messageFor(error.message); trace('final_ui_state',{errorType:adminCatalogSaveErrorType(error),modalOpen:dialog.open,errorRendered:Boolean(errorNode.textContent),editorRetained:Boolean(editedCatalogImageData)}); } };
   if(onReturn){const saveEditor=form.onsubmit;form.onsubmit=async event=>{await saveEditor(event);if(form.querySelector('#catalog-admin-error').textContent==='Saved')onReturn();};}
   const renderMergeTargets = () => { const query=dialog.querySelector('#merge-search').value.normalize('NFKC').toLowerCase(); const target=dialog.querySelector('#merge-target'); target.innerHTML=`<option value="">${t('selectMergeTarget')}</option>`+mergeTargets.filter(item=>!query||[item.brand,item.productName,item.names?.zh,...(item.aliases||[])].join(' ').normalize('NFKC').toLowerCase().includes(query)).slice(0,150).map(mergeOption).join(''); };
   dialog.querySelector('#merge-search').oninput = renderMergeTargets;
@@ -731,7 +785,7 @@ function catalogSourceKey(source) { return ({ base:'catalogSourceBase', remote:'
 
 function openSettings() {
   const recoveryNotice=!store.canPersist ? `<p class="danger">${t('persistenceRecoverySettingsNotice')}</p>` : '';
-  const adminControls=admin.enabled ? `<button type="button" id="restore-diagnostic-export">${t('exportRestoreDiagnostic')}</button><section class="panel"><h3>Recognition Device Diagnostics</h3><p id="recognition-trace-status">Stopped · 0 events</p><button type="button" id="recognition-trace-start">Start Recognition Trace</button><button type="button" id="recognition-trace-stop">Stop Trace</button><button type="button" id="recognition-trace-clear">Clear Trace</button><button type="button" id="recognition-trace-export">Export Recognition Trace JSON</button></section><section class="panel"><h3>Storage Usage</h3><p id="storage-usage-status">Loading…</p><button type="button" id="storage-audit-export">Export Storage Audit JSON</button></section><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>` : `<button type="button" id="admin-open">${t('adminMode')}</button>`;
+  const adminControls=admin.enabled ? `<button type="button" id="restore-diagnostic-export">${t('exportRestoreDiagnostic')}</button><section class="panel"><h3>Recognition Device Diagnostics</h3><p id="recognition-trace-status">Stopped · 0 events</p><button type="button" id="recognition-trace-start">Start Recognition Trace</button><button type="button" id="recognition-trace-stop">Stop Trace</button><button type="button" id="recognition-trace-clear">Clear Trace</button><button type="button" id="recognition-trace-export">Export Recognition Trace JSON</button></section><section class="panel"><h3>Admin Catalog Save Diagnostic</h3><p id="admin-catalog-save-trace-status">Stopped · 0 events</p><button type="button" id="admin-catalog-save-trace-start">Start Trace</button><button type="button" id="admin-catalog-save-trace-stop">Stop Trace</button><button type="button" id="admin-catalog-save-trace-clear">Clear Trace</button><button type="button" id="admin-catalog-save-trace-export">Export Trace JSON</button></section><section class="panel"><h3>Storage Usage</h3><p id="storage-usage-status">Loading…</p><button type="button" id="storage-audit-export">Export Storage Audit JSON</button></section><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>` : `<button type="button" id="admin-open">${t('adminMode')}</button>`;
   const dialog = openModal(`<form class="form"><header><h2>${t('settings')}</h2><button type="button" data-close>×</button></header>${recoveryNotice}<label>${t('language')}<select name="language"><option value="system">${t('system')}</option><option value="en">${t('languageEnglish')}</option><option value="zh">${t('languageChinese')}</option></select></label><label>${t('theme')}<select name="theme"><option value="system">${t('system')}</option><option value="light">${t('light')}</option><option value="dark">${t('dark')}</option></select></label><hr>${profileSettingsFields()}<button class="primary" ${store.canPersist?'':'disabled'}>${t('save')}</button><button type="button" id="backup-export" ${store.canPersist?'':'disabled'}>${t('exportBackup')}</button><button type="button" id="persistence-diagnostic-export">${t('exportPersistenceDiagnostic')}</button><label>${t('restoreBackup')}<input id="backup-import" type="file" accept="application/json" ${store.canPersist?'':'disabled'}></label><p id="backup-restore-status" role="status" aria-live="polite"></p><section id="admin-settings">${adminControls}</section></form>`);
   const form = dialog.querySelector('form'); form.language.value = store.state.settings.language; form.theme.value = store.state.settings.theme;
   if (!store.canPersist) form.querySelectorAll('input, select, textarea').forEach(control => { if (control.id !== 'persistence-diagnostic-export') control.disabled = true; });
@@ -783,8 +837,14 @@ function openSettings() {
   dialog.querySelector('#recognition-trace-stop')?.addEventListener('click',()=>{recognitionDeviceDiagnostic.stop();updateRecognitionTraceStatus();});
   dialog.querySelector('#recognition-trace-clear')?.addEventListener('click',()=>{recognitionDeviceDiagnostic.clear();updateRecognitionTraceStatus();});
   dialog.querySelector('#recognition-trace-export')?.addEventListener('click',()=>downloadJson(recognitionDeviceDiagnostic.export(),`toy-rotation-recognition-device-trace-${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`));
+  const updateAdminCatalogSaveTraceStatus=()=>{const status=dialog.querySelector('#admin-catalog-save-trace-status');if(status)status.textContent=`${adminCatalogSaveDiagnostic.recording?'Recording':'Stopped'} · ${adminCatalogSaveDiagnostic.eventCount} events`;};
+  dialog.querySelector('#admin-catalog-save-trace-start')?.addEventListener('click',()=>{adminCatalogSaveDiagnostic.start();updateAdminCatalogSaveTraceStatus();});
+  dialog.querySelector('#admin-catalog-save-trace-stop')?.addEventListener('click',()=>{adminCatalogSaveDiagnostic.stop();updateAdminCatalogSaveTraceStatus();});
+  dialog.querySelector('#admin-catalog-save-trace-clear')?.addEventListener('click',()=>{adminCatalogSaveDiagnostic.clear();updateAdminCatalogSaveTraceStatus();});
+  dialog.querySelector('#admin-catalog-save-trace-export')?.addEventListener('click',()=>downloadJson(adminCatalogSaveDiagnostic.export({release:window.TOY_ROTATION_CONFIG?.RELEASE||null}),`toy-rotation-admin-catalog-save-trace-${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`));
   const storageStatus=dialog.querySelector('#storage-usage-status'); const refreshStorageUsage=async()=>{const audit=await buildStorageUsageDiagnostic({state:store.state,build:window.TOY_ROTATION_CONFIG});if(storageStatus)storageStatus.textContent=`Canonical ${audit.localStorage.canonicalBytes} B · Total ${audit.localStorage.totalToyRotationBytes} B · Snapshots ${audit.localStorage.snapshotBytes} B · Drafts ${audit.stateBreakdown.draftsBytes} B · Candidates ${audit.stateBreakdown.candidatesBytes} B · Outbox ${audit.stateBreakdown.governanceBytes} B · data:image ${audit.stateBreakdown.embeddedDataImageCount} · ${audit.storageEstimate.available?`Usage ${audit.storageEstimate.usage} / ${audit.storageEstimate.quota} (${audit.storageEstimate.usagePercent}%)`:'Storage estimate unavailable'}`;return audit;};void refreshStorageUsage();dialog.querySelector('#storage-audit-export')?.addEventListener('click',async()=>downloadJson(await refreshStorageUsage(),`toy-rotation-storage-audit-${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`));
   updateRecognitionTraceStatus();
+  updateAdminCatalogSaveTraceStatus();
   dialog.querySelector('#persistence-diagnostic-export')?.addEventListener('click', exportPersistenceDiagnostic);
   dialog.querySelector('#admin-open').onclick = () => admin.enabled ? (admin.signOut(), openSettings()) : openAdminInSettings(dialog);
   dialog.querySelector('#manager-open')?.addEventListener('click', () => openAdminWorkspaceInSettings(dialog));
@@ -1142,7 +1202,7 @@ function captureLoveveryImageSweep(phase) {
 }
 function displayName(toy) { return i18n.language === 'zh' ? (toy.names?.zh || toy.productName) : (toy.names?.en || toy.productName); }
 function brandLabel(brand) { return brand === 'other_unspecified' ? t('otherUnspecified') : brand; }
-function mechanicLabel(code) { return localizePlayMechanism(code, i18n.language) || t('unregisteredPlayMechanism'); }
+function mechanicLabel(code) { const key=`mechanic.${code}`; const translated=t(key); return localizePlayMechanism(code, i18n.language) || (translated === key ? t('unregisteredPlayMechanism') : translated); }
 function t(key, params) { return i18n.t(key, params); }
 function messageFor(code) { const value = t(code); return value === code ? code : value; }
 function capitalize(value) { return String(value || '').slice(0, 1).toUpperCase() + String(value || '').slice(1); }

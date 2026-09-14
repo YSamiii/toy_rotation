@@ -26,14 +26,18 @@ export class AdminService {
     const [health, quota] = await Promise.all([this.#probe('/health', headers), this.#probe('/quota', headers)]);
     return { configured:true, backend:health.ok ? 'available' : 'unavailable', health:health.payload, quota:quota.ok ? quota.payload : null, pendingDeletes };
   }
-  async replaceCatalogImage(key, dataUrl) {
+  async replaceCatalogImage(key, dataUrl, { trace = () => {} } = {}) {
     if (!this.enabled) throw new Error('adminVerificationRequired');
     if (!this.#base) throw new Error('adminUnconfigured');
-    const response = await fetch(`${this.#base}/admin-catalog-image`, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${sessionStorage.getItem(TOKEN_KEY)}` },
-      body:JSON.stringify({ key, imageDataUrl:dataUrl, action:'replace' })
-    });
+    let response;
+    try {
+      response = await fetch(`${this.#base}/admin-catalog-image`, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${sessionStorage.getItem(TOKEN_KEY)}` },
+        body:JSON.stringify({ key, imageDataUrl:dataUrl, action:'replace' })
+      });
+    } catch (error) { emitTrace(trace, 'catalog_image_request_error', { errorType:error?.name || 'UnknownError' }); throw error; }
+    emitTrace(trace, 'catalog_image_response', { status:response.status, ok:response.ok });
     if (!response.ok) throw new Error('catalogImageUploadFailed');
     return `${this.#base}/catalog-image/${encodeURIComponent(key)}`;
   }
@@ -55,7 +59,7 @@ export class AdminService {
   }
   async reviewReport(reportId, action) { return this.#governancePost('/admin-catalog-report',{reportId,action}); }
   async retryMaterialization(mutationId) { return this.#governancePost('/admin-catalog-retry-materialization',{mutationId}); }
-  async edit(key, patch) { await this.#post({ action:'edit', key, patch }); this.#catalog.updateAdminEdit(key, patch); }
+  async edit(key, patch, { trace = () => {} } = {}) { await this.#post({ action:'edit', key, patch }, trace); this.#catalog.updateAdminEdit(key, patch); }
   async merge(key, targetKey) { await this.#post({ action:'merge', key, targetKey }); this.#catalog.mergeReferences(key, targetKey); }
   async delete(key, snapshot) {
     // The local tombstone is the source of truth for the active catalog.  It is
@@ -81,10 +85,12 @@ export class AdminService {
       } catch { /* The local tombstone remains authoritative until the backend is available. */ }
     }
   }
-  async #post(body) { if (!this.enabled) throw new Error('adminVerificationRequired'); if (!this.#base) throw new Error('adminUnconfigured'); const response = await fetch(`${this.#base}/admin-catalog`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${sessionStorage.getItem(TOKEN_KEY)}`}, body:JSON.stringify({...body,mutationId:body.mutationId||crypto.randomUUID()}) }); if (!response.ok) throw new Error('adminOperationFailed'); return response.json(); }
+  async #post(body, trace = () => {}) { if (!this.enabled) throw new Error('adminVerificationRequired'); if (!this.#base) throw new Error('adminUnconfigured'); let response; try { response = await fetch(`${this.#base}/admin-catalog`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${sessionStorage.getItem(TOKEN_KEY)}`}, body:JSON.stringify({...body,mutationId:body.mutationId||crypto.randomUUID()}) }); } catch (error) { emitTrace(trace, 'catalog_update_request_error', { errorType:error?.name || 'UnknownError' }); throw error; } emitTrace(trace, 'catalog_update_response', { status:response.status, ok:response.ok }); if (!response.ok) throw new Error('adminOperationFailed'); return response.json(); }
   async #governancePost(path, body) { if (!this.enabled) throw new Error('adminVerificationRequired'); if (!this.#base) throw new Error('adminUnconfigured'); const response=await fetch(`${this.#base}${path}`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${sessionStorage.getItem(TOKEN_KEY)}`},body:JSON.stringify(body)}); if(!response.ok)throw new Error('catalogGovernanceUpdateFailed'); return response.json(); }
   async #probe(path, headers) {
     try { const response = await fetch(`${this.#base}${path}`, { headers, cache:'no-store' }); return { ok:response.ok, payload:response.ok ? await response.json().catch(() => ({})) : null }; }
     catch { return { ok:false, payload:null }; }
   }
 }
+
+function emitTrace(trace, stage, details) { try { trace?.(stage, details); } catch {} }

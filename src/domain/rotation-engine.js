@@ -1,4 +1,5 @@
 import { assess } from './substitution-engine.js';
+import { developmentFit } from './development-fit.js';
 
 const GENERIC_MECHANICS = new Set(['fine_motor_general', 'construction_general', 'pretend_play_general', 'sensory_general']);
 
@@ -9,11 +10,11 @@ export function generateRotation(input) {
   return selectRotation(input).selected;
 }
 
-export function selectRotation({ toys = [], history = [], childAgeMonths, size = 6, now = Date.now() }) {
+export function selectRotation({ toys = [], history = [], childAgeMonths, size = 6, now = Date.now(), childDevelopmentProfile = {}, developmentFeedbackHistory = [] }) {
   const requestedRotationCount = Math.max(1, Number(size) || 6);
   const classified = classifyCandidates(toys, childAgeMonths);
   const candidates = classified.eligible
-    .map((toy, index) => ({ toy, ...baseScore(toy, childAgeMonths, now, history), index }))
+    .map((toy, index) => ({ toy, ...baseScore(toy, childAgeMonths, now, history, childDevelopmentProfile, developmentFeedbackHistory), index }))
     .sort((a, b) => b.score - a.score || a.toy.productName.localeCompare(b.toy.productName));
   const selected = [];
   const selectedCandidateScores = [];
@@ -36,6 +37,9 @@ export function selectRotation({ toys = [], history = [], childAgeMonths, size =
       brandPenalty:next.adjustment.brandPenalty,
       groupPenalty:next.adjustment.groupPenalty,
       recencyPenalty:next.entry.recencyPenalty,
+      developmentFit:next.entry.development.score,
+      challengeLevel:next.entry.development.challengeLevel,
+      progressionLevel:next.entry.development.progressionLevel,
       finalScore:next.adjusted
     });
     diversity.brandPenaltyApplied += next.adjustment.brandPenalty;
@@ -225,13 +229,20 @@ export function refillCurrentRotation(state, { childAgeMonths, now = new Date().
   if (!plan) return { selectedRotationCount:0, shortageCount:Math.max(1, Number(state.settings?.rotationSize) || 6) };
   const target = Math.max(1, Number(state.settings?.rotationSize) || 6);
   const shelf = currentShelfCollections(state);
-  const kept = shelf.rotation.slice(0, target);
+  // A manual ordinary toy is a deliberate Current Shelf position.  It takes
+  // one ordinary rotation slot, while a user permanent remains outside that
+  // target.  We only score the remaining empty ordinary positions.
+  const remainingTarget = Math.max(0, target - shelf.manual.length);
+  const kept = shelf.rotation.slice(0, remainingTarget);
   const keptIds = new Set(kept.map(toy => toy.id));
-  const missing = Math.max(0, target - kept.length);
+  const occupied = [...kept, ...shelf.manual, ...shelf.permanent];
+  const occupiedIds = new Set(occupied.map(toy => toy.id));
+  const occupiedIdentityKeys = new Set(occupied.flatMap(rotationIdentityKeys));
+  const missing = Math.max(0, remainingTarget - kept.length);
   let additions = [];
   if (missing) {
-    const pool = (state.toys || []).filter(toy => !keptIds.has(toy.id));
-    additions = selectRotation({ toys:pool, history:(state.rotationHistory || []).slice(1), childAgeMonths, size:missing, now:new Date(now).getTime() }).selected.slice(0, missing);
+    const pool = (state.toys || []).filter(toy => !keptIds.has(toy.id) && !occupiedIds.has(toy.id) && !rotationIdentityKeys(toy).some(key => occupiedIdentityKeys.has(key)));
+    additions = selectRotation({ toys:pool, history:(state.rotationHistory || []).slice(1), childAgeMonths, size:missing, now:new Date(now).getTime(), childDevelopmentProfile:state.profile?.developmentProfile || {}, developmentFeedbackHistory:state.developmentFeedbackHistory || [] }).selected.slice(0, missing);
   }
   const selected = [...kept, ...additions];
   for (const toy of additions) toy.lastActivatedAt = now;
@@ -254,9 +265,10 @@ function buildCurrentDiagnostics(state, selectedRotationCount, childAgeMonths) {
   const classified = classifyCandidates(state.toys || [], childAgeMonths);
   const permanentCount = classified.customPermanent.length;
   const manualCount = currentShelfCollections(state).manual.length;
-  const shortageCount = Math.max(0, requestedRotationCount - selectedRotationCount);
+  const ordinaryRotationCount = selectedRotationCount + manualCount;
+  const shortageCount = Math.max(0, requestedRotationCount - ordinaryRotationCount);
   return withShelfCounts({
-    requestedRotationCount, selectedRotationCount, permanentCount,
+    requestedRotationCount, selectedRotationCount:ordinaryRotationCount, automaticRotationCount:selectedRotationCount, permanentCount,
     eligibleRotationCount:classified.eligible.length,
     requestedCount:requestedRotationCount, selectedCount:selectedRotationCount,
     uniqueSelectedCount:selectedRotationCount, eligibleCount:classified.eligible.length,
@@ -267,7 +279,13 @@ function buildCurrentDiagnostics(state, selectedRotationCount, childAgeMonths) {
 
 function withShelfCounts(diagnostics = {}, selectedRotationCount, permanentCount, manualCount = 0) {
   const requestedRotationCount = diagnostics.requestedRotationCount ?? diagnostics.requestedCount ?? selectedRotationCount;
-  return { ...diagnostics, requestedRotationCount, selectedRotationCount, permanentCount, manualShelfCount:manualCount, totalShelfCount:selectedRotationCount + permanentCount + manualCount, eligibleRotationCount:diagnostics.eligibleRotationCount ?? diagnostics.eligibleCount ?? selectedRotationCount, requestedCount:requestedRotationCount, selectedCount:selectedRotationCount };
+  const automaticRotationCount = diagnostics.automaticRotationCount ?? selectedRotationCount;
+  const ordinaryRotationCount = diagnostics.selectedRotationCount ?? diagnostics.selectedCount ?? automaticRotationCount + manualCount;
+  return { ...diagnostics, requestedRotationCount, selectedRotationCount:ordinaryRotationCount, automaticRotationCount, permanentCount, manualShelfCount:manualCount, totalShelfCount:automaticRotationCount + permanentCount + manualCount, eligibleRotationCount:diagnostics.eligibleRotationCount ?? diagnostics.eligibleCount ?? automaticRotationCount, requestedCount:requestedRotationCount, selectedCount:ordinaryRotationCount };
+}
+
+function rotationIdentityKeys(toy = {}) {
+  return [toy.canonicalKey && `canonical:${toy.canonicalKey}`, toy.catalogId && `catalog:${toy.catalogId}`, toy.sku && `sku:${String(toy.sku).toLowerCase()}`].filter(Boolean);
 }
 
 function classifyCandidates(toys, age) {
@@ -290,14 +308,15 @@ function isEligible(toy, age) {
 
 function isShelfVisible(toy) { return !toy.hidden && !toy.archived && toy.set?.kind !== 'parent'; }
 
-function baseScore(toy, age, now, history) {
+function baseScore(toy, age, now, history, childDevelopmentProfile, developmentFeedbackHistory) {
   const ageFit = toy.maxAgeMonths == null || age <= toy.maxAgeMonths + 12 ? 40 : 16;
   const lastActivated = new Date(toy.lastActivatedAt || 0).getTime();
   const freshness = Math.min(30, Math.max(0, (now - lastActivated) / 86400000 / 3));
   const interest = toy.interest === 'like' ? 12 : toy.interest === 'neutral' ? 4 : toy.interest === 'dislike' ? -18 : 0;
   const rotationValue = toy.rotationValue === 'high' ? 12 : toy.rotationValue === 'low' ? -5 : 0;
   const recency = rotationRecencyAdjustment(toy, history);
-  return { score:ageFit + freshness + interest + rotationValue + recency.value, recencyPenalty:recency.penalty };
+  const development = developmentFit(toy, childDevelopmentProfile, developmentFeedbackHistory);
+  return { score:ageFit + freshness + interest + rotationValue + recency.value + development.score, recencyPenalty:recency.penalty, development };
 }
 
 function diversityAdjustment(candidate, selected, history, relations) {

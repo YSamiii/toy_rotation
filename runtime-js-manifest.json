@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-11T19:31:17.435Z",
+  "generatedAt": "2026-09-14T15:49:28.520Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 1",
-    "buildDate": "20260911",
-    "buildId": "v0.11.6-iphone-qa-candidate1-20260911"
+    "buildName": "Toy Rotation v0.11.6 Development-Fit iPhone QA Candidate 3",
+    "buildDate": "20260914",
+    "buildId": "v0.11.6-development-fit-iphone-qa3-20260914"
   },
   "entries": [
     "index.html",
@@ -77,8 +77,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 546,
-      "sha256": "08ccb77a571c434e83823ddc0dfd81f3b8ea5a4bd9406bef67edfe52aee1394d",
+      "bytes": 584,
+      "sha256": "2790b0dbba0da696a13b88237e3db62b5f39a452e0393f5ef1e3360b7c598a2d",
       "importedBy": [
         "deployment-static",
         "index.html"
@@ -506,12 +506,13 @@
     {
       "path": "src/data/schema.js",
       "resolvedDeployPath": "./src/data/schema.js",
-      "bytes": 14566,
-      "sha256": "101ee7254baa27ef2464767ffa7363b9b8b1cdfe376f188d43c60bcbdd8c1a28",
+      "bytes": 14998,
+      "sha256": "ef02b0879e019a3d6ea706bdcbd04c47f30f977c1f529a86e7839efb3f32808e",
       "importedBy": [
         "src/data/backup-service.js",
         "src/data/store.js",
         "src/domain/catalog-repository.js",
+        "src/domain/development-fit.js",
         "src/domain/duplicate-engine.js",
         "src/domain/identity-service.js",
         "src/domain/library-service.js",
@@ -610,6 +611,42 @@
       }
     },
     {
+      "path": "src/domain/development-fit.js",
+      "resolvedDeployPath": "./src/domain/development-fit.js",
+      "bytes": 8193,
+      "sha256": "e7c2c3cffd13f4c46bed94827a45a94ba5e5c5e69aa283fd5158687203e2fe33",
+      "importedBy": [
+        "src/domain/development-presentation.js",
+        "src/domain/rotation-engine.js",
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/data/schema.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/development-presentation.js",
+      "resolvedDeployPath": "./src/domain/development-presentation.js",
+      "bytes": 2439,
+      "sha256": "b895cbb78dccd4d657a446e582155575d7441ac9446b12039cf4eff8a5cc5b10",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/domain/development-fit.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "src/domain/duplicate-engine.js",
       "resolvedDeployPath": "./src/domain/duplicate-engine.js",
       "bytes": 3448,
@@ -692,13 +729,14 @@
     {
       "path": "src/domain/rotation-engine.js",
       "resolvedDeployPath": "./src/domain/rotation-engine.js",
-      "bytes": 20261,
-      "sha256": "db53bc5d2d8d155509bc6d4b7f2a11fa639b327665381f57808c84c60c7565c5",
+      "bytes": 22174,
+      "sha256": "7ff3da8654d5759c657f8ae4478db444a92ca34e9a0624a67b29ec58858d02a0",
       "importedBy": [
         "src/main.js"
       ],
       "staticImports": [
-        "src/domain/substitution-engine.js"
+        "src/domain/substitution-engine.js",
+        "src/domain/development-fit.js"
       ],
       "dynamicImports": [],
       "browserTargetCompatibility": {
@@ -749,10 +787,25 @@
       }
     },
     {
+      "path": "src/features/admin-catalog-save-diagnostic.js",
+      "resolvedDeployPath": "./src/features/admin-catalog-save-diagnostic.js",
+      "bytes": 2366,
+      "sha256": "a8562d853a2f1e540d51cfd6e41fef0441fe1cbfd1c2c34b725ee09d7a950a76",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "src/features/admin-service.js",
       "resolvedDeployPath": "./src/features/admin-service.js",
-      "bytes": 7649,
-      "sha256": "a9e3a4ed1011d645db91a0cb05f8b961e1fd3ade5297d006669f6042479f05d4",
+      "bytes": 8303,
+      "sha256": "69b243565d41d5bbc7007fed5377a321594bf1794a5dce62df8d206b5d784036",
       "importedBy": [
         "src/main.js"
       ],
@@ -988,8 +1041,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 141306,
-      "sha256": "5b914e31ebb724bd0ca5a8f6c753af5dc3c90507577649dcecce0a5b535e43d5",
+      "bytes": 150821,
+      "sha256": "0a8d67557367077c321bc4db880a3c361e6899ba25def02524d7f778f7dcbf9b",
       "importedBy": [
         "index.html"
       ],
@@ -1006,6 +1059,8 @@
         "src/domain/set-service.js",
         "src/domain/profile-service.js",
         "src/domain/rotation-engine.js",
+        "src/domain/development-fit.js",
+        "src/domain/development-presentation.js",
         "src/domain/substitution-engine.js",
         "src/features/admin-service.js",
         "src/features/recognition-service.js",
@@ -1018,6 +1073,7 @@
         "src/features/restore-diagnostic.js",
         "src/features/runtime-image-diagnostic.js",
         "src/features/recognition-device-diagnostic.js",
+        "src/features/admin-catalog-save-diagnostic.js",
         "src/features/storage-usage-diagnostic.js",
         "src/features/startup-trace.js",
         "src/ui/i18n.js",
@@ -1066,8 +1122,8 @@
     {
       "path": "src/ui/app.css",
       "resolvedDeployPath": "./src/ui/app.css",
-      "bytes": 17546,
-      "sha256": "c937e1272cdd15f87acddccea80b0544895e906b2e4a45f95c23530373690a5e",
+      "bytes": 18307,
+      "sha256": "5562dc95c9334faebfbec6a61523c0f2a33ea161bfa3f8ef0dcfb7abb2b324cc",
       "importedBy": [
         "deployment-static"
       ],
@@ -1081,8 +1137,8 @@
     {
       "path": "src/ui/i18n.js",
       "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 44883,
-      "sha256": "c146c522f93dc332978683644efc4cd7dda6ea75b0bcde73432ef1557e496c01",
+      "bytes": 48015,
+      "sha256": "2ce276af839d92c7eebbf01cea413e8ca70d76ddbe7d19a614748a81fc5b509a",
       "importedBy": [
         "src/main.js"
       ],
@@ -1235,8 +1291,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2057,
-      "sha256": "28b59511502a6c564bdc6b84f42e6b35778057bb0498b5b3d2bc08045067333a",
+      "bytes": 2063,
+      "sha256": "d025bd82f7f0fc589b61b805c6c501ae0fe2b8b379935c32a31f6ebbb29e766f",
       "importedBy": [
         "deployment-static"
       ],
@@ -1251,6 +1307,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 72
+    "checkedInputs": 75
   }
 }

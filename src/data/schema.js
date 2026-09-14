@@ -100,6 +100,8 @@ export function normalizeToy(source = {}) {
     categoryCode: categoryCode(source.categoryCode || source.category),
     skillCodes: unique((source.skillCodes || source.skills || []).map(skillCode)),
     playMechanics: unique(source.playMechanics || []), operationCode:source.operationCode || null, goalCodes:unique(source.goalCodes || []), sceneCodes:unique(source.sceneCodes || []),
+    challengeLevel: Number.isInteger(Number(source.challengeLevel)) && Number(source.challengeLevel) >= 1 && Number(source.challengeLevel) <= 5 ? Number(source.challengeLevel) : null,
+    progressionLevel: Number.isInteger(Number(source.progressionLevel)) && Number(source.progressionLevel) >= 1 && Number(source.progressionLevel) <= 5 ? Number(source.progressionLevel) : null,
     imageRef: normalizeImageRef(source), alternateImageRefs:uniqueImageRefs(source.alternateImageRefs || []),
     minAgeMonths: numeric(source.minAgeMonths ?? source.ageMinMonths ?? source.startAge),
     maxAgeMonths: numeric(source.maxAgeMonths ?? source.ageMaxMonths ?? source.endAge),
@@ -137,7 +139,7 @@ export function normalizeWishlistItem(source = {}) {
 }
 
 export function emptyState() {
-  return { schemaVersion: SCHEMA_VERSION, settings: { language: 'system', theme: 'system', rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: '', childBirthDate: '' }, toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
+  return { schemaVersion: SCHEMA_VERSION, settings: { language: 'system', theme: 'system', rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: '', childBirthDate: '', developmentProfile:{} }, developmentFeedbackHistory:[], toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
 }
 
 function numeric(value) { return value === '' || value == null || Number.isNaN(Number(value)) ? null : Number(value); }

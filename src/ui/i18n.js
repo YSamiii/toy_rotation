@@ -54,6 +54,18 @@ export const DICTIONARY = {
     skill:{logic:'逻辑推理',math:'数学启蒙',sorting:'分类能力',memory:'记忆力',problem_solving:'问题解决',cause_effect:'因果关系',spatial_awareness:'空间认知',fine_motor:'精细动作',hand_eye:'手眼协调',visual_spatial:'视觉空间',language:'语言',matching:'认知配对',attention:'专注力',creativity:'创造力',pretend_play:'角色扮演',social:'社交互动',gross_motor:'大运动',sensory_exploration:'感官探索',practical_life:'生活技能',colour:'颜色认知',observation:'观察力',music:'音乐',shapes:'形状认知',balance:'平衡控制',rules:'规则意识',body_coordination:'身体协调',grasping:'抓握能力',aesthetics:'审美表达',visual_tracking:'视觉追踪',strategy:'策略思维',social_cognition:'社会认知',animal_cognition:'动物认知',science:'科学启蒙',open_play:'开放式游戏',imagination:'想象力',letters:'字母启蒙',oral_motor:'口腔运动'}
   }
 };
+Object.assign(DICTIONARY.en, {
+  developmentFeedbackTitle:'How did this go?', developmentFeedbackPrompt:'How did this go?', developmentFeedback:{too_easy:'Too Easy',just_right:'Just Right',good_challenge:'Good Challenge',too_hard:'Too Hard',not_interested:'Not Interested'},
+  recommendationReason:{progression:'A good next challenge for current play.',developmentFit:'Fits current play well.',diversity:'Adds variety to the current shelf.',recency:'A less recent option for this rotation.',familiar:'A familiar option for the current shelf.'},
+  developmentChallenge:{1:'Intro',2:'Basic',3:'Moderate',4:'Advanced',5:'Higher Challenge'}, challengeFilter:'Difficulty', ageFilter:'Age', ageCurrent:'Current age', ageLater:'For later', fitCurrentChild:'Fit Current Child', noCatalogResults:'No catalog toys match these filters.', mechanicsReference:'Play mechanism reference',
+  mechanic:{...DICTIONARY.en.mechanic,posting:'Posting / drop play',shape_sorting:'Shape sorting',puzzle:'Puzzle',matching_sorting:'Matching / sorting',stacking:'Stacking',threading_lacing:'Threading / lacing',lock_key:'Lock and key',screw_bolt_tool:'Screw / tool play',ball_drop:'Ball drop',blocks_build:'Block construction',magnetic_build:'Magnetic construction',pretend_role:'Pretend role play',track_vehicle:'Vehicles / tracks',pull_push_walk:'Pull / push / walk',magnetic_fishing:'Magnetic fishing',maze_logic:'Maze / logic',jigsaw:'Jigsaw puzzle',balance:'Balance',cause_effect:'Cause and effect',music_play:'Music play',sensory:'Sensory play',fine_motor:'Fine-motor play'}
+});
+Object.assign(DICTIONARY.zh, {
+  developmentFeedbackTitle:'这次玩得怎么样？', developmentFeedbackPrompt:'这次玩得怎么样？', developmentFeedback:{too_easy:'太简单',just_right:'刚刚好',good_challenge:'有一点挑战，正合适',too_hard:'太难',not_interested:'没兴趣'},
+  recommendationReason:{progression:'适合当前玩法的下一步挑战。',developmentFit:'适合孩子当前的玩法。',diversity:'为当前玩具架增加一些变化。',recency:'这轮优先安排较久没玩的玩具。',familiar:'适合当前玩具架的熟悉选择。'},
+  developmentChallenge:{1:'入门',2:'基础',3:'适中',4:'进阶',5:'较高挑战'}, challengeFilter:'难度', ageFilter:'月龄', ageCurrent:'当前适龄', ageLater:'以后再玩', fitCurrentChild:'适合当前孩子', noCatalogResults:'没有符合这些筛选条件的标准玩具。', mechanicsReference:'玩法机制参考',
+  mechanic:{...DICTIONARY.zh.mechanic,posting:'投放 / 落下玩法',shape_sorting:'形状分类',puzzle:'益智拼图',matching_sorting:'配对 / 分类',stacking:'堆叠',threading_lacing:'穿线 / 串珠',lock_key:'开锁 / 钥匙',screw_bolt_tool:'螺丝 / 工具操作',ball_drop:'滚球下落',blocks_build:'积木建构',magnetic_build:'磁力建构',pretend_role:'情境角色扮演',track_vehicle:'车辆 / 轨道',pull_push_walk:'推拉 / 学步',magnetic_fishing:'磁力钓鱼',maze_logic:'迷宫 / 逻辑',jigsaw:'拼图',balance:'平衡',cause_effect:'因果操作',music_play:'音乐操作',sensory:'感官探索',fine_motor:'精细动作'}
+});
 export function createI18n(store) {
   const language = () => store.state.settings.language === 'system' ? (navigator.language.startsWith('zh') ? 'zh' : 'en') : store.state.settings.language;
   const t = (key, params = {}) => {
