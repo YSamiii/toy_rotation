@@ -86,13 +86,54 @@ export function ensureSplitSetChildren(toys, definitionsByKey) {
     for (const child of planned) {
       const key = canonicalKey(child.canonicalKey);
       if (intentionallyRemoved.has(key)) continue;
-      const existing = existingByKey.get(key) || chooseBestChild(findHistoricalChildMatches(toys, parent, child), parent, child);
-      if (existing) { childIds.push(existing.id); continue; }
+      const existing = existingByKey.get(key) || exactLegacyParentPartChild(toys, parent, child) || chooseBestChild(findHistoricalChildMatches(toys, parent, child), parent, child);
+      if (existing) {
+        if (canonicalKey(existing.canonicalKey) !== key) {
+          existing.legacyCanonicalKeys=uniqueCanonicalKeys([...(existing.legacyCanonicalKeys || []),existing.canonicalKey,child.canonicalKey]);
+          existing.canonicalKey=key;
+          existing.set={ ...(existing.set || {}), kind:'child', parentId:parent.id, parentCanonicalKey:parent.canonicalKey, partIndex:child.set?.partIndex, rotationMode:'split', ownershipGroupId:parent.id };
+        }
+        childIds.push(existing.id); continue;
+      }
       additions.push(child); existingByKey.set(key, child); childIds.push(child.id);
     }
     parent.set.childIds = childIds;
   }
   return additions;
+}
+
+function exactLegacyParentPartChild(toys, parent, child) {
+  const part=Number(child.set?.partIndex);
+  if (!Number.isInteger(part) || part < 1) return null;
+  return toys.find(candidate => candidate.set?.kind === 'child'
+    && (candidate.set?.parentId === parent.id || canonicalKey(candidate.set?.parentCanonicalKey) === canonicalKey(parent.canonicalKey))
+    && Number(candidate.set?.partIndex) === part) || null;
+}
+
+// One historical build stored the generic Mideer My First Puzzle kit as a
+// whole parent while retaining only one generated child. This is the only
+// legacy shape promoted automatically: both the exact parent key and child
+// ownership evidence are required before the normal split reconciler runs.
+export function backfillKnownMideerLegacySixSlot(state, definitionsByKey) {
+  state.toys ||= [];
+  const parentKey='mideer-my-first-puzzle';
+  const definition=definitionsByKey.get(parentKey);
+  if (!definition || Number(definition.childCount) !== 6) return { promoted:0, parentIds:[] };
+  const parentIds=[];
+  for (const parent of state.toys.filter(toy=>canonicalKey(toy.canonicalKey) === parentKey)) {
+    if (parent.set?.kind === 'parent' && parent.set.rotationMode === 'split') continue;
+    const retainedChildren=state.toys.filter(child => {
+      const childKey=canonicalKey(child.canonicalKey);
+      return child.set?.parentId === parent.id
+        || canonicalKey(child.set?.parentCanonicalKey) === parentKey
+        || String(childKey).startsWith(`${parentKey}:`)
+        || (parent.set?.childIds || []).includes(child.id);
+    });
+    if (!retainedChildren.length) continue;
+    parent.set={ ...(parent.set || {}), kind:'parent', rotationMode:'split', childIds:retainedChildren.map(child=>child.id), legacySixSlotBackfill:'mideer-my-first-puzzle-v1' };
+    parentIds.push(parent.id);
+  }
+  return { promoted:parentIds.length, parentIds };
 }
 
 // Repairs a *previously split* ownership set that an older migration removed.
@@ -307,7 +348,8 @@ export function reconcileSplitSetChildren(state, definitionsByKey) {
     const planned = splitExplicitSet(parent, deriveExplicitChildren(parent, definition)).children;
     const childIds = [];
     for (const child of planned) {
-      const matches = findHistoricalChildMatches(state.toys, parent, child);
+      const exactPart = exactLegacyParentPartChild(state.toys, parent, child);
+      const matches = exactPart ? [exactPart] : findHistoricalChildMatches(state.toys, parent, child);
       if (!matches.length) continue;
       const primary = chooseBestChild(matches, parent, child);
       const primaryOldKey = primary.canonicalKey;
@@ -478,7 +520,8 @@ export function reconcileLegacyChildOwnership(state) {
   // parent-token grouping, so a detected pair could never reach merge.
   const queue = findDuplicates(all).filter(item =>
     item.kind === 'same_child_legacy_duplicate' &&
-    item.a?.set?.kind === 'child' && item.b?.set?.kind === 'child'
+    item.a?.set?.kind === 'child' && item.b?.set?.kind === 'child' &&
+    !differentKnownSiblingParts(item.a, item.b)
   );
   let merged = 0, attempted = 0, failed = 0;
   const executions = [];
@@ -509,6 +552,15 @@ export function reconcileLegacyChildOwnership(state) {
   return { detected:queue.length, queued:queue.length, attempted, merged, failed, executions,
     siblingExcluded:relations.filter(item => item.kind === 'sibling_child').length,
     variantExcluded:relations.filter(item => item.kind === 'related_variant').length };
+}
+
+function differentKnownSiblingParts(left, right) {
+  const leftParent=canonicalKey(left?.set?.parentCanonicalKey);
+  const rightParent=canonicalKey(right?.set?.parentCanonicalKey);
+  const sameParent=left?.set?.parentId === right?.set?.parentId || (leftParent && leftParent === rightParent);
+  const leftPart=Number(left?.set?.partIndex || partIndexFromKey(left?.canonicalKey));
+  const rightPart=Number(right?.set?.partIndex || partIndexFromKey(right?.canonicalKey));
+  return Boolean(sameParent && leftPart && rightPart && leftPart !== rightPart);
 }
 
 export function auditSetIntegrity(toys = []) {

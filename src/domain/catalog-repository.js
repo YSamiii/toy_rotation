@@ -1,5 +1,5 @@
 import { canonicalKey, normalizeCatalogToy } from '../data/schema.js';
-import { reconcileSplitSetChildren, restoreMissingSplitSetChildren, establishParentChildOwnership, repairChildImageProvenance, repairLegacyChildImageBindings, reconcileOrphanedSplitOwnership } from './set-service.js';
+import { reconcileSplitSetChildren, restoreMissingSplitSetChildren, establishParentChildOwnership, repairChildImageProvenance, repairLegacyChildImageBindings, reconcileOrphanedSplitOwnership, backfillKnownMideerLegacySixSlot } from './set-service.js';
 import { catalogImageRef, deriveCatalogMechanics } from './catalog-presentation.js';
 import { resolveCatalogReference, sameCatalogIdentity } from './identity-service.js';
 import { compare, exactProductIdentityKey } from './duplicate-engine.js';
@@ -124,6 +124,28 @@ export class CatalogRepository {
     const text = String(query).trim().toLowerCase();
     return this.#active.filter(toy => (includeReview || isPublicCatalogVisible(toy)) && (!brand || toy.brand === brand) && (!categoryCode || toy.categoryCode === categoryCode) && (!skillCode || toy.skillCodes.includes(skillCode)) && (!playMechanic || toy.playMechanics.includes(playMechanic)) && (!text || [toy.brand, toy.productName, ...toy.aliases].join(' ').toLowerCase().includes(text)));
   }
+  getPublicVisibleCatalogCount() { return this.#active.filter(isPublicCatalogVisible).length; }
+  catalogCountSnapshot() {
+    const state=this.#store.state.catalogState || {};
+    const localLearned=entries(state.learnedEntries), localRemote=entries(state.remoteEntries);
+    const sources=[...this.#base, ...this.#remote, ...localLearned, ...localRemote];
+    const key=value=>canonicalKey(value?.canonicalKey || value?.id);
+    const counts=new Map(); for (const row of sources) { const value=key(row); if(value)counts.set(value,(counts.get(value)||0)+1); }
+    const bundledIds=new Set([...this.#base,...this.#remote].map(key).filter(Boolean));
+    return {
+      raw:{ base:this.#base.length, remote:this.#remote.length, localLearned:localLearned.length, localRemote:localRemote.length, total:sources.length },
+      localAdditions:localLearned.length + localRemote.length,
+      adminEdits:Object.keys(state.adminEdits || {}).length,
+      tombstoneCount:Object.values(state.tombstones || {}).filter(record=>record && !record.mergedInto).length,
+      mergedRaw:sources.length,
+      canonicalDeduped:counts.size,
+      active:this.#active.length,
+      publicVisible:this.getPublicVisibleCatalogCount(),
+      remoteIds:[...new Set(this.#remote.map(key).filter(Boolean))].sort(),
+      localOnlyIds:[...new Set([...localLearned,...localRemote].map(key).filter(value=>value&&!bundledIds.has(value)))].sort(),
+      collisionSummary:{ canonicalKeyCollisions:[...counts.entries()].filter(([,count])=>count>1).map(([canonicalKey,count])=>({canonicalKey,count})).sort((a,b)=>a.canonicalKey.localeCompare(b.canonicalKey)), total: [...counts.values()].filter(count=>count>1).length }
+    };
+  }
   applyRemote(entriesValue) { this.#remote = entries(entriesValue); this.#rebuild(); this.ensureSetChildren(); }
   applyBase(entriesValue) { this.#base = entries(entriesValue); this.#rebuild(); this.ensureSetChildren(); }
   applyServerEdits(value) { this.#serverEdits = value?.overrides || value || {}; this.#rebuild(); this.ensureSetChildren(); }
@@ -156,6 +178,7 @@ export class CatalogRepository {
     const definitions = new Map(this.#active.map(toy => [toy.canonicalKey, toy]));
     this.#store.update(state => {
       state.toys ||= [];
+      const knownMideerLegacyBackfill = backfillKnownMideerLegacySixSlot(state, definitions);
       const orphanLifecycle = reconcileOrphanedSplitOwnership(state, definitions);
       // Repair only when the legacy store or stale child IDs proves a previous
       // migration removed owned split children. This runs before the normal
@@ -170,7 +193,7 @@ export class CatalogRepository {
       const pending = (result.residualDuplicateChildren || 0) > 0;
       state.catalogState.syncMetadata.parentChildReconciliationV12 = { reconciledAt:new Date().toISOString(), pending, executionRequired:pending, ...result, remainingCandidates:result.residualDuplicateChildren || 0 };
       state.catalogState.syncMetadata.parentChildDataRepair = { repairedAt:new Date().toISOString(), ...repair };
-      state.catalogState.syncMetadata.parentChildIntegrityV12 = { repairedAt:new Date().toISOString(), ...ownership, ...imageProvenance, orphanLifecycle, legacyChildImageBindings };
+      state.catalogState.syncMetadata.parentChildIntegrityV12 = { repairedAt:new Date().toISOString(), ...ownership, ...imageProvenance, orphanLifecycle, legacyChildImageBindings, knownMideerLegacyBackfill };
     }, 'set-child-migration');
   }
   repairSetStructure() { this.ensureSetChildren(); return this.#store.state.catalogState?.syncMetadata?.parentChildReconciliationV12 || null; }

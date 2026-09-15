@@ -36,6 +36,10 @@ export const skillCode = value => SKILL_CODES.includes(value) ? value : skillAli
 export const unique = values => [...new Set((values || []).filter(Boolean))];
 
 export function normalizeImageRef(source = {}) {
+  if (source.imageRef?.kind === 'packaged') {
+    const path=String(source.imageRef.path || '').replace(/\\/g,'/');
+    return /^catalog-assets\/[a-z0-9][a-z0-9._-]*\.(?:svg|png|webp)$/i.test(path) ? { kind:'packaged', path } : { kind:'placeholder' };
+  }
   if (source.imageRef?.kind && source.imageRef.kind !== 'placeholder') return source.imageRef;
   if (source.photoId) return { kind: 'personal', id: source.photoId };
   if (source.catalogPhotoId || source.confirmedPhotoId) return { kind: 'catalog', id: source.catalogPhotoId || source.confirmedPhotoId };
@@ -93,7 +97,17 @@ export function normalizeToy(source = {}) {
     id: source.id || crypto.randomUUID(),
     canonicalKey: canonicalKey(source.canonicalKey || source.catalogKey || source.key || productName),
     legacyCanonicalKeys: unique([...(source.legacyCanonicalKeys || []), source.catalogKey, source.key].map(canonicalKey)),
-    sku: String(source.sku || source.productCode || source.modelNumber || source.variantCode || '').trim() || null,
+    // A manufacturer set number is the same durable product identifier as a
+    // SKU for Catalog identity purposes. Keep the explicit field as well so
+    // it can travel through Library and Wishlist snapshots without a UI-only
+    // translation layer.
+    sku: String(source.sku || source.setNumber || source.variantId || source.productCode || source.modelNumber || source.variantCode || '').trim() || null,
+    setNumber: String(source.setNumber || source.sku || '').trim() || null,
+    variantId: String(source.variantId || source.variantCode || '').trim() || null,
+    variantName: String(source.variantName || '').trim() || null,
+    pieceCount: numeric(source.pieceCount),
+    exactTitle: String(source.exactTitle || '').trim() || null,
+    identitySource: String(source.identitySource || '').trim() || null,
     brand: normalizeBrand(source.brand), productName,
     names: { en: source.names?.en || source.nameEn || '', zh: source.names?.zh || source.nameZh || '' },
     aliases: unique(source.aliases || []),
@@ -134,7 +148,7 @@ export function normalizeWishlistItem(source = {}) {
   const sourceToy = source.catalogSnapshot || source;
   const normalized = normalizeToy(sourceToy);
   const hasSnapshot = Boolean(sourceToy.productName || sourceToy.name || sourceToy.nameEn || sourceToy.nameZh);
-  const catalogSnapshot = hasSnapshot ? { canonicalKey: normalized.canonicalKey, brand: normalized.brand, productName: normalized.productName, names: normalized.names, categoryCode: normalized.categoryCode, skillCodes: normalized.skillCodes, playMechanics: normalized.playMechanics, imageRef: normalized.imageRef, minAgeMonths: normalized.minAgeMonths, maxAgeMonths: normalized.maxAgeMonths } : null;
+  const catalogSnapshot = hasSnapshot ? { canonicalKey: normalized.canonicalKey, sku:normalized.sku, setNumber:normalized.setNumber, variantId:normalized.variantId, variantName:normalized.variantName, pieceCount:normalized.pieceCount, exactTitle:normalized.exactTitle, identitySource:normalized.identitySource, brand: normalized.brand, productName: normalized.productName, names: normalized.names, categoryCode: normalized.categoryCode, skillCodes: normalized.skillCodes, playMechanics: normalized.playMechanics, imageRef: normalized.imageRef, minAgeMonths: normalized.minAgeMonths, maxAgeMonths: normalized.maxAgeMonths } : null;
   return { id: source.id || crypto.randomUUID(), canonicalKey: canonicalKey(source.canonicalKey || source.catalogKey || normalized.canonicalKey), catalogId: source.catalogId || source.catalogKey || null, catalogSnapshot, status: ['want','purchased','dismissed'].includes(source.status) ? source.status : 'want', priority: ['low','medium','high'].includes(source.priority) ? source.priority : 'medium', notes: String(source.notes || '').slice(0,2000), sourceLink: String(source.sourceLink || '').slice(0,2000), recognizedMetadata: plainObject(source.recognizedMetadata), recommendationState: source.recommendationState || null, dismissedAt: source.dismissedAt || null, addedAt: source.addedAt || new Date().toISOString() };
 }
 

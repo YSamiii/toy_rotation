@@ -187,7 +187,7 @@ function uniqueObjects(values) { const seen=new Set(); return values.filter(valu
 function imageRank(ref) { return { personal:4, catalog:3, remote:2, placeholder:1 }[ref?.kind] || 0; }
 function normalizeName(value) { return String(value || '').normalize('NFKC').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, ''); }
 function normalizeBrand(value) { return String(value === 'other_unspecified' ? '' : value || '').normalize('NFKC').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, ''); }
-function normalizedSku(toy) { return String(toy?.sku || toy?.productCode || toy?.modelNumber || toy?.variantCode || '').normalize('NFKC').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, ''); }
+function normalizedSku(toy) { return String(toy?.setNumber || toy?.variantId || toy?.sku || toy?.productCode || toy?.modelNumber || toy?.variantCode || '').normalize('NFKC').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, ''); }
 function canonicalOwnershipKeys(toy = {}) { return unique([toy.canonicalKey, toy.catalogKey, toy.key, ...(toy.legacyCanonicalKeys || [])].map(canonicalKey)); }
 function stableCatalogIds(toy = {}, includeRecordId = false) { return unique([toy.catalogId, toy.catalogSourceId, toy.sourceCatalogId, toy.sourceId, toy.catalogSnapshot?.id, includeRecordId ? toy.id : null].map(canonicalKey)); }
 function shared(left, right) { return left.some(value => value && right.includes(value)); }

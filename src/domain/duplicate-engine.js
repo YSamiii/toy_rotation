@@ -32,7 +32,7 @@ export function compare(a, b) {
   if (brand && similarName(a,b)) return result('related_variant', 0, a, b, ['related_name']);
   return result('none', 0, a, b, []);
 }
-export function exactProductIdentityKey(toy) { const name=normalizedName(toy); const brand=normalized(toy.brand); return name && brand ? `${brand}|${name}` : ''; }
+export function exactProductIdentityKey(toy) { const brand=normalized(toy.brand); const sku=normalized(toy.setNumber || toy.sku); const name=normalizedName(toy); return brand && sku ? `${brand}|sku:${sku}` : name && brand ? `${brand}|${name}` : ''; }
 export function isActionableDuplicate(kind) { return ['exact_duplicate','same_child_legacy_duplicate','strong_probable_duplicate'].includes(kind); }
 function result(kind, score, a, b, reasons) { return { kind, score, a, b, reasons }; }
 function sameName(a,b) { const x=normalizedName(a),y=normalizedName(b); return Boolean(x && x === y); }

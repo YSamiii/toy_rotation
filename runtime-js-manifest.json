@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-14T15:49:28.520Z",
+  "generatedAt": "2026-09-15T15:58:09.767Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 Development-Fit iPhone QA Candidate 3",
-    "buildDate": "20260914",
-    "buildId": "v0.11.6-development-fit-iphone-qa3-20260914"
+    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 4 Frontend Repair",
+    "buildDate": "20260915",
+    "buildId": "v0.11.6-iphone-qa4-frontend-repair-20260915"
   },
   "entries": [
     "index.html",
@@ -30,10 +30,25 @@
       }
     },
     {
+      "path": "catalog-assets/packaged-image-fixture.svg",
+      "resolvedDeployPath": "./catalog-assets/packaged-image-fixture.svg",
+      "bytes": 612,
+      "sha256": "1b0eee6bf4ccc5b028a8036097ff732ff2b06e55eb12e378dd3283d8b9504940",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "catalog-base.json",
       "resolvedDeployPath": "./catalog-base.json",
-      "bytes": 333044,
-      "sha256": "881cc66c6285c9adadca58a5a17ca71ca38de85a56220743c0d4a453e7027b4a",
+      "bytes": 336744,
+      "sha256": "8ea16bb1dd00b4cfd797056c9b61f6b89d4457bdb8ad5ed978943d783cf2564f",
       "importedBy": [
         "deployment-static"
       ],
@@ -78,7 +93,7 @@
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
       "bytes": 584,
-      "sha256": "2790b0dbba0da696a13b88237e3db62b5f39a452e0393f5ef1e3360b7c598a2d",
+      "sha256": "6002aa2014048f794011d43730626f2e153ed0bf674581a3f26908127a6f9c7f",
       "importedBy": [
         "deployment-static",
         "index.html"
@@ -491,8 +506,8 @@
     {
       "path": "src/data/image-repository.js",
       "resolvedDeployPath": "./src/data/image-repository.js",
-      "bytes": 7521,
-      "sha256": "312f9ec517011b0fb44baba045e349c4a7f2b4854db70da02adc1ae5f64cd5f8",
+      "bytes": 7801,
+      "sha256": "b7b5755f67a5223352789975db976a4e12070fd25568e29f34ee8036d4a2b09b",
       "importedBy": [
         "src/main.js"
       ],
@@ -506,8 +521,8 @@
     {
       "path": "src/data/schema.js",
       "resolvedDeployPath": "./src/data/schema.js",
-      "bytes": 14998,
-      "sha256": "ef02b0879e019a3d6ea706bdcbd04c47f30f977c1f529a86e7839efb3f32808e",
+      "bytes": 16188,
+      "sha256": "a3836e6f5b2e5a07c073635f7a92278e6b912bebe3ecc8b4810cd7ff290d8256",
       "importedBy": [
         "src/data/backup-service.js",
         "src/data/store.js",
@@ -589,8 +604,8 @@
     {
       "path": "src/domain/catalog-repository.js",
       "resolvedDeployPath": "./src/domain/catalog-repository.js",
-      "bytes": 21956,
-      "sha256": "7e2fe5f7ebbb794daaf7ef52cb300525288374a634669973e1b64a0809bfe8a6",
+      "bytes": 23806,
+      "sha256": "18814fc0bf25bfedd9d4d768c5f0fb31ec5de559ace06e788abda9f72ffb3867",
       "importedBy": [
         "src/main.js"
       ],
@@ -649,8 +664,8 @@
     {
       "path": "src/domain/duplicate-engine.js",
       "resolvedDeployPath": "./src/domain/duplicate-engine.js",
-      "bytes": 3448,
-      "sha256": "e48c93c5634b4da0c4801f7735b3b8d9e35edf929d50b8c6fd011998940e2309",
+      "bytes": 3535,
+      "sha256": "0fd2c7021d08e70c4a14be6e67735a457b0e98f7e7812ed8c05a20bc24f19cfc",
       "importedBy": [
         "src/data/backup-service.js",
         "src/domain/catalog-repository.js",
@@ -670,8 +685,8 @@
     {
       "path": "src/domain/identity-service.js",
       "resolvedDeployPath": "./src/domain/identity-service.js",
-      "bytes": 12410,
-      "sha256": "c3ffdc87649d7b63575bf2239b361ffa9206d40757dca5872de067090e9f8947",
+      "bytes": 12446,
+      "sha256": "52547aa5ab23bf378f400161fad4c40b58b19938d4a40367528008dfe7ef7484",
       "importedBy": [
         "src/data/store.js",
         "src/domain/catalog-image-shared-ref-preflight.js",
@@ -747,8 +762,8 @@
     {
       "path": "src/domain/set-service.js",
       "resolvedDeployPath": "./src/domain/set-service.js",
-      "bytes": 56894,
-      "sha256": "7b516f74e07e5816ffadd150e693af1f0e32c7c98fccbce3ca3e4c85d3c4abd4",
+      "bytes": 60003,
+      "sha256": "770d730b75e55e3c31360d927cbe62f92f20d228495629f7ecf1f14592937fdb",
       "importedBy": [
         "src/data/backup-service.js",
         "src/domain/catalog-presentation.js",
@@ -806,6 +821,21 @@
       "resolvedDeployPath": "./src/features/admin-service.js",
       "bytes": 8303,
       "sha256": "69b243565d41d5bbc7007fed5377a321594bf1794a5dce62df8d206b5d784036",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/features/catalog-count-diagnostic.js",
+      "resolvedDeployPath": "./src/features/catalog-count-diagnostic.js",
+      "bytes": 734,
+      "sha256": "2e140ed721acb5085fa2160f523de2d21c44d560ff8938f951cd49aeef7b5ef8",
       "importedBy": [
         "src/main.js"
       ],
@@ -1041,8 +1071,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 150821,
-      "sha256": "0a8d67557367077c321bc4db880a3c361e6899ba25def02524d7f778f7dcbf9b",
+      "bytes": 153325,
+      "sha256": "e68b303ffabe282a2b5aae322fedbe02edc6fd73ba5da31c653cce352e5468a6",
       "importedBy": [
         "index.html"
       ],
@@ -1075,6 +1105,7 @@
         "src/features/recognition-device-diagnostic.js",
         "src/features/admin-catalog-save-diagnostic.js",
         "src/features/storage-usage-diagnostic.js",
+        "src/features/catalog-count-diagnostic.js",
         "src/features/startup-trace.js",
         "src/ui/i18n.js",
         "src/ui/modal-manager.js",
@@ -1122,8 +1153,8 @@
     {
       "path": "src/ui/app.css",
       "resolvedDeployPath": "./src/ui/app.css",
-      "bytes": 18307,
-      "sha256": "5562dc95c9334faebfbec6a61523c0f2a33ea161bfa3f8ef0dcfb7abb2b324cc",
+      "bytes": 19369,
+      "sha256": "612b36982ebae61201a07bec5dde4f13f4efed8aa1b28824b4f655aef779f4cd",
       "importedBy": [
         "deployment-static"
       ],
@@ -1137,8 +1168,8 @@
     {
       "path": "src/ui/i18n.js",
       "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 48015,
-      "sha256": "2ce276af839d92c7eebbf01cea413e8ca70d76ddbe7d19a614748a81fc5b509a",
+      "bytes": 50003,
+      "sha256": "9bc7f5d0f24b20ed6355d1d511011d1f42c6cc79537e470960b4858340ed8e09",
       "importedBy": [
         "src/main.js"
       ],
@@ -1274,8 +1305,8 @@
     {
       "path": "storage-recovery-diagnostic.js",
       "resolvedDeployPath": "./storage-recovery-diagnostic.js",
-      "bytes": 7307,
-      "sha256": "8ecc9c38b4d7dce97edff37f867a2fddaf1a9d304fd37a8d9dc228fa1a59c3aa",
+      "bytes": 7338,
+      "sha256": "a32840d675def444209c8cc1c4433d35c62453feb6fe159531a1aaa6f78b36d2",
       "importedBy": [
         "storage-recovery-diagnostic.html"
       ],
@@ -1292,7 +1323,7 @@
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
       "bytes": 2063,
-      "sha256": "d025bd82f7f0fc589b61b805c6c501ae0fe2b8b379935c32a31f6ebbb29e766f",
+      "sha256": "1b4037197abfb98f34913b23a502c989750e019a2cfc6ff6dc7d0f027d29f6fb",
       "importedBy": [
         "deployment-static"
       ],
@@ -1307,6 +1338,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 75
+    "checkedInputs": 77
   }
 }

@@ -66,6 +66,16 @@ Object.assign(DICTIONARY.zh, {
   developmentChallenge:{1:'入门',2:'基础',3:'适中',4:'进阶',5:'较高挑战'}, challengeFilter:'难度', ageFilter:'月龄', ageCurrent:'当前适龄', ageLater:'以后再玩', fitCurrentChild:'适合当前孩子', noCatalogResults:'没有符合这些筛选条件的标准玩具。', mechanicsReference:'玩法机制参考',
   mechanic:{...DICTIONARY.zh.mechanic,posting:'投放 / 落下玩法',shape_sorting:'形状分类',puzzle:'益智拼图',matching_sorting:'配对 / 分类',stacking:'堆叠',threading_lacing:'穿线 / 串珠',lock_key:'开锁 / 钥匙',screw_bolt_tool:'螺丝 / 工具操作',ball_drop:'滚球下落',blocks_build:'积木建构',magnetic_build:'磁力建构',pretend_role:'情境角色扮演',track_vehicle:'车辆 / 轨道',pull_push_walk:'推拉 / 学步',magnetic_fishing:'磁力钓鱼',maze_logic:'迷宫 / 逻辑',jigsaw:'拼图',balance:'平衡',cause_effect:'因果操作',music_play:'音乐操作',sensory:'感官探索',fine_motor:'精细动作'}
 });
+Object.assign(DICTIONARY.en, {
+  catalogReportTitle:'Report an issue', catalogReportType:'Issue type', catalogReportDescription:'Description', catalogReportAttachment:'Optional screenshot', catalogReportSubmit:'Submit report', catalogReportSubmitted:'Report submitted.', catalogReportAttachmentTooLarge:'Attachment must be 700 KB or smaller.', catalogReportFailed:'Unable to save report.',
+  catalogReportType:{image_wrong:'Image is incorrect',duplicate:'Duplicate product',name_wrong:'Name is incorrect',brand_wrong:'Brand is incorrect',sku_wrong:'SKU / model is incorrect',age_wrong:'Age range is incorrect',category_wrong:'Toy type is incorrect',skills_wrong:'Skills are incorrect',mechanism_wrong:'Core play mechanism is incorrect',parent_child_wrong:'Parent / child relationship is incorrect',retired:'Retired or nonexistent',other:'Other'},
+  exportCatalogCountDiagnostic:'Export Catalog count diagnostic', exportCatalogCountDiagnosticHint:'Read-only export of Catalog source, merge, visibility, and count state.'
+});
+Object.assign(DICTIONARY.zh, {
+  catalogReportTitle:'报告问题', catalogReportType:'问题类型', catalogReportDescription:'说明', catalogReportAttachment:'可选截图', catalogReportSubmit:'提交报告', catalogReportSubmitted:'报告已提交。', catalogReportAttachmentTooLarge:'附件不能超过 700 KB。', catalogReportFailed:'无法保存报告。',
+  catalogReportType:{image_wrong:'图片不正确',duplicate:'重复产品',name_wrong:'名称不正确',brand_wrong:'品牌不正确',sku_wrong:'SKU / 型号不正确',age_wrong:'建议月龄不正确',category_wrong:'玩具类型不正确',skills_wrong:'能力标签不正确',mechanism_wrong:'核心玩法机制不正确',parent_child_wrong:'套装 / 子玩具关系不正确',retired:'已停产或不存在',other:'其他'},
+  exportCatalogCountDiagnostic:'导出标准库数量诊断', exportCatalogCountDiagnosticHint:'只读导出标准库来源、合并、可见性与数量状态。'
+});
 export function createI18n(store) {
   const language = () => store.state.settings.language === 'system' ? (navigator.language.startsWith('zh') ? 'zh' : 'en') : store.state.settings.language;
   const t = (key, params = {}) => {

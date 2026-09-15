@@ -9,6 +9,7 @@ export class ImageRepository {
   async resolve(ref) {
     if (!ref || ref.kind === 'placeholder') return null;
     if (ref.kind === 'generated') return generatedCatalogFallback(ref);
+    if (ref.kind === 'packaged') return packagedAssetUrl(ref);
     const cacheKey = ref.kind === 'remote' ? ref.url : `${ref.kind}:${ref.id}`;
     if (this.#cache.has(cacheKey)) return this.#cache.get(cacheKey);
     const stored = ref.kind === 'remote' ? ref.url : await this.#read(ref.id);
@@ -86,6 +87,11 @@ export class ImageRepository {
   }
   async #write(key, value) { const db = await this.#db(); return new Promise((resolve, reject) => { const tx = db.transaction(LEGACY_STORE, 'readwrite'); tx.objectStore(LEGACY_STORE).put(value, key); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); }
   async #delete(key) { const db = await this.#db(); return new Promise((resolve, reject) => { const tx = db.transaction(LEGACY_STORE, 'readwrite'); tx.objectStore(LEGACY_STORE).delete(key); tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); }); }
+}
+export function packagedAssetUrl(ref = {}) {
+  const path=String(ref.path || '').replace(/\\/g,'/');
+  if (!/^catalog-assets\/[a-z0-9][a-z0-9._-]*\.(?:svg|png|webp)$/i.test(path)) return null;
+  return `./${path}`;
 }
 function generatedCatalogFallback(ref) {
   const brand=escapeXml(String(ref.brand || 'Toy Rotation').slice(0,34));
