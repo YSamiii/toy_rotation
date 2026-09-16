@@ -38,7 +38,7 @@ export const unique = values => [...new Set((values || []).filter(Boolean))];
 export function normalizeImageRef(source = {}) {
   if (source.imageRef?.kind === 'packaged') {
     const path=String(source.imageRef.path || '').replace(/\\/g,'/');
-    return /^catalog-assets\/[a-z0-9][a-z0-9._-]*\.(?:svg|png|webp)$/i.test(path) ? { kind:'packaged', path } : { kind:'placeholder' };
+    return /^catalog-assets\/[a-z0-9][a-z0-9._-]*\.(?:svg|png|webp|jpe?g)$/i.test(path) ? { kind:'packaged', path } : { kind:'placeholder' };
   }
   if (source.imageRef?.kind && source.imageRef.kind !== 'placeholder') return source.imageRef;
   if (source.photoId) return { kind: 'personal', id: source.photoId };

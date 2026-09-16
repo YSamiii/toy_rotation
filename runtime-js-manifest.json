@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-15T15:58:09.767Z",
+  "generatedAt": "2026-09-16T19:39:02.234Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 4 Frontend Repair",
-    "buildDate": "20260915",
-    "buildId": "v0.11.6-iphone-qa4-frontend-repair-20260915"
+    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 5 Image Audit",
+    "buildDate": "20260916",
+    "buildId": "v0.11.6-iphone-qa5-image-audit-20260916"
   },
   "entries": [
     "index.html",
@@ -19,6 +19,156 @@
       "resolvedDeployPath": "./catalog-assets/bduck-bounce-catch-game.webp",
       "bytes": 41674,
       "sha256": "dd8d8a0503709001d51df3929570b2d1897e8d25b26c49a0cbc95e04f49aa664",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/cherrypick-dustless-chalk-crayons.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-dustless-chalk-crayons.jpg",
+      "bytes": 23977,
+      "sha256": "3c0a08b8bdce7a4bed2065f3050fd63b6058a9b599cc00fc36de50d5a9e5ba70",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/cherrypick-emotions-magnets-soft-foam-20pc.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-emotions-magnets-soft-foam-20pc.jpg",
+      "bytes": 31634,
+      "sha256": "f7dbc7585e1dec66dfb620b8a19a86e2f198a8bb4a4abd59b3344054b62a7fa5",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/cherrypick-original-magic-playwall.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-original-magic-playwall.jpg",
+      "bytes": 65681,
+      "sha256": "49c4ef0ede77ba62d5c8ff385deb84005a5a05fac32c6cd45b96215785e097a3",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/cherrypick-soft-foam-magnetic-letters.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-soft-foam-magnetic-letters.jpg",
+      "bytes": 30365,
+      "sha256": "3c3fbf7c25b1c94c3e6879213d771f18bc1ead0903b2aa4f90b38ac95a4a8ad3",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/lego-duplo-3in1-construction-vehicles-10475.png",
+      "resolvedDeployPath": "./catalog-assets/lego-duplo-3in1-construction-vehicles-10475.png",
+      "bytes": 120435,
+      "sha256": "510aa25bcf9f1abd6385364236972e96c1673fb52044fd44ca9a8b1f5aa572d0",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/lego-duplo-animal-train-10955.jpg",
+      "resolvedDeployPath": "./catalog-assets/lego-duplo-animal-train-10955.jpg",
+      "bytes": 90764,
+      "sha256": "3736cac2185ac843f8ceed04a9ab7d4c042ef5afffb54ff1a09d0b7301de8ccd",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/lego-duplo-fire-truck-hose-firefighter-10473.jpg",
+      "resolvedDeployPath": "./catalog-assets/lego-duplo-fire-truck-hose-firefighter-10473.jpg",
+      "bytes": 100919,
+      "sha256": "ad876feeb6209405527d7e3813de4aedc9509053471b6c9f59b874b741c0d174",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-animal-toys-set-15pcs.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-animal-toys-set-15pcs.jpg",
+      "bytes": 56769,
+      "sha256": "e062bf4ff7b9136ce15263bd994abf587b26a1c9bfa896c4ff87975c89998e90",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg",
+      "bytes": 60320,
+      "sha256": "b926afe91148eccc63e9ea4367482f0833d566a5b6b55fd09020b6d8466cd98b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-my-first-puzzle-dinosaurs-6in1.webp",
+      "resolvedDeployPath": "./catalog-assets/mideer-my-first-puzzle-dinosaurs-6in1.webp",
+      "bytes": 32238,
+      "sha256": "e5fe90815379cd197aa58f5aeaaa5bb3cde546a2fb35882c2d2cbe9074043432",
       "importedBy": [
         "deployment-static"
       ],
@@ -47,8 +197,8 @@
     {
       "path": "catalog-base.json",
       "resolvedDeployPath": "./catalog-base.json",
-      "bytes": 336744,
-      "sha256": "8ea16bb1dd00b4cfd797056c9b61f6b89d4457bdb8ad5ed978943d783cf2564f",
+      "bytes": 339018,
+      "sha256": "246b9b305a8359db6821f64f1a7203a3c20575fbae647cf275a107a4aabbfc20",
       "importedBy": [
         "deployment-static"
       ],
@@ -92,8 +242,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 584,
-      "sha256": "6002aa2014048f794011d43730626f2e153ed0bf674581a3f26908127a6f9c7f",
+      "bytes": 572,
+      "sha256": "2757eacb97abb7d2881b6e08d4ad525d2110a0525ce3ae05a63465983032790f",
       "importedBy": [
         "deployment-static",
         "index.html"
@@ -459,8 +609,8 @@
     {
       "path": "src/data/catalog-image-assets.js",
       "resolvedDeployPath": "./src/data/catalog-image-assets.js",
-      "bytes": 14484,
-      "sha256": "2bc38e0c673b99d75c05d6b0580907a503b176d53ad729bf54a5f58b6892d75a",
+      "bytes": 17901,
+      "sha256": "f8da80e4a72a5db4cc2d063ed42e0790f38bc8be9e6e746c41e082d73b4d9f78",
       "importedBy": [
         "src/domain/catalog-repository.js"
       ],
@@ -506,8 +656,8 @@
     {
       "path": "src/data/image-repository.js",
       "resolvedDeployPath": "./src/data/image-repository.js",
-      "bytes": 7801,
-      "sha256": "b7b5755f67a5223352789975db976a4e12070fd25568e29f34ee8036d4a2b09b",
+      "bytes": 7807,
+      "sha256": "595b34f9d4b62e35f9f5067271df9f97dd142cac8445b463d5e8beeb087ab364",
       "importedBy": [
         "src/main.js"
       ],
@@ -521,8 +671,8 @@
     {
       "path": "src/data/schema.js",
       "resolvedDeployPath": "./src/data/schema.js",
-      "bytes": 16188,
-      "sha256": "a3836e6f5b2e5a07c073635f7a92278e6b912bebe3ecc8b4810cd7ff290d8256",
+      "bytes": 16194,
+      "sha256": "6f152a02b670288217f00200d9e31ef5d81b674ed2c80ef6b39a29608548d44c",
       "importedBy": [
         "src/data/backup-service.js",
         "src/data/store.js",
@@ -577,6 +727,21 @@
       "staticImports": [
         "src/domain/identity-service.js"
       ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "src/domain/catalog-image-usability.js",
+      "resolvedDeployPath": "./src/domain/catalog-image-usability.js",
+      "bytes": 3373,
+      "sha256": "15caabde69a6b8598a4c5afd69f964d4d29fe34a03579d607fe264416260b66b",
+      "importedBy": [
+        "src/features/real-device-owned-wishlist-image-audit.js"
+      ],
+      "staticImports": [],
       "dynamicImports": [],
       "browserTargetCompatibility": {
         "target": "safari16",
@@ -747,6 +912,7 @@
       "bytes": 22174,
       "sha256": "7ff3da8654d5759c657f8ae4478db444a92ca34e9a0624a67b29ec58858d02a0",
       "importedBy": [
+        "src/features/real-device-owned-wishlist-image-audit.js",
         "src/main.js"
       ],
       "staticImports": [
@@ -920,6 +1086,24 @@
       }
     },
     {
+      "path": "src/features/real-device-owned-wishlist-image-audit.js",
+      "resolvedDeployPath": "./src/features/real-device-owned-wishlist-image-audit.js",
+      "bytes": 6708,
+      "sha256": "5e26d807d2631abef517e18e95008f83ce23abe61d006ff4de60b16b2ea77d17",
+      "importedBy": [
+        "src/main.js"
+      ],
+      "staticImports": [
+        "src/domain/catalog-image-usability.js",
+        "src/domain/rotation-engine.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "src/features/recognition-device-diagnostic.js",
       "resolvedDeployPath": "./src/features/recognition-device-diagnostic.js",
       "bytes": 8834,
@@ -1071,8 +1255,8 @@
     {
       "path": "src/main.js",
       "resolvedDeployPath": "./src/main.js",
-      "bytes": 153325,
-      "sha256": "e68b303ffabe282a2b5aae322fedbe02edc6fd73ba5da31c653cce352e5468a6",
+      "bytes": 153977,
+      "sha256": "9b76b79c6bc1fda5f08c1e4f6a0ae4deab982aa8b22a47c45fdaae050138b917",
       "importedBy": [
         "index.html"
       ],
@@ -1106,6 +1290,7 @@
         "src/features/admin-catalog-save-diagnostic.js",
         "src/features/storage-usage-diagnostic.js",
         "src/features/catalog-count-diagnostic.js",
+        "src/features/real-device-owned-wishlist-image-audit.js",
         "src/features/startup-trace.js",
         "src/ui/i18n.js",
         "src/ui/modal-manager.js",
@@ -1168,8 +1353,8 @@
     {
       "path": "src/ui/i18n.js",
       "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 50003,
-      "sha256": "9bc7f5d0f24b20ed6355d1d511011d1f42c6cc79537e470960b4858340ed8e09",
+      "bytes": 50406,
+      "sha256": "5c9cff8c11834e0c81fbfd61bbf0153eda2420bedeccf39c4a89fadec6ee96e1",
       "importedBy": [
         "src/main.js"
       ],
@@ -1305,8 +1490,8 @@
     {
       "path": "storage-recovery-diagnostic.js",
       "resolvedDeployPath": "./storage-recovery-diagnostic.js",
-      "bytes": 7338,
-      "sha256": "a32840d675def444209c8cc1c4433d35c62453feb6fe159531a1aaa6f78b36d2",
+      "bytes": 7334,
+      "sha256": "fb053b3e2f808e0f9fb678ff02750b8ab39b0de1f13f47d7329e7fd1d9762e20",
       "importedBy": [
         "storage-recovery-diagnostic.html"
       ],
@@ -1322,8 +1507,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2063,
-      "sha256": "1b4037197abfb98f34913b23a502c989750e019a2cfc6ff6dc7d0f027d29f6fb",
+      "bytes": 2059,
+      "sha256": "a24f19724ce080f3875e10bb3c8cf5008e76fba715b1d15973fa32aa869f7492",
       "importedBy": [
         "deployment-static"
       ],
@@ -1338,6 +1523,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 77
+    "checkedInputs": 89
   }
 }

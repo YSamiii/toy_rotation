@@ -20,6 +20,9 @@ const UPDATED_AT = '2026-08-24T00:00:00.000Z';
 function remote(url, imageSource, imageSourceType) {
   return { kind:'remote', url, catalogImageRef:url, imageSource, imageSourceType, verificationStatus:imageSourceType === 'official_cdn' ? 'verified_real' : 'manually_confirmed', updatedAt:UPDATED_AT, fallbackState:'none', assetState:imageSourceType === 'official_cdn' ? 'verified_real' : 'stable_remote' };
 }
+function packaged(path, imageSource, sourceType, mimeType, contentHash) {
+  return { kind:'packaged', path, catalogImageRef:`./${path}`, imageSource, imageSourceType:sourceType, verificationStatus:'verified_real', updatedAt:'2026-09-16T00:00:00.000Z', fallbackState:'none', assetState:'verified_packaged', mimeType, contentHash };
+}
 const BATCH1_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH1_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, remote(url, source, 'official_cdn')]));
 const BATCH2_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH2_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, remote(url, source, 'official_cdn')]));
 const BATCH3_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH3_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, remote(url, source, 'official_cdn')]));
@@ -99,6 +102,16 @@ export const CATALOG_IMAGE_ASSETS = Object.freeze({
   "mideer-my-first-construction-6in1": remote("https://mideer.store/wp-content/uploads/2025/01/0dafc3f81f68ef0ab4a49d4a2d91dcfb_4460e93b-5e45-4e1e-9d4b-5f9a4182a94d.webp", "https://mideer.store/en/product/my-first-pieces-6-in-1-construction-machines/", 'stable_retailer'),
   "hape-jungle-musical-railway": remote("https://eurekakids.com.hk/cdn/shop/files/E3825-jpg.webp?v=1773987744", "https://eurekakids.com.hk/products/music-and-monkey-railway", "stable_retailer"),
   "bduck-bounce-catch-game": remote("./catalog-assets/bduck-bounce-catch-game.webp", "bundled:catalog-assets/bduck-bounce-catch-game.webp", "manually_confirmed"),
+  "cherrypick-original-magic-playwall": packaged('catalog-assets/cherrypick-original-magic-playwall.jpg', 'https://shopcherrypick.com/products/magic-playwall?variant=44481003192508', 'official_variant_cdn', 'image/jpeg', 'sha256:49c4ef0ede77ba62d5c8ff385deb84005a5a05fac32c6cd45b96215785e097a3'),
+  "cherrypick-emotions-magnets-soft-foam-20pc": packaged('catalog-assets/cherrypick-emotions-magnets-soft-foam-20pc.jpg', 'https://shopcherrypick.com/products/emotions-magnets-soft-foam-magnetic-set', 'official_variant_cdn', 'image/jpeg', 'sha256:f7dbc7585e1dec66dfb620b8a19a86e2f198a8bb4a4abd59b3344054b62a7fa5'),
+  "cherrypick-soft-foam-magnetic-letters": packaged('catalog-assets/cherrypick-soft-foam-magnetic-letters.jpg', 'https://shopcherrypick.com/products/soft-foam-magnetic-letters-symbols-150pc-set?variant=44529740382396', 'official_variant_cdn', 'image/jpeg', 'sha256:3c3fbf7c25b1c94c3e6879213d771f18bc1ead0903b2aa4f90b38ac95a4a8ad3'),
+  "cherrypick-dustless-chalk-crayons": packaged('catalog-assets/cherrypick-dustless-chalk-crayons.jpg', 'https://shopcherrypick.com/products/dustless-chalk-crayons-magnetic-holder-bundle-for-magic-playwall?variant=44190785765564', 'official_variant_cdn', 'image/jpeg', 'sha256:3c0a08b8bdce7a4bed2065f3050fd63b6058a9b599cc00fc36de50d5a9e5ba70'),
+  "mideer-animal-toys-set-15pcs": packaged('catalog-assets/mideer-animal-toys-set-15pcs.jpg', 'https://www.toytag.com/products/animals-toy-set-15p', 'authorized_retailer_exact_sku', 'image/jpeg', 'sha256:e062bf4ff7b9136ce15263bd994abf587b26a1c9bfa896c4ff87975c89998e90'),
+  "mideer-level1-home-sweet-home-puzzle": packaged('catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg', 'https://mideermall.com/products/mideer-level-up-puzzles-level-1-home-sweet-home', 'authorized_retailer_exact_sku', 'image/jpeg', 'sha256:b926afe91148eccc63e9ea4367482f0833d566a5b6b55fd09020b6d8466cd98b'),
+  "mideer-my-first-puzzle-dinosaurs-6in1": packaged('catalog-assets/mideer-my-first-puzzle-dinosaurs-6in1.webp', 'https://mideer.store/en/product/my-first-dinosaur-pieces-6-in-1/', 'official_cdn', 'image/webp', 'sha256:e5fe90815379cd197aa58f5aeaaa5bb3cde546a2fb35882c2d2cbe9074043432'),
+  "lego-duplo-fire-truck-hose-firefighter-10473": packaged('catalog-assets/lego-duplo-fire-truck-hose-firefighter-10473.jpg', 'https://www.lego.com/en-ca/product/fire-truck-with-hose-and-firefighter-10473', 'authorized_retailer_exact_set', 'image/jpeg', 'sha256:ad876feeb6209405527d7e3813de4aedc9509053471b6c9f59b874b741c0d174'),
+  "lego-duplo-3in1-construction-vehicles-10475": packaged('catalog-assets/lego-duplo-3in1-construction-vehicles-10475.png', 'https://www.lego.com/en-us/product/3-in-1-construction-vehicles-10475', 'authorized_retailer_exact_set', 'image/png', 'sha256:510aa25bcf9f1abd6385364236972e96c1673fb52044fd44ca9a8b1f5aa572d0'),
+  "lego-duplo-animal-train": packaged('catalog-assets/lego-duplo-animal-train-10955.jpg', 'https://www.lego.com/en-pt/product/animal-train-10955', 'authorized_retailer_exact_set', 'image/jpeg', 'sha256:3736cac2185ac843f8ceed04a9ab7d4c042ef5afffb54ff1a09d0b7301de8ccd'),
   ...BATCH1_OFFICIAL_IMAGE_ASSETS,
   ...BATCH2_OFFICIAL_IMAGE_ASSETS,
   ...BATCH3_OFFICIAL_IMAGE_ASSETS,

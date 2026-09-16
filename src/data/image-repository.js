@@ -90,7 +90,7 @@ export class ImageRepository {
 }
 export function packagedAssetUrl(ref = {}) {
   const path=String(ref.path || '').replace(/\\/g,'/');
-  if (!/^catalog-assets\/[a-z0-9][a-z0-9._-]*\.(?:svg|png|webp)$/i.test(path)) return null;
+  if (!/^catalog-assets\/[a-z0-9][a-z0-9._-]*\.(?:svg|png|webp|jpe?g)$/i.test(path)) return null;
   return `./${path}`;
 }
 function generatedCatalogFallback(ref) {

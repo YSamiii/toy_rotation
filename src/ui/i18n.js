@@ -55,12 +55,14 @@ export const DICTIONARY = {
   }
 };
 Object.assign(DICTIONARY.en, {
+  dataAudit:'Data Audit', exportToyImageAudit:'Export Toy Image Audit', exportToyImageAuditHint:'Read-only image status for mapped Toy Library and Wishlist items. No images or private notes are exported.',
   developmentFeedbackTitle:'How did this go?', developmentFeedbackPrompt:'How did this go?', developmentFeedback:{too_easy:'Too Easy',just_right:'Just Right',good_challenge:'Good Challenge',too_hard:'Too Hard',not_interested:'Not Interested'},
   recommendationReason:{progression:'A good next challenge for current play.',developmentFit:'Fits current play well.',diversity:'Adds variety to the current shelf.',recency:'A less recent option for this rotation.',familiar:'A familiar option for the current shelf.'},
   developmentChallenge:{1:'Intro',2:'Basic',3:'Moderate',4:'Advanced',5:'Higher Challenge'}, challengeFilter:'Difficulty', ageFilter:'Age', ageCurrent:'Current age', ageLater:'For later', fitCurrentChild:'Fit Current Child', noCatalogResults:'No catalog toys match these filters.', mechanicsReference:'Play mechanism reference',
   mechanic:{...DICTIONARY.en.mechanic,posting:'Posting / drop play',shape_sorting:'Shape sorting',puzzle:'Puzzle',matching_sorting:'Matching / sorting',stacking:'Stacking',threading_lacing:'Threading / lacing',lock_key:'Lock and key',screw_bolt_tool:'Screw / tool play',ball_drop:'Ball drop',blocks_build:'Block construction',magnetic_build:'Magnetic construction',pretend_role:'Pretend role play',track_vehicle:'Vehicles / tracks',pull_push_walk:'Pull / push / walk',magnetic_fishing:'Magnetic fishing',maze_logic:'Maze / logic',jigsaw:'Jigsaw puzzle',balance:'Balance',cause_effect:'Cause and effect',music_play:'Music play',sensory:'Sensory play',fine_motor:'Fine-motor play'}
 });
 Object.assign(DICTIONARY.zh, {
+  dataAudit:'数据审计', exportToyImageAudit:'导出玩具图片审计', exportToyImageAuditHint:'只读导出已映射玩具库和心愿单的图片状态，不导出图片或私密备注。',
   developmentFeedbackTitle:'这次玩得怎么样？', developmentFeedbackPrompt:'这次玩得怎么样？', developmentFeedback:{too_easy:'太简单',just_right:'刚刚好',good_challenge:'有一点挑战，正合适',too_hard:'太难',not_interested:'没兴趣'},
   recommendationReason:{progression:'适合当前玩法的下一步挑战。',developmentFit:'适合孩子当前的玩法。',diversity:'为当前玩具架增加一些变化。',recency:'这轮优先安排较久没玩的玩具。',familiar:'适合当前玩具架的熟悉选择。'},
   developmentChallenge:{1:'入门',2:'基础',3:'适中',4:'进阶',5:'较高挑战'}, challengeFilter:'难度', ageFilter:'月龄', ageCurrent:'当前适龄', ageLater:'以后再玩', fitCurrentChild:'适合当前孩子', noCatalogResults:'没有符合这些筛选条件的标准玩具。', mechanicsReference:'玩法机制参考',
