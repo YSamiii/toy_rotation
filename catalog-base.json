@@ -9801,7 +9801,7 @@
         {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-2","name":"Police Car Puzzle","nameZh":"警车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
         {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-3","name":"Ice Cream Truck Puzzle","nameZh":"冰淇淋车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
         {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-4","name":"Garbage Truck Puzzle","nameZh":"垃圾车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
-        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-5","name":"Dump Truck Puzzle","nameZh":"运输车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
+        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-5","name":"Delivery Truck Puzzle","nameZh":"运输车拼图","aliases":["Dump Truck Puzzle"],"category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
         {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-6","name":"School Bus Puzzle","nameZh":"校车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]}
       ]
     },

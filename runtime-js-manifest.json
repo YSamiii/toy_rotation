@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-16T19:39:02.234Z",
+  "generatedAt": "2026-09-17T15:05:32.509Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 5 Image Audit",
-    "buildDate": "20260916",
-    "buildId": "v0.11.6-iphone-qa5-image-audit-20260916"
+    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 6 Upload Friendly",
+    "buildDate": "20260917",
+    "buildId": "v0.11.6-iphone-qa6-upload-friendly-20260917"
   },
   "entries": [
     "index.html",
@@ -14,6 +14,21 @@
     "startup-diagnostic.html"
   ],
   "files": [
+    {
+      "path": "app.bundle.js",
+      "resolvedDeployPath": "./app.bundle.js",
+      "bytes": 771150,
+      "sha256": "06e888afd1d26d0449bccbecff5bfa02bd869658b276396a1ed1c547ff7b19d2",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
     {
       "path": "catalog-assets/bduck-bounce-catch-game.webp",
       "resolvedDeployPath": "./catalog-assets/bduck-bounce-catch-game.webp",
@@ -150,6 +165,186 @@
       }
     },
     {
+      "path": "catalog-assets/mideer-busy-cars-puzzle-1.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-1.jpg",
+      "bytes": 34353,
+      "sha256": "40cd9bdc31b537c6497cd502ea6d51a1777eb3384ef93782a92b892cfba39237",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-busy-cars-puzzle-2.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-2.jpg",
+      "bytes": 38212,
+      "sha256": "1485fec9f9ea652b748d22cb854d87f415140201d01de567b2a0dfa5b2127eda",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-busy-cars-puzzle-3.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-3.jpg",
+      "bytes": 39716,
+      "sha256": "13a3ebe749f7a7f71915e1fbc6f97cd9502c52ebe1c2cdfcd628cb01ef86069e",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-busy-cars-puzzle-4.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-4.jpg",
+      "bytes": 30662,
+      "sha256": "972db788aadd40c8ca58c0be17d2e3b774875f758581dad8ac7fe24e05381dfe",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-busy-cars-puzzle-5.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-5.jpg",
+      "bytes": 30036,
+      "sha256": "98ae82eead9d904f1e122384232dcd962da970262b93b33836faa15764bdadbd",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-busy-cars-puzzle-6.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-6.jpg",
+      "bytes": 38489,
+      "sha256": "f038a4549bdb351ff2860cec47ced960c926b58dbf32ee4d5d7ee397e296e49b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-1.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-1.jpg",
+      "bytes": 32941,
+      "sha256": "50a37b75207f08231087fd2ca946ecd8677110922a6de906f7d8db293c7f707b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-2.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-2.jpg",
+      "bytes": 33261,
+      "sha256": "2f56da3269e237f87c4c24699271b74b4ac78d1197a028b5e9d7a55a5ee55825",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-3.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-3.jpg",
+      "bytes": 41614,
+      "sha256": "cb0a06968a763966e5f1122a2a50602f9b304b44792d879209d347552d62f7ef",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-4.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-4.jpg",
+      "bytes": 31803,
+      "sha256": "b528639f61013f52334c4089c2a8291e5d01a1b6e5b4846cc23b1e508cee2976",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-5.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-5.jpg",
+      "bytes": 30923,
+      "sha256": "1790aa814c576ef9ff42cbb969af90c2d0f50a921eb8bc6bb5ed97ee289e0f3b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-6.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-6.jpg",
+      "bytes": 38875,
+      "sha256": "28f1c34e738d981870f6b08343fbe26d66c4907c3ec4b6d74270084c31fb0f49",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg",
       "resolvedDeployPath": "./catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg",
       "bytes": 60320,
@@ -197,8 +392,8 @@
     {
       "path": "catalog-base.json",
       "resolvedDeployPath": "./catalog-base.json",
-      "bytes": 339018,
-      "sha256": "246b9b305a8359db6821f64f1a7203a3c20575fbae647cf275a107a4aabbfc20",
+      "bytes": 339054,
+      "sha256": "0b8cb40f98f3995c1225f5ef75cdf26b87ccac206010b6875980cfdaf32c761a",
       "importedBy": [
         "deployment-static"
       ],
@@ -242,11 +437,10 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 572,
-      "sha256": "2757eacb97abb7d2881b6e08d4ad525d2110a0525ce3ae05a63465983032790f",
+      "bytes": 584,
+      "sha256": "55829f6d0215851bd4edca2a8231643d5101be0c78d0b1f4e5e8e7691736f53a",
       "importedBy": [
-        "deployment-static",
-        "index.html"
+        "deployment-static"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -318,13 +512,12 @@
     {
       "path": "index.html",
       "resolvedDeployPath": "./index.html",
-      "bytes": 5296,
-      "sha256": "f7e426088905e71898f82063d56c90ee3c300faad54cf0b803f85f9a600c3d51",
-      "importedBy": [],
-      "staticImports": [
-        "config.js",
-        "src/main.js"
+      "bytes": 5298,
+      "sha256": "0643f52ec94ca5935359a3ef4284bdced6331678465d3f972ac948f1990603f2",
+      "importedBy": [
+        "deployment-static"
       ],
+      "staticImports": [],
       "dynamicImports": [],
       "browserTargetCompatibility": {
         "target": "safari16",
@@ -338,995 +531,6 @@
       "sha256": "aeeaca9f272e388d73cca4d37c0911067b2cfcf465340fb11346eb820c6762c1",
       "importedBy": [
         "deployment-static"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/backup-service.js",
-      "resolvedDeployPath": "./src/data/backup-service.js",
-      "bytes": 18850,
-      "sha256": "fb552d179aaf89f8cd431b8731d5bfae4308f8783d60945610610ac0081e4655",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js",
-        "src/data/store.js",
-        "src/domain/duplicate-engine.js",
-        "src/domain/set-service.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch1.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch1.js",
-      "bytes": 48898,
-      "sha256": "9c7aa7334d3acf324381f57f50ead01d82c10573eac2227cdd24536949afa70c",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch10.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch10.js",
-      "bytes": 1553,
-      "sha256": "87a3bda7b7086a3d7d674c5f34ad8d03fd78ffc02f9ae3513ea4e87af6118239",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch11.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch11.js",
-      "bytes": 441,
-      "sha256": "21c4f726b07f83b5348679186e689c8c927bd20094fec934617c3446b0387999",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch12.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch12.js",
-      "bytes": 308,
-      "sha256": "0422846a0b368222fe547359c330d6e58cc51414e5b795ec9c24e2bf597752ed",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch13.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch13.js",
-      "bytes": 1126,
-      "sha256": "545e7ffa1e55b5aa57abd4417896a4f4b2efa47060c90c5309fdd70cdd1ea2f1",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch2.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch2.js",
-      "bytes": 27383,
-      "sha256": "f737d0b138694a1e10cc3a5bbfb21d5b836df94707a18c921b8995d39dbaad57",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch3.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch3.js",
-      "bytes": 17714,
-      "sha256": "73c7939089384d2bd61c9fb83a0f204bd79ac9cd9e94b86d796bfdecfb609f75",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch4.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch4.js",
-      "bytes": 2503,
-      "sha256": "161433b6d16b18386d659b74a0f0caa9fa9044c95ac8e8b0967d616cd0fa9f3b",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch5.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch5.js",
-      "bytes": 8730,
-      "sha256": "7b0ed8f75c0564b8dbe279ccca06aee030d63e9e9c7692577e30c44bda08cf3d",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch6.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch6.js",
-      "bytes": 2527,
-      "sha256": "b2be6fd473c1602b2339f52d55f61d8bb0132ae35639582c94893fd8abc19f51",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch7.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch7.js",
-      "bytes": 10640,
-      "sha256": "f93f16426bd01ceb8375e73dd908c2a00e9f66a32a91cad7d7abaf60bfa87344",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch8.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch8.js",
-      "bytes": 15741,
-      "sha256": "d82aa7918ec0a37c2c17011455543b288512e672517341d6d0df0df6ee622f97",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-batch9.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-batch9.js",
-      "bytes": 1573,
-      "sha256": "e35434f8a7616068cddf5da2b2fa245d3da48942684567a1b0b1185e2ea89b3e",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-hape-batch1.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-hape-batch1.js",
-      "bytes": 4124,
-      "sha256": "9eee086e9b5f835ed2f2954c21d91c2a9f36a65cd66982683b7752eab9d9edf5",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-hape-batch2.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-hape-batch2.js",
-      "bytes": 4296,
-      "sha256": "cad4320b0715c35628907b74593fcd9ca828e3ff44eaefc5e9fc77ebb6c03efa",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets-hape-final-resolution.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets-hape-final-resolution.js",
-      "bytes": 969,
-      "sha256": "3501046ae25cef11ea6cd041b2c2aee09546355bac1b00c2a8c57e97de329ed9",
-      "importedBy": [
-        "src/data/catalog-image-assets.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/catalog-image-assets.js",
-      "resolvedDeployPath": "./src/data/catalog-image-assets.js",
-      "bytes": 17901,
-      "sha256": "f8da80e4a72a5db4cc2d063ed42e0790f38bc8be9e6e746c41e082d73b4d9f78",
-      "importedBy": [
-        "src/domain/catalog-repository.js"
-      ],
-      "staticImports": [
-        "src/data/catalog-image-assets-batch1.js",
-        "src/data/catalog-image-assets-batch2.js",
-        "src/data/catalog-image-assets-batch3.js",
-        "src/data/catalog-image-assets-batch4.js",
-        "src/data/catalog-image-assets-batch5.js",
-        "src/data/catalog-image-assets-batch6.js",
-        "src/data/catalog-image-assets-batch7.js",
-        "src/data/catalog-image-assets-batch8.js",
-        "src/data/catalog-image-assets-batch9.js",
-        "src/data/catalog-image-assets-batch10.js",
-        "src/data/catalog-image-assets-batch11.js",
-        "src/data/catalog-image-assets-batch12.js",
-        "src/data/catalog-image-assets-batch13.js",
-        "src/data/catalog-image-assets-hape-batch1.js",
-        "src/data/catalog-image-assets-hape-batch2.js",
-        "src/data/catalog-image-assets-hape-final-resolution.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/hape-final-resolution-review.js",
-      "resolvedDeployPath": "./src/data/hape-final-resolution-review.js",
-      "bytes": 2221,
-      "sha256": "9c55e710a50f0780de0d6c1db6041f20a3bffb4e6f8583626ec1807fac57d727",
-      "importedBy": [
-        "src/domain/catalog-repository.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/image-repository.js",
-      "resolvedDeployPath": "./src/data/image-repository.js",
-      "bytes": 7807,
-      "sha256": "595b34f9d4b62e35f9f5067271df9f97dd142cac8445b463d5e8beeb087ab364",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/schema.js",
-      "resolvedDeployPath": "./src/data/schema.js",
-      "bytes": 16194,
-      "sha256": "6f152a02b670288217f00200d9e31ef5d81b674ed2c80ef6b39a29608548d44c",
-      "importedBy": [
-        "src/data/backup-service.js",
-        "src/data/store.js",
-        "src/domain/catalog-repository.js",
-        "src/domain/development-fit.js",
-        "src/domain/duplicate-engine.js",
-        "src/domain/identity-service.js",
-        "src/domain/library-service.js",
-        "src/domain/set-service.js",
-        "src/domain/substitution-engine.js",
-        "src/features/catalog-report-store.js",
-        "src/features/data-repair-diagnostic.js",
-        "src/features/recognition-service.js",
-        "src/features/shared-catalog-governance.js",
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/data/store.js",
-      "resolvedDeployPath": "./src/data/store.js",
-      "bytes": 51575,
-      "sha256": "1d1e56123a1032c74f06a3495e2f63f12a828990e17e6712a30649c94211c0dc",
-      "importedBy": [
-        "src/data/backup-service.js",
-        "src/features/persistence-diagnostic.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js",
-        "src/domain/identity-service.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/catalog-image-shared-ref-preflight.js",
-      "resolvedDeployPath": "./src/domain/catalog-image-shared-ref-preflight.js",
-      "bytes": 3213,
-      "sha256": "8d3ca2535f0af773809225452fdc4a0dab7dae728b92b8ff27cc7c1a4e10093d",
-      "importedBy": [
-        "deployment-static"
-      ],
-      "staticImports": [
-        "src/domain/identity-service.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/catalog-image-usability.js",
-      "resolvedDeployPath": "./src/domain/catalog-image-usability.js",
-      "bytes": 3373,
-      "sha256": "15caabde69a6b8598a4c5afd69f964d4d29fe34a03579d607fe264416260b66b",
-      "importedBy": [
-        "src/features/real-device-owned-wishlist-image-audit.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/catalog-presentation.js",
-      "resolvedDeployPath": "./src/domain/catalog-presentation.js",
-      "bytes": 8201,
-      "sha256": "3dba8e5443878c1ae475844a47ad071885f6ffa5cc92c606026ebb93413a83e3",
-      "importedBy": [
-        "src/domain/catalog-repository.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/domain/set-service.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/catalog-repository.js",
-      "resolvedDeployPath": "./src/domain/catalog-repository.js",
-      "bytes": 23806,
-      "sha256": "18814fc0bf25bfedd9d4d768c5f0fb31ec5de559ace06e788abda9f72ffb3867",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js",
-        "src/domain/set-service.js",
-        "src/domain/catalog-presentation.js",
-        "src/domain/identity-service.js",
-        "src/domain/duplicate-engine.js",
-        "src/data/catalog-image-assets.js",
-        "src/domain/set-service.js",
-        "src/data/hape-final-resolution-review.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/development-fit.js",
-      "resolvedDeployPath": "./src/domain/development-fit.js",
-      "bytes": 8193,
-      "sha256": "e7c2c3cffd13f4c46bed94827a45a94ba5e5c5e69aa283fd5158687203e2fe33",
-      "importedBy": [
-        "src/domain/development-presentation.js",
-        "src/domain/rotation-engine.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/development-presentation.js",
-      "resolvedDeployPath": "./src/domain/development-presentation.js",
-      "bytes": 2439,
-      "sha256": "b895cbb78dccd4d657a446e582155575d7441ac9446b12039cf4eff8a5cc5b10",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/domain/development-fit.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/duplicate-engine.js",
-      "resolvedDeployPath": "./src/domain/duplicate-engine.js",
-      "bytes": 3535,
-      "sha256": "0fd2c7021d08e70c4a14be6e67735a457b0e98f7e7812ed8c05a20bc24f19cfc",
-      "importedBy": [
-        "src/data/backup-service.js",
-        "src/domain/catalog-repository.js",
-        "src/domain/set-service.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js",
-        "src/domain/identity-service.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/identity-service.js",
-      "resolvedDeployPath": "./src/domain/identity-service.js",
-      "bytes": 12446,
-      "sha256": "52547aa5ab23bf378f400161fad4c40b58b19938d4a40367528008dfe7ef7484",
-      "importedBy": [
-        "src/data/store.js",
-        "src/domain/catalog-image-shared-ref-preflight.js",
-        "src/domain/catalog-repository.js",
-        "src/domain/duplicate-engine.js",
-        "src/domain/library-service.js",
-        "src/domain/set-service.js",
-        "src/features/recognition-service.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/library-service.js",
-      "resolvedDeployPath": "./src/domain/library-service.js",
-      "bytes": 6334,
-      "sha256": "84a1466cac1b3ca3dcb2b4a24db0a03ff5c44a7a1fb3f92b9d9848592f23d192",
-      "importedBy": [
-        "src/features/recognition-service.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js",
-        "src/domain/identity-service.js",
-        "src/domain/set-service.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/profile-service.js",
-      "resolvedDeployPath": "./src/domain/profile-service.js",
-      "bytes": 1435,
-      "sha256": "1b982481b1fbe409bf5e75a10ed0f692ae5e0f19e00006f6178ffff051783db6",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/rotation-engine.js",
-      "resolvedDeployPath": "./src/domain/rotation-engine.js",
-      "bytes": 22174,
-      "sha256": "7ff3da8654d5759c657f8ae4478db444a92ca34e9a0624a67b29ec58858d02a0",
-      "importedBy": [
-        "src/features/real-device-owned-wishlist-image-audit.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/domain/substitution-engine.js",
-        "src/domain/development-fit.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/set-service.js",
-      "resolvedDeployPath": "./src/domain/set-service.js",
-      "bytes": 60003,
-      "sha256": "770d730b75e55e3c31360d927cbe62f92f20d228495629f7ecf1f14592937fdb",
-      "importedBy": [
-        "src/data/backup-service.js",
-        "src/domain/catalog-presentation.js",
-        "src/domain/catalog-repository.js",
-        "src/domain/library-service.js",
-        "src/features/data-repair-diagnostic.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js",
-        "src/domain/identity-service.js",
-        "src/domain/duplicate-engine.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/domain/substitution-engine.js",
-      "resolvedDeployPath": "./src/domain/substitution-engine.js",
-      "bytes": 5097,
-      "sha256": "4b5c2369a5e435e342882e74993a39214117fc7eeea57ed95e40f43f1e4bd55c",
-      "importedBy": [
-        "src/domain/rotation-engine.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/admin-catalog-save-diagnostic.js",
-      "resolvedDeployPath": "./src/features/admin-catalog-save-diagnostic.js",
-      "bytes": 2366,
-      "sha256": "a8562d853a2f1e540d51cfd6e41fef0441fe1cbfd1c2c34b725ee09d7a950a76",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/admin-service.js",
-      "resolvedDeployPath": "./src/features/admin-service.js",
-      "bytes": 8303,
-      "sha256": "69b243565d41d5bbc7007fed5377a321594bf1794a5dce62df8d206b5d784036",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/catalog-count-diagnostic.js",
-      "resolvedDeployPath": "./src/features/catalog-count-diagnostic.js",
-      "bytes": 734,
-      "sha256": "2e140ed721acb5085fa2160f523de2d21c44d560ff8938f951cd49aeef7b5ef8",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/catalog-report-store.js",
-      "resolvedDeployPath": "./src/features/catalog-report-store.js",
-      "bytes": 5323,
-      "sha256": "3e04517a8b39ee6f07084779912d54da84275f9e5beaeee5a00d66a29a923f6d",
-      "importedBy": [
-        "src/features/review-count.js",
-        "src/features/shared-catalog-governance.js",
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/data-repair-diagnostic.js",
-      "resolvedDeployPath": "./src/features/data-repair-diagnostic.js",
-      "bytes": 16199,
-      "sha256": "d65899aac3fc3e9da124671911f4a1b16b21e8ab0429f3f26ecd2b19a5367be2",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js",
-        "src/domain/set-service.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/local-candidate-queue.js",
-      "resolvedDeployPath": "./src/features/local-candidate-queue.js",
-      "bytes": 5244,
-      "sha256": "7c39fcf612859353a5f48383ba0f5501cc238f2d82300b8ee239a286e595477f",
-      "importedBy": [
-        "src/features/recognition-device-diagnostic.js",
-        "src/features/recognition-service.js",
-        "src/features/review-count.js",
-        "src/features/shared-catalog-governance.js",
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/persistence-diagnostic.js",
-      "resolvedDeployPath": "./src/features/persistence-diagnostic.js",
-      "bytes": 3815,
-      "sha256": "d252c0b40c31d380cae6c57d37f10294d97e6f841ac5ee0972b71f8e5666e949",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/store.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/real-device-owned-wishlist-image-audit.js",
-      "resolvedDeployPath": "./src/features/real-device-owned-wishlist-image-audit.js",
-      "bytes": 6708,
-      "sha256": "5e26d807d2631abef517e18e95008f83ce23abe61d006ff4de60b16b2ea77d17",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/domain/catalog-image-usability.js",
-        "src/domain/rotation-engine.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/recognition-device-diagnostic.js",
-      "resolvedDeployPath": "./src/features/recognition-device-diagnostic.js",
-      "bytes": 8834,
-      "sha256": "b7bce0b5a8f34f8011dfbe1340a5361870b9c4c5e3013b98e934e6d59cf4e452",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/features/local-candidate-queue.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/recognition-service.js",
-      "resolvedDeployPath": "./src/features/recognition-service.js",
-      "bytes": 26592,
-      "sha256": "13f8b1a50d304278c7a32f0e04cbd708052ae4dee1a11ba6914b36d50f79d022",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js",
-        "src/domain/library-service.js",
-        "src/features/local-candidate-queue.js",
-        "src/domain/identity-service.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/restore-diagnostic.js",
-      "resolvedDeployPath": "./src/features/restore-diagnostic.js",
-      "bytes": 1545,
-      "sha256": "c59a5b6ad55a4f3d789991dee0aee9e74c59034cd064abe39122f0a886b1f347",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/review-count.js",
-      "resolvedDeployPath": "./src/features/review-count.js",
-      "bytes": 421,
-      "sha256": "3c3f13c75189660a357faee802ceb48099da6e4066bc4b3f5f2ca700ba16756c",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/features/local-candidate-queue.js",
-        "src/features/catalog-report-store.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/runtime-image-diagnostic.js",
-      "resolvedDeployPath": "./src/features/runtime-image-diagnostic.js",
-      "bytes": 9684,
-      "sha256": "6406ed5c3a34393a1b1dc0396620110bbde8103cee7489c781f2036cca5e13ed",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/shared-catalog-governance.js",
-      "resolvedDeployPath": "./src/features/shared-catalog-governance.js",
-      "bytes": 11344,
-      "sha256": "f5acf85787eba6a50ecd94969db9c402ba3597bf2b253d9752a5866d5fb10f08",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/data/schema.js",
-        "src/features/local-candidate-queue.js",
-        "src/features/catalog-report-store.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/standalone-storage-diagnostic-core.js",
-      "resolvedDeployPath": "./src/features/standalone-storage-diagnostic-core.js",
-      "bytes": 3042,
-      "sha256": "7dbf6783a1d7542cb2f9705b4d63f4478d0ad08bbb988cb385940f6a1583594c",
-      "importedBy": [
-        "storage-recovery-diagnostic.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/startup-trace.js",
-      "resolvedDeployPath": "./src/features/startup-trace.js",
-      "bytes": 2953,
-      "sha256": "9010c0523f39fd13bb33681f164d86ea7c24595477ea877bd65fa8c9bb90ce70",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/features/storage-usage-diagnostic.js",
-      "resolvedDeployPath": "./src/features/storage-usage-diagnostic.js",
-      "bytes": 2358,
-      "sha256": "ffa131d3a6c9cbaf9993348c9e3a4d82c64d4d32aa7f8d6964e7374dd58f1adc",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/main.js",
-      "resolvedDeployPath": "./src/main.js",
-      "bytes": 153977,
-      "sha256": "9b76b79c6bc1fda5f08c1e4f6a0ae4deab982aa8b22a47c45fdaae050138b917",
-      "importedBy": [
-        "index.html"
-      ],
-      "staticImports": [
-        "src/data/backup-service.js",
-        "src/data/image-repository.js",
-        "src/data/schema.js",
-        "src/data/store.js",
-        "src/domain/catalog-repository.js",
-        "src/domain/catalog-presentation.js",
-        "src/domain/duplicate-engine.js",
-        "src/domain/library-service.js",
-        "src/domain/identity-service.js",
-        "src/domain/set-service.js",
-        "src/domain/profile-service.js",
-        "src/domain/rotation-engine.js",
-        "src/domain/development-fit.js",
-        "src/domain/development-presentation.js",
-        "src/domain/substitution-engine.js",
-        "src/features/admin-service.js",
-        "src/features/recognition-service.js",
-        "src/features/shared-catalog-governance.js",
-        "src/features/local-candidate-queue.js",
-        "src/features/catalog-report-store.js",
-        "src/features/review-count.js",
-        "src/features/data-repair-diagnostic.js",
-        "src/features/persistence-diagnostic.js",
-        "src/features/restore-diagnostic.js",
-        "src/features/runtime-image-diagnostic.js",
-        "src/features/recognition-device-diagnostic.js",
-        "src/features/admin-catalog-save-diagnostic.js",
-        "src/features/storage-usage-diagnostic.js",
-        "src/features/catalog-count-diagnostic.js",
-        "src/features/real-device-owned-wishlist-image-audit.js",
-        "src/features/startup-trace.js",
-        "src/ui/i18n.js",
-        "src/ui/modal-manager.js",
-        "src/ui/admin-workspace-controller.js",
-        "src/ui/admin-governance-child.js",
-        "src/ui/recognition-review-production.js",
-        "src/ui/personal-image-editor.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/ui/admin-governance-child.js",
-      "resolvedDeployPath": "./src/ui/admin-governance-child.js",
-      "bytes": 1418,
-      "sha256": "a134ecdabb52ad4e9a05995911c136e1106fe777a5a564b09032e8070a8c8725",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/ui/admin-workspace-controller.js",
-      "resolvedDeployPath": "./src/ui/admin-workspace-controller.js",
-      "bytes": 1706,
-      "sha256": "da4fa1847c2b96d0006a70b794a2b45bc4896704c135bfc94c5e9d7dff9ac71b",
-      "importedBy": [
-        "src/main.js"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -1351,83 +555,6 @@
       }
     },
     {
-      "path": "src/ui/i18n.js",
-      "resolvedDeployPath": "./src/ui/i18n.js",
-      "bytes": 50406,
-      "sha256": "5c9cff8c11834e0c81fbfd61bbf0153eda2420bedeccf39c4a89fadec6ee96e1",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/ui/modal-manager.js",
-      "resolvedDeployPath": "./src/ui/modal-manager.js",
-      "bytes": 2185,
-      "sha256": "1dd4724f024e46aac2f1946cd3c4459322b15ae119a7e868ab05e84cba8822d2",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/ui/personal-image-editor.js",
-      "resolvedDeployPath": "./src/ui/personal-image-editor.js",
-      "bytes": 6124,
-      "sha256": "611d133242933fa5fcb90f35fd1509baddd975c7adb58020fac728b555a93d7a",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/ui/recognition-review-production.js",
-      "resolvedDeployPath": "./src/ui/recognition-review-production.js",
-      "bytes": 8302,
-      "sha256": "7ea5ab27a97ce56075f4d2aa8d41e940438613aaa9e0e35aadf950de66b62b6b",
-      "importedBy": [
-        "src/main.js"
-      ],
-      "staticImports": [
-        "src/ui/recognition-review-submit-controller.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "src/ui/recognition-review-submit-controller.js",
-      "resolvedDeployPath": "./src/ui/recognition-review-submit-controller.js",
-      "bytes": 1331,
-      "sha256": "9f3d1b7b7a484b94fc8dc5f5109df61aadfb3332b50ae2e306bfe5bee997b210",
-      "importedBy": [
-        "src/ui/recognition-review-production.js"
-      ],
-      "staticImports": [],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
       "path": "src/ui/theme.css",
       "resolvedDeployPath": "./src/ui/theme.css",
       "bytes": 1462,
@@ -1443,14 +570,14 @@
       }
     },
     {
-      "path": "startup-diagnostic.html",
-      "resolvedDeployPath": "./startup-diagnostic.html",
-      "bytes": 1849,
-      "sha256": "e674550311a7b0f9bd08a9176289cbe98972528ba235dd14388a422c76184303",
-      "importedBy": [],
-      "staticImports": [
-        "startup-diagnostic.js"
+      "path": "startup-diagnostic.bundle.js",
+      "resolvedDeployPath": "./startup-diagnostic.bundle.js",
+      "bytes": 5149,
+      "sha256": "b93d62700d3ef412c17d6b98d18c8aa0a485c93f11bd70e9a6ec52e8eb720ffa",
+      "importedBy": [
+        "deployment-static"
       ],
+      "staticImports": [],
       "dynamicImports": [],
       "browserTargetCompatibility": {
         "target": "safari16",
@@ -1458,12 +585,27 @@
       }
     },
     {
-      "path": "startup-diagnostic.js",
-      "resolvedDeployPath": "./startup-diagnostic.js",
-      "bytes": 4777,
-      "sha256": "955aa3bbd68fc69fe300c2ab3266af6db93b4696b23ea9af12adb6e6dac248ee",
+      "path": "startup-diagnostic.html",
+      "resolvedDeployPath": "./startup-diagnostic.html",
+      "bytes": 1856,
+      "sha256": "63a9a30074b551f352f239124005c091abd5290814da4b5ea926bca6b8808a2d",
       "importedBy": [
-        "startup-diagnostic.html"
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "storage-recovery-diagnostic.bundle.js",
+      "resolvedDeployPath": "./storage-recovery-diagnostic.bundle.js",
+      "bytes": 10781,
+      "sha256": "10924d548c3445b05f63f7df4e694b9d05bd6bce45c0eb4e4533a308b01232a5",
+      "importedBy": [
+        "deployment-static"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -1475,29 +617,12 @@
     {
       "path": "storage-recovery-diagnostic.html",
       "resolvedDeployPath": "./storage-recovery-diagnostic.html",
-      "bytes": 2485,
-      "sha256": "1d811e2c37852bc3838e3baf6efd314fffddf6e77e1088aad46b39db18bfbe68",
-      "importedBy": [],
-      "staticImports": [
-        "storage-recovery-diagnostic.js"
-      ],
-      "dynamicImports": [],
-      "browserTargetCompatibility": {
-        "target": "safari16",
-        "result": "pass"
-      }
-    },
-    {
-      "path": "storage-recovery-diagnostic.js",
-      "resolvedDeployPath": "./storage-recovery-diagnostic.js",
-      "bytes": 7334,
-      "sha256": "fb053b3e2f808e0f9fb678ff02750b8ab39b0de1f13f47d7329e7fd1d9762e20",
+      "bytes": 2492,
+      "sha256": "d20fc1ab586d64c4e9ad8f49d8b58de432842496cc31c51792d9755ebee918a8",
       "importedBy": [
-        "storage-recovery-diagnostic.html"
+        "deployment-static"
       ],
-      "staticImports": [
-        "src/features/standalone-storage-diagnostic-core.js"
-      ],
+      "staticImports": [],
       "dynamicImports": [],
       "browserTargetCompatibility": {
         "target": "safari16",
@@ -1507,8 +632,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2059,
-      "sha256": "a24f19724ce080f3875e10bb3c8cf5008e76fba715b1d15973fa32aa869f7492",
+      "bytes": 2041,
+      "sha256": "9f81a255012b3df708004668d12d0e8ae871c563af41f1a51904985edf883e2f",
       "importedBy": [
         "deployment-static"
       ],
@@ -1523,6 +648,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 89
+    "checkedInputs": 42
   }
 }
