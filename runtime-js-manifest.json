@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-17T15:05:32.509Z",
+  "generatedAt": "2026-09-18T00:00:00.000Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 6 Upload Friendly",
-    "buildDate": "20260917",
-    "buildId": "v0.11.6-iphone-qa6-upload-friendly-20260917"
+    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 7 R2",
+    "buildDate": "20260918",
+    "buildId": "v0.11.6-iphone-qa7-r2-20260918"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 771150,
-      "sha256": "06e888afd1d26d0449bccbecff5bfa02bd869658b276396a1ed1c547ff7b19d2",
+      "bytes": 795403,
+      "sha256": "cdd397cdde7e7db89b64d408276fd3928ea408728a43a5905ed99a20da1bcd0d",
       "importedBy": [
         "deployment-static"
       ],
@@ -392,8 +392,8 @@
     {
       "path": "catalog-base.json",
       "resolvedDeployPath": "./catalog-base.json",
-      "bytes": 339054,
-      "sha256": "0b8cb40f98f3995c1225f5ef75cdf26b87ccac206010b6875980cfdaf32c761a",
+      "bytes": 339294,
+      "sha256": "8aef881bb1bb7e0aba8c4b878f88b3b2540c9e8cfb5be047c6fbd848d0d82618",
       "importedBy": [
         "deployment-static"
       ],
@@ -422,8 +422,8 @@
     {
       "path": "catalog-remote.json",
       "resolvedDeployPath": "./catalog-remote.json",
-      "bytes": 56710,
-      "sha256": "ed91e00c771f514f1fdcdda7adaa5ac53a3223e3c5cce57463349c2bb592b3c0",
+      "bytes": 56849,
+      "sha256": "d05578014df3947dcd1e6d303f58a1feb6d104bec04a391ef090c0e435e37523",
       "importedBy": [
         "deployment-static"
       ],
@@ -437,8 +437,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 584,
-      "sha256": "55829f6d0215851bd4edca2a8231643d5101be0c78d0b1f4e5e8e7691736f53a",
+      "bytes": 545,
+      "sha256": "a0a3c7e021d2049798ac86848d0b8473366dd6265e97c144a8fd0c469af52759",
       "importedBy": [
         "deployment-static"
       ],
@@ -528,7 +528,7 @@
       "path": "manifest.webmanifest",
       "resolvedDeployPath": "./manifest.webmanifest",
       "bytes": 334,
-      "sha256": "aeeaca9f272e388d73cca4d37c0911067b2cfcf465340fb11346eb820c6762c1",
+      "sha256": "f0b63a605ab7d12dbd56ecefd6541307e6eacece07da6d628fb7c85ce1e3064e",
       "importedBy": [
         "deployment-static"
       ],
@@ -632,8 +632,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2041,
-      "sha256": "9f81a255012b3df708004668d12d0e8ae871c563af41f1a51904985edf883e2f",
+      "bytes": 2028,
+      "sha256": "c060fbe834c97765303c9ab76ac4531e87e7a85401ee3d7a3b1b56915e660436",
       "importedBy": [
         "deployment-static"
       ],

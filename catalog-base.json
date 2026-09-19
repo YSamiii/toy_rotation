@@ -9797,12 +9797,12 @@
       "catalogStatus": "complete",
       "childCount": 6,
       "children": [
-        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-1","name":"Car Puzzle","nameZh":"汽车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
-        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-2","name":"Police Car Puzzle","nameZh":"警车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
-        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-3","name":"Ice Cream Truck Puzzle","nameZh":"冰淇淋车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
-        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-4","name":"Garbage Truck Puzzle","nameZh":"垃圾车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
-        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-5","name":"Delivery Truck Puzzle","nameZh":"运输车拼图","aliases":["Dump Truck Puzzle"],"category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
-        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-6","name":"School Bus Puzzle","nameZh":"校车拼图","category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]}
+        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-1","name":"Car","nameZh":"汽车","aliases":["Car Puzzle"],"category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
+        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-2","name":"Police Car","nameZh":"警车","aliases":["Police Car Puzzle"],"category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
+        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-3","name":"Ice Cream Truck","nameZh":"冰淇淋车","aliases":["Ice Cream Truck Puzzle"],"category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
+        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-4","name":"Garbage Truck","nameZh":"垃圾车","aliases":["Garbage Truck Puzzle"],"category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
+        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-5","name":"Delivery Truck","nameZh":"运输车","aliases":["Delivery Truck Puzzle","Dump Truck","Dump Truck Puzzle"],"category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]},
+        {"canonicalKey":"mideer-first-artist-busy-cars:puzzle-6","name":"School Bus","nameZh":"校车","aliases":["School Bus Puzzle"],"category":"拼图/配对","skills":["视觉空间","精细动作","认知配对"]}
       ]
     },
     {
@@ -13192,6 +13192,7 @@
       "nameZh": "动物玩具套装 15件",
       "exactTitle": "Mideer Animal Toys Set 15pcs",
       "sku": "MD1382",
+      "resurrectionVersion": "qa6-catalog-resurrection-v1",
       "pieceCount": 15,
       "identitySource": "https://mytreats.maybank.com/my/mideer-animal-toys-set-15pcs-md1382/p/324811",
       "aliases": ["Mideer Wild Animal Toys Set 15pcs", "Mideer Animal Figures 15pc"],
@@ -13209,6 +13210,7 @@
       "nameZh": "进阶拼图 1级：我们的家",
       "exactTitle": "mideer Level Up! Puzzles - Level 1 Home, Sweet Home!",
       "sku": "MD1673",
+      "resurrectionVersion": "qa6-catalog-resurrection-v1",
       "pieceCount": 8,
       "identitySource": "https://mideermall.com/products/mideer-level-up-puzzles-level-1-home-sweet-home",
       "aliases": ["Mideer Home Sweet Home", "Mideer 我们的家", "Mideer Level 1 Home Sweet Home"],

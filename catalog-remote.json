@@ -304,6 +304,7 @@
       "brand": "Mideer",
       "name": "My First Puzzle – Dinosaurs 6-in-1",
       "nameZh": "我的第一套拼图：恐龙 6合1",
+      "sku": "MD1460",
       "ageMinMonths": 24,
       "ageMaxMonths": 60,
       "category": "拼图/配对",
@@ -318,12 +319,12 @@
   "catalogStatus": "complete",
   "childCount": 6,
   "children": [
-    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-1","name":"Dinosaur Puzzle 1","nameZh":"恐龙拼图 1","category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
-    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-2","name":"Dinosaur Puzzle 2","nameZh":"恐龙拼图 2","category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
-    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-3","name":"Dinosaur Puzzle 3","nameZh":"恐龙拼图 3","category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
-    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-4","name":"Dinosaur Puzzle 4","nameZh":"恐龙拼图 4","category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
-    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-5","name":"Dinosaur Puzzle 5","nameZh":"恐龙拼图 5","category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
-    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-6","name":"Dinosaur Puzzle 6","nameZh":"恐龙拼图 6","category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]}
+    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-1","name":"Pterosaur","nameZh":"翼龙","aliases":["Dinosaur Puzzle 1"],"category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
+    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-2","name":"Parasaurolophus","nameZh":"副栉龙","aliases":["Dinosaur Puzzle 2"],"category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
+    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-3","name":"Stegosaurus","nameZh":"剑龙","aliases":["Dinosaur Puzzle 3"],"category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
+    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-4","name":"Triceratops","nameZh":"三角龙","aliases":["Dinosaur Puzzle 4"],"category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
+    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-5","name":"Tyrannosaurus rex","nameZh":"霸王龙","aliases":["Dinosaur Puzzle 5"],"category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]},
+    {"canonicalKey":"mideer-my-first-puzzle-dinosaurs-6in1-md1460:puzzle-6","name":"Snake","nameZh":"蛇","aliases":["Dinosaur Puzzle 6"],"category":"拼图/配对","skills":["精细动作","手眼协调","视觉空间","认知配对"]}
   ],
       "aliases": [
         "Mideer dinosaur puzzle set",
