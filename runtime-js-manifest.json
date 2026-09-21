@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-20T18:46:01.446Z",
+  "generatedAt": "2026-09-21T18:48:48.287Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 7 R3",
-    "buildDate": "20260920",
-    "buildId": "v0.11.6-iphone-qa7-r3-20260920"
+    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 7 R4",
+    "buildDate": "20260921",
+    "buildId": "v0.11.6-iphone-qa7-r4-20260921"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 796451,
-      "sha256": "c3a0f5b593c71cfa3c571940b3463aa8682611376f4ed3c3e5eb52ad7b153ef0",
+      "bytes": 807000,
+      "sha256": "32e6cf7e8afa200a49bbf757f521ff9aa4bc639a5e7427d9904dbf3864c4bbef",
       "importedBy": [
         "index.html"
       ],
@@ -94,6 +94,51 @@
       "resolvedDeployPath": "./catalog-assets/cherrypick-soft-foam-magnetic-letters.jpg",
       "bytes": 30365,
       "sha256": "3c3fbf7c25b1c94c3e6879213d771f18bc1ead0903b2aa4f90b38ac95a4a8ad3",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/hahaland-farm-busy-book-20in1.jpg",
+      "resolvedDeployPath": "./catalog-assets/hahaland-farm-busy-book-20in1.jpg",
+      "bytes": 546707,
+      "sha256": "3e22ad2e37d1db06612ecefda6e99301a68383c3a212a22e769ab7bf06e26a5b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/hahaland-mermaid-busy-board.jpg",
+      "resolvedDeployPath": "./catalog-assets/hahaland-mermaid-busy-board.jpg",
+      "bytes": 483741,
+      "sha256": "ee54e47301030181df08d936e6437b276c4d1e82cf052f88136f4c79a874ba1b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/hahaland-surprise-barn.jpg",
+      "resolvedDeployPath": "./catalog-assets/hahaland-surprise-barn.jpg",
+      "bytes": 337931,
+      "sha256": "d6e2024358fcc018fea9b2419ae01fb133cd15668d85b2df18d505f6dba91735",
       "importedBy": [
         "deployment-static"
       ],
@@ -345,6 +390,141 @@
       }
     },
     {
+      "path": "catalog-assets/mideer-home-sweet-home-md1673-board.webp",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-board.webp",
+      "bytes": 83570,
+      "sha256": "280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-1.svg",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-1.svg",
+      "bytes": 153,
+      "sha256": "90329fe73f8e3be77ba895c0a522add8b2cb60004bb50ad881a9d39de763f761",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-2.svg",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-2.svg",
+      "bytes": 153,
+      "sha256": "38e2201f9fec8fce5f33c23f82da5a7de5abfe61070628ddea312206dbb29687",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-3.svg",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-3.svg",
+      "bytes": 154,
+      "sha256": "ae9cb92eca854e2dab88a0dc63cd195784a7e5f25945214a0f9d9e692b44ab49",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-4.svg",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-4.svg",
+      "bytes": 154,
+      "sha256": "fb8129e0c273d3b3a49bb9514dd3fe44c58d4dba06825f323face1a039eb3bcf",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-5.svg",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-5.svg",
+      "bytes": 154,
+      "sha256": "da2e18726d6a72693c45bec7f43192ef2622611c40eb3b77c90a0e897d628b5d",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-6.svg",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-6.svg",
+      "bytes": 154,
+      "sha256": "e245041a498d0b1c3f448689da11d2908e95121f4102e9d63e827f379693b491",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-7.svg",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-7.svg",
+      "bytes": 154,
+      "sha256": "5b394c735ec486c2eeb35622a7964639f93a3b9b6cbb7c65283ac11e9bcfa4a6",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-8.svg",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-8.svg",
+      "bytes": 154,
+      "sha256": "8b3f71bee7a3fe721a5bcddbff89627f988d525a0cd7c4852e1ae06c1537ac5c",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg",
       "resolvedDeployPath": "./catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg",
       "bytes": 60320,
@@ -438,7 +618,7 @@
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
       "bytes": 545,
-      "sha256": "b5f4be9b35d5e6eb703744013a4c91811cf251ca81a4ab28e3dca8f1b96d8139",
+      "sha256": "19c4babc471a285eb336fba416de0fd65b25e49cbef05ce52f8c303b5f93760c",
       "importedBy": [
         "deployment-static",
         "index.html"
@@ -635,7 +815,7 @@
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
       "bytes": 2028,
-      "sha256": "d04a9410234aa5ead1ba733ece509932a6f58ed8750c739b963960528a1a6c75",
+      "sha256": "79b4ca6622b49e15b812056ed32b62d60e1befeb1dfe388eb2e2e396ddac851d",
       "importedBy": [
         "deployment-static"
       ],
@@ -650,6 +830,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 42
+    "checkedInputs": 54
   }
 }
