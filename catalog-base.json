@@ -13218,7 +13218,20 @@
       "ageMaxMonths": 72,
       "category": "拼图/配对",
       "playMechanics": ["matching_sorting"],
-      "skills": ["视觉空间", "精细动作", "认知配对", "注意力"]
+      "skills": ["视觉空间", "精细动作", "认知配对", "注意力"],
+      "isSet": true,
+      "rotationRule": "split",
+      "childCount": 8,
+      "children": [
+        {"canonicalKey":"mideer-level1-home-sweet-home-puzzle:puzzle-1","name":"Home, Sweet Home! · Progressive Puzzle 1","nameZh":"我们的家·渐进拼图 1","pieceCount":2},
+        {"canonicalKey":"mideer-level1-home-sweet-home-puzzle:puzzle-2","name":"Home, Sweet Home! · Progressive Puzzle 2","nameZh":"我们的家·渐进拼图 2","pieceCount":2},
+        {"canonicalKey":"mideer-level1-home-sweet-home-puzzle:puzzle-3","name":"Home, Sweet Home! · Progressive Puzzle 3","nameZh":"我们的家·渐进拼图 3","pieceCount":3},
+        {"canonicalKey":"mideer-level1-home-sweet-home-puzzle:puzzle-4","name":"Home, Sweet Home! · Progressive Puzzle 4","nameZh":"我们的家·渐进拼图 4","pieceCount":3},
+        {"canonicalKey":"mideer-level1-home-sweet-home-puzzle:puzzle-5","name":"Home, Sweet Home! · Progressive Puzzle 5","nameZh":"我们的家·渐进拼图 5","pieceCount":4},
+        {"canonicalKey":"mideer-level1-home-sweet-home-puzzle:puzzle-6","name":"Home, Sweet Home! · Progressive Puzzle 6","nameZh":"我们的家·渐进拼图 6","pieceCount":4},
+        {"canonicalKey":"mideer-level1-home-sweet-home-puzzle:puzzle-7","name":"Home, Sweet Home! · Progressive Puzzle 7","nameZh":"我们的家·渐进拼图 7","pieceCount":5},
+        {"canonicalKey":"mideer-level1-home-sweet-home-puzzle:puzzle-8","name":"Home, Sweet Home! · Progressive Puzzle 8","nameZh":"我们的家·渐进拼图 8","pieceCount":6}
+      ]
     },
     {
       "key": "mideer-my-first-puzzle-dinosaurs-6in1",

@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-18T00:00:00.000Z",
+  "generatedAt": "2026-09-20T18:46:01.446Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 7 R2",
-    "buildDate": "20260918",
-    "buildId": "v0.11.6-iphone-qa7-r2-20260918"
+    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 7 R3",
+    "buildDate": "20260920",
+    "buildId": "v0.11.6-iphone-qa7-r3-20260920"
   },
   "entries": [
     "index.html",
@@ -17,10 +17,10 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 795403,
-      "sha256": "cdd397cdde7e7db89b64d408276fd3928ea408728a43a5905ed99a20da1bcd0d",
+      "bytes": 796451,
+      "sha256": "c3a0f5b593c71cfa3c571940b3463aa8682611376f4ed3c3e5eb52ad7b153ef0",
       "importedBy": [
-        "deployment-static"
+        "index.html"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -392,8 +392,8 @@
     {
       "path": "catalog-base.json",
       "resolvedDeployPath": "./catalog-base.json",
-      "bytes": 339294,
-      "sha256": "8aef881bb1bb7e0aba8c4b878f88b3b2540c9e8cfb5be047c6fbd848d0d82618",
+      "bytes": 340837,
+      "sha256": "19f2a21d8fbd119541510a0b537cb2d5d72d2b04d4cb8654924f6bd633bda1d5",
       "importedBy": [
         "deployment-static"
       ],
@@ -438,9 +438,10 @@
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
       "bytes": 545,
-      "sha256": "a0a3c7e021d2049798ac86848d0b8473366dd6265e97c144a8fd0c469af52759",
+      "sha256": "b5f4be9b35d5e6eb703744013a4c91811cf251ca81a4ab28e3dca8f1b96d8139",
       "importedBy": [
-        "deployment-static"
+        "deployment-static",
+        "index.html"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -514,10 +515,11 @@
       "resolvedDeployPath": "./index.html",
       "bytes": 5298,
       "sha256": "0643f52ec94ca5935359a3ef4284bdced6331678465d3f972ac948f1990603f2",
-      "importedBy": [
-        "deployment-static"
+      "importedBy": [],
+      "staticImports": [
+        "config.js",
+        "app.bundle.js"
       ],
-      "staticImports": [],
       "dynamicImports": [],
       "browserTargetCompatibility": {
         "target": "safari16",
@@ -575,7 +577,7 @@
       "bytes": 5149,
       "sha256": "b93d62700d3ef412c17d6b98d18c8aa0a485c93f11bd70e9a6ec52e8eb720ffa",
       "importedBy": [
-        "deployment-static"
+        "startup-diagnostic.html"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -589,10 +591,10 @@
       "resolvedDeployPath": "./startup-diagnostic.html",
       "bytes": 1856,
       "sha256": "63a9a30074b551f352f239124005c091abd5290814da4b5ea926bca6b8808a2d",
-      "importedBy": [
-        "deployment-static"
+      "importedBy": [],
+      "staticImports": [
+        "startup-diagnostic.bundle.js"
       ],
-      "staticImports": [],
       "dynamicImports": [],
       "browserTargetCompatibility": {
         "target": "safari16",
@@ -605,7 +607,7 @@
       "bytes": 10781,
       "sha256": "10924d548c3445b05f63f7df4e694b9d05bd6bce45c0eb4e4533a308b01232a5",
       "importedBy": [
-        "deployment-static"
+        "storage-recovery-diagnostic.html"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -619,10 +621,10 @@
       "resolvedDeployPath": "./storage-recovery-diagnostic.html",
       "bytes": 2492,
       "sha256": "d20fc1ab586d64c4e9ad8f49d8b58de432842496cc31c51792d9755ebee918a8",
-      "importedBy": [
-        "deployment-static"
+      "importedBy": [],
+      "staticImports": [
+        "storage-recovery-diagnostic.bundle.js"
       ],
-      "staticImports": [],
       "dynamicImports": [],
       "browserTargetCompatibility": {
         "target": "safari16",
@@ -633,7 +635,7 @@
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
       "bytes": 2028,
-      "sha256": "c060fbe834c97765303c9ab76ac4531e87e7a85401ee3d7a3b1b56915e660436",
+      "sha256": "d04a9410234aa5ead1ba733ece509932a6f58ed8750c739b963960528a1a6c75",
       "importedBy": [
         "deployment-static"
       ],

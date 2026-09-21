@@ -7266,9 +7266,10 @@ var TOY_IMAGE_AUDIT_VERSION = "v0.11.6";
 var PRIORITY_BRANDS = /* @__PURE__ */ new Set(["mideer", "cherry-pick", "learning resources", "lego / duplo", "lego duplo"]);
 var USABLE = /* @__PURE__ */ new Set(["VERIFIED_PACKAGED", "VERIFIED_REMOTE", "CATALOG_IDB", "PERSONAL_IMAGE"]);
 function buildToyImageAudit({ state = {}, catalog: catalog2, build = {}, generatedAt = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
-  const catalogRows = Array.isArray(catalog2) ? catalog2 : catalog2?.active || [];
-  const resolve = (reference) => catalog2?.resolve?.(reference) || resolveFromRows(reference, catalogRows);
-  const catalogStates = catalogRows.map((item) => imageState(item.imageRef));
+  const activeRows = Array.isArray(catalog2) ? catalog2 : catalog2?.active || [];
+  const resolve = (reference) => catalog2?.resolve?.(reference) || resolveFromRows(reference, activeRows);
+  const catalogRows = catalogPresentationRows(activeRows, resolve);
+  const catalogStates = catalogRows.map((item) => imageState(catalogImageForAudit(item, catalog2, resolve)));
   const owned = buildOwned(state.toys || [], resolve, state);
   const wishlist = buildWishlist(state.wishlist || [], resolve);
   return {
@@ -7287,7 +7288,7 @@ function buildOwned(toys, resolve, state) {
   const items = toys.map((toy) => {
     const catalog2 = resolve(toy);
     if (!catalog2) return null;
-    const catalogImageState = imageState(catalog2.imageRef);
+    const catalogImageState = imageState(catalogImageForAudit(toy, catalog2, resolve));
     const hasPersonalImage = toy.imageRef?.kind === "personal";
     const state2 = hasPersonalImage ? "PERSONAL_IMAGE" : catalogImageState;
     return { personalToyId: text(toy.id), canonicalKey: text(catalog2.canonicalKey), catalogId: text(catalog2.id), brand: text(catalog2.brand), name: text(catalog2.productName), imageState: state2, imageSourceType: sourceType(state2), hasPersonalImage, catalogImageState, catalogImageMissing: !usable(catalogImageState), userVisibleImageMissing: !usable(state2), currentShelfState: shelfIds.has(toy.id) ? "CURRENT_SHELF" : "NOT_CURRENT_SHELF", permanentState: isUserCustomPermanent(toy) ? "USER_PERMANENT" : "NOT_USER_PERMANENT" };
@@ -7301,7 +7302,7 @@ function buildWishlist(wishlist, resolve) {
   const items = wishlist.map((wish) => {
     const catalog2 = resolve(wish);
     if (!catalog2) return null;
-    const state = imageState(catalog2.imageRef);
+    const state = imageState(catalogImageForAudit(wish, catalog2, resolve));
     return { wishlistItemId: text(wish.id), canonicalKey: text(catalog2.canonicalKey), catalogId: text(catalog2.id), brand: text(catalog2.brand), name: text(catalog2.productName), exactIdentity: Boolean(catalog2.exactTitle || catalog2.sku || catalog2.setNumber || catalog2.variantId), variant: nullable(catalog2.variantName || catalog2.variantId), setNumber: nullable(catalog2.setNumber), sku: nullable(catalog2.sku), imageState: state, imageSourceType: sourceType(state), catalogImageMissing: !usable(state), userVisibleImageMissing: !usable(state) };
   }).filter(Boolean);
   return summary(wishlist.length, items, false);
@@ -7318,8 +7319,30 @@ function priorityRows(owned, wishlist) {
 }
 function imageState(ref) {
   if (ref?.kind === "catalog") return "CATALOG_IDB";
+  if (ref?.kind === "packaged" && /^catalog-assets\/[a-z0-9][a-z0-9._-]*\.(?:svg|png|webp|jpe?g)$/i.test(String(ref.path || ""))) return "VERIFIED_PACKAGED";
   const classification = classifyCatalogImage(ref);
   return { [IMAGE_USABILITY.VERIFIED_PACKAGED_IMAGE]: "VERIFIED_PACKAGED", [IMAGE_USABILITY.VERIFIED_REMOTE_IMAGE]: "VERIFIED_REMOTE", [IMAGE_USABILITY.VERIFIED_USABLE_IMAGE]: "PERSONAL_IMAGE", [IMAGE_USABILITY.PLACEHOLDER_ONLY]: "PLACEHOLDER_ONLY", [IMAGE_USABILITY.IMAGE_SOURCE_UNVERIFIED]: "IMAGE_SOURCE_UNVERIFIED", [IMAGE_USABILITY.KNOWN_BROKEN_IMAGE]: "KNOWN_BROKEN", [IMAGE_USABILITY.NO_IMAGE]: "NO_IMAGE" }[classification] || "NO_IMAGE";
+}
+function catalogImageForAudit(reference, catalog2, resolve) {
+  const catalogToy = resolve(reference) || reference;
+  if (catalog2?.resolve) {
+    return resolvedLibraryImageRef({ ...reference, imageRef: { kind: "placeholder" } }, catalog2) || catalogToy.imageRef;
+  }
+  return catalogToy.imageRef;
+}
+function catalogPresentationRows(activeRows, resolve) {
+  const rows = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const parent of activeRows) {
+    for (const candidate of [parent, ...parent.children || []]) {
+      const row = resolve(candidate) || candidate;
+      const key = text(row.canonicalKey || row.id);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      rows.push(row);
+    }
+  }
+  return rows;
 }
 function sourceType(state) {
   return { VERIFIED_PACKAGED: "packaged", VERIFIED_REMOTE: "remote", CATALOG_IDB: "catalog_idb", PERSONAL_IMAGE: "personal", PLACEHOLDER_ONLY: "placeholder", IMAGE_SOURCE_UNVERIFIED: "unverified", KNOWN_BROKEN: "broken", NO_IMAGE: "none" }[state];
