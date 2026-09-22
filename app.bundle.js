@@ -1,20 +1,3 @@
-var __typeError = (msg) => {
-  throw TypeError(msg);
-};
-var __accessCheck = (obj, member, msg) => member.has(obj) || __typeError("Cannot " + msg);
-var __privateGet = (obj, member, getter) => (__accessCheck(obj, member, "read from private field"), getter ? getter.call(obj) : member.get(obj));
-var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
-var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
-var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
-var __privateWrapper = (obj, member, setter, getter) => ({
-  set _(value) {
-    __privateSet(obj, member, value, setter);
-  },
-  get _() {
-    return __privateGet(obj, member, getter);
-  }
-});
-
 // src/data/schema.js
 var SCHEMA_VERSION = 12;
 var CATEGORY_CODES = Object.freeze([
@@ -669,65 +652,64 @@ function persistStateWithQuotaRecovery(next, storage = globalThis.localStorage) 
     }
   }
 }
-var _state, _listeners, _revision, _persistence, _diagnostic, _save;
 var AppStore = class {
+  #state;
+  #listeners = /* @__PURE__ */ new Set();
+  #revision = 0;
+  #persistence;
+  #diagnostic = null;
+  #save;
   constructor(state, persistence = { writable: true, status: "ready", diagnostic: null }, { safeSave = persistStateWithQuotaRecovery } = {}) {
-    __privateAdd(this, _state);
-    __privateAdd(this, _listeners, /* @__PURE__ */ new Set());
-    __privateAdd(this, _revision, 0);
-    __privateAdd(this, _persistence);
-    __privateAdd(this, _diagnostic, null);
-    __privateAdd(this, _save);
-    __privateSet(this, _state, state);
-    __privateSet(this, _persistence, persistence);
-    __privateSet(this, _save, safeSave);
+    this.#state = state;
+    this.#persistence = persistence;
+    this.#save = safeSave;
   }
   get state() {
-    return __privateGet(this, _state);
+    return this.#state;
   }
   get revision() {
-    return __privateGet(this, _revision);
+    return this.#revision;
   }
   get persistence() {
-    return structuredClone(__privateGet(this, _persistence));
+    return structuredClone(this.#persistence);
   }
   get canPersist() {
-    return __privateGet(this, _persistence).writable === true;
+    return this.#persistence.writable === true;
   }
   attachDiagnostic(diagnostic) {
-    __privateSet(this, _diagnostic, diagnostic);
+    this.#diagnostic = diagnostic;
   }
   subscribe(listener) {
-    __privateGet(this, _listeners).add(listener);
-    return () => __privateGet(this, _listeners).delete(listener);
+    this.#listeners.add(listener);
+    return () => this.#listeners.delete(listener);
   }
   update(mutator, reason2 = "update") {
-    const before = __privateGet(this, _state);
+    const before = this.#state;
     try {
       const next = structuredClone(before);
       mutator(next);
       next.schemaVersion = SCHEMA_VERSION;
       if (!this.canPersist) throw new Error("storage_recovery_required");
-      __privateGet(this, _diagnostic)?.storeUpdate(reason2, before, next);
-      __privateGet(this, _save).call(this, next);
-      __privateSet(this, _state, next);
-      __privateWrapper(this, _revision)._++;
-      for (const listener of __privateGet(this, _listeners)) {
+      this.#diagnostic?.storeUpdate(reason2, before, next);
+      this.#save(next);
+      this.#state = next;
+      this.#revision++;
+      for (const listener of this.#listeners) {
         listener(next, reason2);
-        __privateGet(this, _diagnostic)?.subscriberFired(reason2, next);
+        this.#diagnostic?.subscriberFired(reason2, next);
       }
     } catch (error) {
-      __privateGet(this, _diagnostic)?.storeUpdateFailed(reason2, before, error);
+      this.#diagnostic?.storeUpdateFailed(reason2, before, error);
       throw error;
     }
   }
   replace(next, reason2 = "replace") {
     const prepared = runMigrations(next);
     if (!this.canPersist) throw new Error("storage_recovery_required");
-    __privateGet(this, _save).call(this, prepared);
-    __privateSet(this, _state, prepared);
-    __privateWrapper(this, _revision)._++;
-    for (const listener of __privateGet(this, _listeners)) listener(__privateGet(this, _state), reason2);
+    this.#save(prepared);
+    this.#state = prepared;
+    this.#revision++;
+    for (const listener of this.#listeners) listener(this.#state, reason2);
   }
   // Restore uses this path so a failed persistence write cannot leave memory
   // and durable storage on different versions of the user's database.
@@ -738,27 +720,21 @@ var AppStore = class {
     onStage("commit_prepare_end", { schemaVersion: prepared.schemaVersion, toyCount: (prepared.toys || []).length });
     onStage("local_storage_persistence_start");
     if (!this.canPersist) throw new Error("storage_recovery_required");
-    __privateGet(this, _diagnostic)?.storeUpdate(reason2, __privateGet(this, _state), prepared);
-    __privateGet(this, _save).call(this, prepared);
+    this.#diagnostic?.storeUpdate(reason2, this.#state, prepared);
+    this.#save(prepared);
     onStage("local_storage_persistence_end");
     onStage("store_state_replace_start");
-    __privateSet(this, _state, prepared);
-    __privateWrapper(this, _revision)._++;
-    onStage("store_state_replace_end", { revision: __privateGet(this, _revision) });
-    onStage("ui_refresh_start", { listeners: __privateGet(this, _listeners).size });
-    for (const listener of __privateGet(this, _listeners)) {
-      listener(__privateGet(this, _state), reason2);
-      __privateGet(this, _diagnostic)?.subscriberFired(reason2, __privateGet(this, _state));
+    this.#state = prepared;
+    this.#revision++;
+    onStage("store_state_replace_end", { revision: this.#revision });
+    onStage("ui_refresh_start", { listeners: this.#listeners.size });
+    for (const listener of this.#listeners) {
+      listener(this.#state, reason2);
+      this.#diagnostic?.subscriberFired(reason2, this.#state);
     }
     onStage("ui_refresh_end");
   }
 };
-_state = new WeakMap();
-_listeners = new WeakMap();
-_revision = new WeakMap();
-_persistence = new WeakMap();
-_diagnostic = new WeakMap();
-_save = new WeakMap();
 function bootStore({ onStage = () => {
 }, diagnosticMode = globalThis.window?.TOY_ROTATION_CONFIG?.PERSISTENCE_DIAGNOSTIC_MODE === true } = {}) {
   onStage("store_persistence_read_start");
@@ -960,7 +936,6 @@ function migrateV4(state) {
   return { ...state, schemaVersion: 4, catalogState: { ...base.catalogState, ...existing, imageRefsByKey: { ...migratedImages.imageRefsByKey, ...existing.imageRefsByKey || {} }, imageRefsByIdentity: { ...migratedImages.imageRefsByIdentity, ...existing.imageRefsByIdentity || {} } } };
 }
 function migrateV5(state) {
-  var _a;
   const legacy = typeof localStorage === "undefined" ? null : LEGACY_KEYS.map((key) => parse(localStorage.getItem(key))).find(Boolean);
   const legacyToys = (legacy?.toys || []).map(normalizeToy);
   state.toys = (state.toys || []).map((current) => {
@@ -976,53 +951,48 @@ function migrateV5(state) {
     return normalizeWishlistItem({ ...old || {}, ...item, catalogSnapshot: item.catalogSnapshot || old });
   });
   const reconciliation = reconcilePersonalDuplicates(state);
-  state.catalogState || (state.catalogState = emptyState().catalogState);
+  state.catalogState ||= emptyState().catalogState;
   state.catalogState.tombstones = { ...migrateTombstones(), ...state.catalogState.tombstones || {} };
   sanitizeCatalogImageRefs(state.catalogState);
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.featureParityV5 = { migratedAt: (/* @__PURE__ */ new Date()).toISOString(), restoredLegacyImages: state.toys.filter((toy) => toy.imageRef?.kind === "personal").length, reconciledDuplicates: reconciliation.merged };
   state.schemaVersion = 5;
   return state;
 }
 function migrateV6(state) {
-  var _a;
-  state.catalogState || (state.catalogState = emptyState().catalogState);
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState ||= emptyState().catalogState;
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.featureParityV6 = { migratedAt: (/* @__PURE__ */ new Date()).toISOString(), personalImageRecoveryPending: true };
   state.schemaVersion = 6;
   return state;
 }
 function migrateV7(state) {
-  var _a;
-  state.catalogState || (state.catalogState = emptyState().catalogState);
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState ||= emptyState().catalogState;
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.imageAuditV7 = { startedAt: (/* @__PURE__ */ new Date()).toISOString(), pending: true, missingToyIds: [] };
   state.schemaVersion = 7;
   return state;
 }
 function migrateV8(state) {
-  var _a;
   state.toys = (state.toys || []).map(normalizeToy);
-  state.catalogState || (state.catalogState = emptyState().catalogState);
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState ||= emptyState().catalogState;
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.parentChildReconciliationV8 = { startedAt: (/* @__PURE__ */ new Date()).toISOString(), pending: true, added: 0, merged: 0, remapped: 0 };
   state.schemaVersion = 8;
   return state;
 }
 function migrateV9(state) {
-  var _a;
   state.toys = (state.toys || []).map(normalizeToy);
-  state.catalogState || (state.catalogState = emptyState().catalogState);
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState ||= emptyState().catalogState;
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.parentChildReconciliationV9 = { startedAt: (/* @__PURE__ */ new Date()).toISOString(), pending: true, added: 0, merged: 0, remapped: 0 };
   state.schemaVersion = 9;
   return state;
 }
 function migrateV10(state) {
-  var _a;
   state.toys = (state.toys || []).map(normalizeToy);
-  state.catalogState || (state.catalogState = emptyState().catalogState);
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState ||= emptyState().catalogState;
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.parentChildReconciliationV10 = {
     startedAt: (/* @__PURE__ */ new Date()).toISOString(),
     pending: true,
@@ -1039,20 +1009,18 @@ function migrateV10(state) {
   return state;
 }
 function migrateV11(state) {
-  var _a;
   state.toys = (state.toys || []).map(normalizeToy);
-  state.catalogState || (state.catalogState = emptyState().catalogState);
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState ||= emptyState().catalogState;
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.residualIdentityReconciliationV11 = { startedAt: (/* @__PURE__ */ new Date()).toISOString(), pending: true, reason: "legacy parent references normalized as child relationships" };
   state.catalogState.syncMetadata.catalogImageAuditV11 = { startedAt: (/* @__PURE__ */ new Date()).toISOString(), pending: true };
   state.schemaVersion = 11;
   return state;
 }
 function migrateV12(state) {
-  var _a;
   state.toys = (state.toys || []).map(normalizeToy);
-  state.catalogState || (state.catalogState = emptyState().catalogState);
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState ||= emptyState().catalogState;
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.parentChildReconciliationV12 = {
     startedAt: (/* @__PURE__ */ new Date()).toISOString(),
     pending: true,
@@ -1179,7 +1147,6 @@ function catalogImageAvailability(toy, catalog2) {
   return { catalogToy, ref, sameChild, available: Boolean(sameChild && stable) };
 }
 async function repairFakePersonalPlaceholderBindings(state, { images: images2, catalog: catalog2, mutate = true } = {}) {
-  var _a;
   const rows = [];
   let genuine = 0;
   let fake = 0;
@@ -1228,8 +1195,8 @@ async function repairFakePersonalPlaceholderBindings(state, { images: images2, c
     changed,
     rows
   };
-  state.catalogState || (state.catalogState = {});
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState ||= {};
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.fakePersonalPlaceholderRepairV121 = summary2;
   return summary2;
 }
@@ -1336,8 +1303,7 @@ async function auditStandardCatalogImages({ store: store2, catalog: catalog2, ve
     ...Object.fromEntries(Object.entries(byStatus).map(([status, keys]) => [`${status}Keys`, keys]))
   };
   store2.update((state) => {
-    var _a;
-    (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+    state.catalogState.syncMetadata ||= {};
     state.catalogState.syncMetadata.catalogImageAuditV12 = result2;
   }, "standard-catalog-image-audit");
   return store2.state.catalogState.syncMetadata.catalogImageAuditV12;
@@ -1574,7 +1540,7 @@ function parseExplicitChildCount(definition = {}, parent = {}) {
   return Number.isInteger(count4) && count4 > 1 && count4 <= 24 ? count4 : 0;
 }
 function ensureSplitSetChildren(toys, definitionsByKey) {
-  toys || (toys = []);
+  toys ||= [];
   const existingByKey = new Map(toys.map((toy) => [canonicalKey(toy.canonicalKey), toy]));
   const additions = [];
   for (const parent of toys.filter((toy) => toy.set?.kind === "parent" && toy.set.rotationMode === "split")) {
@@ -1610,7 +1576,7 @@ function exactLegacyParentPartChild(toys, parent, child) {
   return toys.find((candidate) => candidate.set?.kind === "child" && (candidate.set?.parentId === parent.id || canonicalKey(candidate.set?.parentCanonicalKey) === canonicalKey(parent.canonicalKey)) && Number(candidate.set?.partIndex) === part) || null;
 }
 function backfillKnownMideerLegacySixSlot(state, definitionsByKey) {
-  state.toys || (state.toys = []);
+  state.toys ||= [];
   const parentKey = "mideer-my-first-puzzle";
   const definition = definitionsByKey.get(parentKey);
   if (!definition || Number(definition.childCount) !== 6) return { promoted: 0, parentIds: [] };
@@ -1662,11 +1628,11 @@ function repairQa6MideerCanonicalState(state, definitionsByKey) {
       }
     }
   }
-  const catalog2 = state.catalogState || (state.catalogState = {});
-  catalog2.tombstones || (catalog2.tombstones = {});
-  catalog2.adminEdits || (catalog2.adminEdits = {});
-  catalog2.imageRefsByKey || (catalog2.imageRefsByKey = {});
-  catalog2.imageRefsByIdentity || (catalog2.imageRefsByIdentity = {});
+  const catalog2 = state.catalogState ||= {};
+  catalog2.tombstones ||= {};
+  catalog2.adminEdits ||= {};
+  catalog2.imageRefsByKey ||= {};
+  catalog2.imageRefsByIdentity ||= {};
   for (const from of legacy) {
     if (catalog2.adminEdits[from]) {
       catalog2.adminEdits[target] = { ...catalog2.adminEdits[from] || {}, ...catalog2.adminEdits[target] || {}, legacyCanonicalKeys: uniqueCanonicalKeys([...catalog2.adminEdits[target]?.legacyCanonicalKeys || [], from]) };
@@ -1691,12 +1657,12 @@ function repairQa6MideerCanonicalState(state, definitionsByKey) {
     if (legacy.has(canonicalKey(round.canonicalKey))) round.canonicalKey = target;
     if (legacy.has(canonicalKey(round.catalogKey))) round.catalogKey = target;
   }
-  catalog2.syncMetadata || (catalog2.syncMetadata = {});
+  catalog2.syncMetadata ||= {};
   catalog2.syncMetadata.qa6MideerCanonicalRepairV1 = { repairedAt: (/* @__PURE__ */ new Date()).toISOString(), target, migratedParents, migratedChildren, mergedParents };
   return { applied: true, target, migratedParents, migratedChildren, mergedParents };
 }
 function restoreMissingSplitSetChildren(state, definitionsByKey, legacyToys = []) {
-  state.toys || (state.toys = []);
+  state.toys ||= [];
   const existing = state.toys;
   const legacy = (legacyToys || []).map(normalizeToy);
   const restored = [];
@@ -1761,7 +1727,7 @@ function classifyStructureMigrationDamage(state, definitionsByKey) {
   return candidates;
 }
 function repairStructureMigrationDamage(state, definitionsByKey, { confirmedParentIds = [], confirmedParentKeys = [] } = {}) {
-  state.toys || (state.toys = []);
+  state.toys ||= [];
   const confirmedIds = new Set(confirmedParentIds.map(String));
   const confirmedKeys = new Set(confirmedParentKeys.map(canonicalKey));
   const classifications = classifyStructureMigrationDamage(state, definitionsByKey);
@@ -1893,7 +1859,7 @@ function restoreHistoricalChild(historical, parent, plan) {
   return normalizeToy({ ...historical, canonicalKey: plan.canonicalKey, legacyCanonicalKeys: [...historical.legacyCanonicalKeys || [], historical.canonicalKey, plan.canonicalKey], productName: historical.productName || plan.productName, names: { ...plan.names, ...historical.names }, imageRef: parentCover ? plan.imageRef : historical.imageRef, set: { kind: "child", parentId: parent.id, parentCanonicalKey: parent.canonicalKey, legacyParentIds: [...historical.set?.legacyParentIds || [], historical.set?.parentId].filter(Boolean), setName: parent.productName, partIndex: plan.set?.partIndex || partIndexFromKey(plan.canonicalKey), childIds: [], rotationMode: "split", ownershipSource: "generated_from_set", generatedFromParentId: parent.id, ownershipGroupId: parent.id, detachedFromSet: false }, mergeDiagnostics: [...historical.mergeDiagnostics || [], "data-repair: restored_missing_split_child"] });
 }
 function reconcileSplitSetChildren(state, definitionsByKey) {
-  state.toys || (state.toys = []);
+  state.toys ||= [];
   const additions = ensureSplitSetChildren(state.toys, definitionsByKey);
   if (additions.length) state.toys.push(...additions);
   let merged = 0;
@@ -1975,7 +1941,7 @@ function uniqueDisplayStrings(values) {
   });
 }
 function reconcileOrphanedSplitOwnership(state, definitionsByKey) {
-  state.toys || (state.toys = []);
+  state.toys ||= [];
   const plans = splitChildPlanIndex(definitionsByKey);
   const activeParentIds = new Set(state.toys.filter((toy) => toy.set?.kind === "parent").map((toy) => toy.id));
   const activeParentKeys = new Set(state.toys.filter((toy) => toy.set?.kind === "parent").map((toy) => canonicalKey(toy.canonicalKey)));
@@ -2056,9 +2022,8 @@ function classifyOrphanedSplitChild(toy, plan) {
   return { kind: "unknown_legacy_provenance", reason: "catalog_split_identity_without_proven_parent_ownership" };
 }
 function archiveRemovedOwnerships(state, toys, reason2) {
-  var _a;
-  state.catalogState || (state.catalogState = {});
-  (_a = state.catalogState).removedOwnerships || (_a.removedOwnerships = {});
+  state.catalogState ||= {};
+  state.catalogState.removedOwnerships ||= {};
   for (const toy of toys) if (!state.catalogState.removedOwnerships[toy.id]) state.catalogState.removedOwnerships[toy.id] = {
     removedAt: (/* @__PURE__ */ new Date()).toISOString(),
     reason: reason2,
@@ -2082,7 +2047,6 @@ function preserveDeletedReferences(state, removedIds) {
   }
 }
 function reconcileLegacyChildOwnership(state) {
-  var _a;
   const all = state.toys || [];
   const parentsByLegacyIdentity = /* @__PURE__ */ new Map();
   for (const parent of all.filter((toy) => toy.set?.kind === "parent")) {
@@ -2095,7 +2059,7 @@ function reconcileLegacyChildOwnership(state) {
       toy.set.parentId = resolvedParent.id;
       toy.set.parentCanonicalKey = canonicalKey(resolvedParent.canonicalKey);
       toy.set.legacyParentIds = [.../* @__PURE__ */ new Set([...toy.set.legacyParentIds || [], resolvedParent.id])];
-      (_a = toy.set).setName || (_a.setName = resolvedParent.productName);
+      toy.set.setName ||= resolvedParent.productName;
     }
   }
   const queue = findDuplicates(all).filter(
@@ -2474,7 +2438,6 @@ async function exportBackup(store2, imageRepository) {
 }
 async function restoreBackup(payload, store2, imageRepository, { catalog: catalog2 = null, onStage = () => {
 }, trace: existingTrace = null } = {}) {
-  var _a, _b;
   const trace = existingTrace || createRestoreTrace();
   const stage = (name, detail = {}) => {
     trace.mark(name, detail);
@@ -2497,8 +2460,8 @@ async function restoreBackup(payload, store2, imageRepository, { catalog: catalo
     stage("image_metadata_validation_start", { phase: "start" });
     validateImageReferences(staged.state, payload.images || {});
     stage("image_metadata_validation_end", { phase: "end" });
-    (_a = staged.state).catalogState || (_a.catalogState = {});
-    (_b = staged.state.catalogState).syncMetadata || (_b.syncMetadata = {});
+    staged.state.catalogState ||= {};
+    staged.state.catalogState.syncMetadata ||= {};
     staged.state.catalogState.syncMetadata.restorePipelineR12A = {
       completedAt: (/* @__PURE__ */ new Date()).toISOString(),
       repairedDuplicates: staged.summary.repairedDuplicates,
@@ -2525,7 +2488,6 @@ async function restoreBackup(payload, store2, imageRepository, { catalog: catalo
 }
 function prepareRestoreState(input, catalog2 = null, onStage = () => {
 }) {
-  var _a, _b, _c;
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalidBackupState");
   const legacyReferenceIndex = buildLegacyReferenceIndex(input.toys || []);
   onStage("migrations_start", { phase: "start" });
@@ -2535,10 +2497,10 @@ function prepareRestoreState(input, catalog2 = null, onStage = () => {
   state.toys = (state.toys || []).map(normalizeToy);
   state.wishlist = (state.wishlist || []).map(normalizeWishlistItem);
   onStage("identity_normalization_end", { phase: "end", toyCount: state.toys.length, wishlistCount: state.wishlist.length });
-  state.catalogState || (state.catalogState = {});
-  (_a = state.catalogState).tombstones || (_a.tombstones = {});
-  (_b = state.catalogState).adminEdits || (_b.adminEdits = {});
-  (_c = state.catalogState).syncMetadata || (_c.syncMetadata = {});
+  state.catalogState ||= {};
+  state.catalogState.tombstones ||= {};
+  state.catalogState.adminEdits ||= {};
+  state.catalogState.syncMetadata ||= {};
   const catalogIdentityRedirects = applyCatalogRedirects(state, catalog2);
   const definitions = new Map((catalog2?.active || []).map((row) => [canonicalKey(row.canonicalKey), row]));
   const before = state.toys.length;
@@ -2628,7 +2590,6 @@ function validateRestoredState(state, catalog2) {
   return { toyCount: ids.size, setGraph: true, legacyDuplicateCount: 0, wishlistReferences: true };
 }
 function repairHistoricalReferences(state, { legacyReferenceIndex = /* @__PURE__ */ new Map(), reconciliation = {} } = {}) {
-  var _a;
   const currentById = new Map((state.toys || []).map((toy) => [toy.id, toy]));
   const currentByKey = /* @__PURE__ */ new Map();
   for (const toy of state.toys || []) {
@@ -2693,8 +2654,8 @@ function repairHistoricalReferences(state, { legacyReferenceIndex = /* @__PURE__
     }
   }
   const summary2 = { remapped, markedMissing, affectedRounds, diagnostics };
-  state.catalogState || (state.catalogState = {});
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+  state.catalogState ||= {};
+  state.catalogState.syncMetadata ||= {};
   state.catalogState.syncMetadata.restoreHistoricalReferenceRepair = { repairedAt: (/* @__PURE__ */ new Date()).toISOString(), ...summary2 };
   return summary2;
 }
@@ -2780,59 +2741,55 @@ var LEGACY_DB = "toyRotationPhotosV04";
 var LEGACY_STORE = "photos";
 var CATALOG_PREFIX = "catalog:";
 var PERSONAL_PREFIX = "personal:";
-var _cache, _database, _ImageRepository_instances, db_fn, read_fn, readAll_fn, write_fn, delete_fn;
 var ImageRepository = class {
-  constructor() {
-    __privateAdd(this, _ImageRepository_instances);
-    __privateAdd(this, _cache, /* @__PURE__ */ new Map());
-    __privateAdd(this, _database, null);
-  }
+  #cache = /* @__PURE__ */ new Map();
+  #database = null;
   async resolve(ref) {
     if (!ref || ref.kind === "placeholder") return null;
     if (ref.kind === "generated") return generatedCatalogFallback(ref);
     if (ref.kind === "packaged") return packagedAssetUrl(ref);
     const cacheKey = ref.kind === "remote" ? ref.url : `${ref.kind}:${ref.id}`;
-    if (__privateGet(this, _cache).has(cacheKey)) return __privateGet(this, _cache).get(cacheKey);
-    const stored = ref.kind === "remote" ? ref.url : await __privateMethod(this, _ImageRepository_instances, read_fn).call(this, ref.id);
+    if (this.#cache.has(cacheKey)) return this.#cache.get(cacheKey);
+    const stored = ref.kind === "remote" ? ref.url : await this.#read(ref.id);
     const value = await normalizeStoredImage(stored);
-    __privateGet(this, _cache).set(cacheKey, value || null);
+    this.#cache.set(cacheKey, value || null);
     return value || null;
   }
   async savePersonal(dataUrl2, id = crypto.randomUUID()) {
     const key = `${PERSONAL_PREFIX}${id}`;
-    await __privateMethod(this, _ImageRepository_instances, write_fn).call(this, key, dataUrl2);
-    __privateGet(this, _cache).set(`personal:${key}`, dataUrl2);
+    await this.#write(key, dataUrl2);
+    this.#cache.set(`personal:${key}`, dataUrl2);
     return { kind: "personal", id: key };
   }
   async importPersonal(id, dataUrl2) {
-    await __privateMethod(this, _ImageRepository_instances, write_fn).call(this, id, dataUrl2);
-    __privateGet(this, _cache).set(`personal:${id}`, dataUrl2);
+    await this.#write(id, dataUrl2);
+    this.#cache.set(`personal:${id}`, dataUrl2);
     return { kind: "personal", id };
   }
   async importCatalog(id, dataUrl2) {
-    await __privateMethod(this, _ImageRepository_instances, write_fn).call(this, id, dataUrl2);
-    __privateGet(this, _cache).set(`catalog:${id}`, dataUrl2);
+    await this.#write(id, dataUrl2);
+    this.#cache.set(`catalog:${id}`, dataUrl2);
     return { kind: "catalog", id };
   }
   async saveCatalog(dataUrl2, canonicalKey2) {
     if (!dataUrl2 || !canonicalKey2) throw new Error("Catalog image and canonical key are required");
     const id = `${CATALOG_PREFIX}${canonicalKey2}`;
-    await __privateMethod(this, _ImageRepository_instances, write_fn).call(this, id, dataUrl2);
-    __privateGet(this, _cache).set(`catalog:${id}`, dataUrl2);
+    await this.#write(id, dataUrl2);
+    this.#cache.set(`catalog:${id}`, dataUrl2);
     return { kind: "catalog", id };
   }
   async copyToCatalog(personalRef, canonicalKey2) {
     const raw = await this.resolve(personalRef);
     if (!raw) throw new Error("No personal image available to copy");
     const id = `${CATALOG_PREFIX}${canonicalKey2}`;
-    await __privateMethod(this, _ImageRepository_instances, write_fn).call(this, id, raw);
-    __privateGet(this, _cache).set(`catalog:${id}`, raw);
+    await this.#write(id, raw);
+    this.#cache.set(`catalog:${id}`, raw);
     return { kind: "catalog", id };
   }
   async removePersonal(ref) {
     if (ref?.kind !== "personal") return;
-    await __privateMethod(this, _ImageRepository_instances, delete_fn).call(this, ref.id);
-    __privateGet(this, _cache).delete(`personal:${ref.id}`);
+    await this.#delete(ref.id);
+    this.#cache.delete(`personal:${ref.id}`);
   }
   async copyToPersonal(ref) {
     const raw = await this.resolve(ref);
@@ -2853,7 +2810,7 @@ var ImageRepository = class {
       const raw = await this.resolve({ kind: "personal", id });
       if (raw) return raw;
     }
-    const records = await __privateMethod(this, _ImageRepository_instances, readAll_fn).call(this);
+    const records = await this.#readAll();
     const needle = String(toyId || "").toLowerCase();
     for (const { key, value } of records) {
       const metadata = typeof value === "object" ? JSON.stringify(value).toLowerCase() : "";
@@ -2865,7 +2822,7 @@ var ImageRepository = class {
     return null;
   }
   async listPersonalRecords() {
-    const records = await __privateMethod(this, _ImageRepository_instances, readAll_fn).call(this);
+    const records = await this.#readAll();
     const normalized2 = await Promise.all(records.map(async ({ key, value }) => ({
       id: String(key || ""),
       raw: await normalizeStoredImage(value),
@@ -2873,75 +2830,73 @@ var ImageRepository = class {
     })));
     return normalized2.filter((record) => record.raw && !record.id.startsWith(CATALOG_PREFIX));
   }
-};
-_cache = new WeakMap();
-_database = new WeakMap();
-_ImageRepository_instances = new WeakSet();
-db_fn = async function() {
-  if (!__privateGet(this, _database)) __privateSet(this, _database, new Promise((resolve, reject) => {
-    const request = indexedDB.open(LEGACY_DB, 1);
-    request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(LEGACY_STORE)) request.result.createObjectStore(LEGACY_STORE);
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }));
-  return __privateGet(this, _database);
-};
-read_fn = async function(key) {
-  const db = await __privateMethod(this, _ImageRepository_instances, db_fn).call(this);
-  return new Promise((resolve, reject) => {
-    const request = db.transaction(LEGACY_STORE).objectStore(LEGACY_STORE).get(key);
-    request.onsuccess = () => resolve(request.result || null);
-    request.onerror = () => reject(request.error);
-  });
-};
-readAll_fn = async function() {
-  const db = await __privateMethod(this, _ImageRepository_instances, db_fn).call(this);
-  return new Promise((resolve, reject) => {
-    const store2 = db.transaction(LEGACY_STORE).objectStore(LEGACY_STORE);
-    const keys = store2.getAllKeys();
-    const values = store2.getAll();
-    let resolvedKeys = [];
-    let resolvedValues = [];
-    let completed = 0;
-    const complete = () => {
-      if (++completed === 2) resolve(resolvedKeys.map((key, index) => ({ key, value: resolvedValues[index] })));
-    };
-    keys.onsuccess = () => {
-      resolvedKeys = keys.result || [];
-      complete();
-    };
-    values.onsuccess = () => {
-      resolvedValues = values.result || [];
-      complete();
-    };
-    keys.onerror = () => reject(keys.error);
-    values.onerror = () => reject(values.error);
-  });
-};
-write_fn = async function(key, value) {
-  const db = await __privateMethod(this, _ImageRepository_instances, db_fn).call(this);
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(LEGACY_STORE, "readwrite");
-    tx.objectStore(LEGACY_STORE).put(value, key);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-};
-delete_fn = async function(key) {
-  const db = await __privateMethod(this, _ImageRepository_instances, db_fn).call(this);
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(LEGACY_STORE, "readwrite");
-    tx.objectStore(LEGACY_STORE).delete(key);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
+  async #db() {
+    if (!this.#database) this.#database = new Promise((resolve, reject) => {
+      const request = indexedDB.open(LEGACY_DB, 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains(LEGACY_STORE)) request.result.createObjectStore(LEGACY_STORE);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    return this.#database;
+  }
+  async #read(key) {
+    const db = await this.#db();
+    return new Promise((resolve, reject) => {
+      const request = db.transaction(LEGACY_STORE).objectStore(LEGACY_STORE).get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+  async #readAll() {
+    const db = await this.#db();
+    return new Promise((resolve, reject) => {
+      const store2 = db.transaction(LEGACY_STORE).objectStore(LEGACY_STORE);
+      const keys = store2.getAllKeys();
+      const values = store2.getAll();
+      let resolvedKeys = [];
+      let resolvedValues = [];
+      let completed = 0;
+      const complete = () => {
+        if (++completed === 2) resolve(resolvedKeys.map((key, index) => ({ key, value: resolvedValues[index] })));
+      };
+      keys.onsuccess = () => {
+        resolvedKeys = keys.result || [];
+        complete();
+      };
+      values.onsuccess = () => {
+        resolvedValues = values.result || [];
+        complete();
+      };
+      keys.onerror = () => reject(keys.error);
+      values.onerror = () => reject(values.error);
+    });
+  }
+  async #write(key, value) {
+    const db = await this.#db();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(LEGACY_STORE, "readwrite");
+      tx.objectStore(LEGACY_STORE).put(value, key);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async #delete(key) {
+    const db = await this.#db();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(LEGACY_STORE, "readwrite");
+      tx.objectStore(LEGACY_STORE).delete(key);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
 };
 function packagedAssetUrl(ref = {}) {
   const path = String(ref.path || "").replace(/\\/g, "/");
   if (!/^catalog-assets\/[a-z0-9][a-z0-9._-]*\.(?:svg|png|webp|jpe?g)$/i.test(path)) return null;
-  return `./${path}`;
+  const base = globalThis.document?.baseURI || globalThis.location?.href;
+  return base ? new URL(path, base).href : `./${path}`;
 }
 function generatedCatalogFallback(ref) {
   const brand = escapeXml(String(ref.brand || "Toy Rotation").slice(0, 34));
@@ -4045,14 +4000,14 @@ var CATALOG_IMAGE_ASSETS = Object.freeze({
   "cherrypick-dustless-chalk-crayons": packaged("catalog-assets/cherrypick-dustless-chalk-crayons.jpg", "https://shopcherrypick.com/products/dustless-chalk-crayons-magnetic-holder-bundle-for-magic-playwall?variant=44190785765564", "official_variant_cdn", "image/jpeg", "sha256:3c0a08b8bdce7a4bed2065f3050fd63b6058a9b599cc00fc36de50d5a9e5ba70"),
   "mideer-animal-toys-set-15pcs": packaged("catalog-assets/mideer-animal-toys-set-15pcs.jpg", "https://www.toytag.com/products/animals-toy-set-15p", "authorized_retailer_exact_sku", "image/jpeg", "sha256:e062bf4ff7b9136ce15263bd994abf587b26a1c9bfa896c4ff87975c89998e90"),
   "mideer-level1-home-sweet-home-puzzle": packaged("catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg", "https://mideermall.com/products/mideer-level-up-puzzles-level-1-home-sweet-home", "authorized_retailer_exact_sku", "image/jpeg", "sha256:b926afe91148eccc63e9ea4367482f0833d566a5b6b55fd09020b6d8466cd98b"),
-  "mideer-level1-home-sweet-home-puzzle:puzzle-1": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-1.svg", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/svg+xml", "sha256:90329fe73f8e3be77ba895c0a522add8b2cb60004bb50ad881a9d39de763f761"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-1", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Fish (2 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "338,85,130,120", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
-  "mideer-level1-home-sweet-home-puzzle:puzzle-2": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-2.svg", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/svg+xml", "sha256:38e2201f9fec8fce5f33c23f82da5a7de5abfe61070628ddea312206dbb29687"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-2", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Bee (2 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "465,85,130,120", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
-  "mideer-level1-home-sweet-home-puzzle:puzzle-3": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-3.svg", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/svg+xml", "sha256:ae9cb92eca854e2dab88a0dc63cd195784a7e5f25945214a0f9d9e692b44ab49"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-3", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Frog (3 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "337,185,132,120", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
-  "mideer-level1-home-sweet-home-puzzle:puzzle-4": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-4.svg", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/svg+xml", "sha256:fb8129e0c273d3b3a49bb9514dd3fe44c58d4dba06825f323face1a039eb3bcf"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-4", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Bird (3 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "464,185,132,120", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
-  "mideer-level1-home-sweet-home-puzzle:puzzle-5": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-5.svg", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/svg+xml", "sha256:da2e18726d6a72693c45bec7f43192ef2622611c40eb3b77c90a0e897d628b5d"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-5", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Chicken (4 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "337,285,132,125", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
-  "mideer-level1-home-sweet-home-puzzle:puzzle-6": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-6.svg", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/svg+xml", "sha256:e245041a498d0b1c3f448689da11d2908e95121f4102e9d63e827f379693b491"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-6", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Cat (4 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "464,285,132,125", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
-  "mideer-level1-home-sweet-home-puzzle:puzzle-7": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-7.svg", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/svg+xml", "sha256:5b394c735ec486c2eeb35622a7964639f93a3b9b6cbb7c65283ac11e9bcfa4a6"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-7", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Football Dog (5 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "337,390,132,125", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
-  "mideer-level1-home-sweet-home-puzzle:puzzle-8": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-8.svg", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/svg+xml", "sha256:8b3f71bee7a3fe721a5bcddbff89627f988d525a0cd7c4852e1ae06c1537ac5c"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-8", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Cow in House (6 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "464,390,132,125", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
+  "mideer-level1-home-sweet-home-puzzle:puzzle-1": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-1.png", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/png", "sha256:41b2a4ae3a622fb2685ad1bfac66acf2bcf1d924254ab960666355f374a398ed"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-1", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Fish (2 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "338,85,130,120", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
+  "mideer-level1-home-sweet-home-puzzle:puzzle-2": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-2.png", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/png", "sha256:4c873c64155dda52f579e36657938fca8274f53357dd78ba848fb6166ac773a3"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-2", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Bee (2 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "465,85,130,120", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
+  "mideer-level1-home-sweet-home-puzzle:puzzle-3": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-3.png", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/png", "sha256:7eca507ad5b4f69fa7632a6c2686cfa9a4f24c6b480c055ba18cad80490c326e"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-3", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Frog (3 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "337,185,132,120", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
+  "mideer-level1-home-sweet-home-puzzle:puzzle-4": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-4.png", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/png", "sha256:9a84e514d49ea6d59a892d3ae9cff76bae3e8d72709191dd68edf2b87e6f4e5a"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-4", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Bird (3 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "464,185,132,120", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
+  "mideer-level1-home-sweet-home-puzzle:puzzle-5": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-5.png", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/png", "sha256:68ab8dae2db702d24573db5597aa11d4b2bf806de2160dd128d75ef6f1c7682f"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-5", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Chicken (4 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "337,285,132,125", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
+  "mideer-level1-home-sweet-home-puzzle:puzzle-6": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-6.png", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/png", "sha256:1686ada094067eeec498ebc63bda9111177ce6a655765ebb921f7ae5bf6076e0"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-6", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Cat (4 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "464,285,132,125", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
+  "mideer-level1-home-sweet-home-puzzle:puzzle-7": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-7.png", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/png", "sha256:8ea3272fdd61f64c7cc3622f08fda57331a5922b6897d6044d722a1007165ceb"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-7", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Football Dog (5 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "337,390,132,125", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
+  "mideer-level1-home-sweet-home-puzzle:puzzle-8": { ...packaged("catalog-assets/mideer-home-sweet-home-md1673-puzzle-8.png", "https://www.panguitoys.cl/puzzle-progresivo-8-en-1-nuestro-hogar-nivel-1", "authorized_retailer_exact_sku", "image/png", "sha256:ed96a2c6ca4f4c6f4697cad7b6fe0b2110f384d237627e36e6952aeb99db3f77"), imageOwnerCanonicalKey: "mideer-level1-home-sweet-home-puzzle:puzzle-8", sku: "MD1673", officialProductName: "Level Up! Puzzles Level 1: Home, Sweet Home! \u2014 Cow in House (6 pieces)", sourceImageUrl: "https://cdnx.jumpseller.com/panguitoys/image/70391759/resize/610/610?1764889740=", sourceImageMime: "image/webp", cropRect: "464,390,132,125", sourceImageHash: "sha256:280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f" },
   "mideer-my-first-puzzle-dinosaurs-6in1": packaged("catalog-assets/mideer-my-first-puzzle-dinosaurs-6in1.webp", "https://mideer.store/en/product/my-first-dinosaur-pieces-6-in-1/", "official_cdn", "image/webp", "sha256:e5fe90815379cd197aa58f5aeaaa5bb3cde546a2fb35882c2d2cbe9074043432"),
   "hahaland-farm-busy-book-20in1": { ...packaged("catalog-assets/hahaland-farm-busy-book-20in1.jpg", "https://hahaland.com/products/montessori-farm-busy-book-for-toddlers-1-3", "official_cdn", "image/jpeg", "sha256:3e22ad2e37d1db06612ecefda6e99301a68383c3a212a22e769ab7bf06e26a5b"), imageOwnerCanonicalKey: "hahaland-farm-busy-book-20in1", officialProductName: "Montessori Farm Busy Book for Toddlers 1\u20133", sourceImageUrl: "https://hahaland.com/cdn/shop/files/1601x1601-1E.jpg?v=1776750632", sourceImageMime: "image/jpeg" },
   "hahaland-surprise-barn": { ...packaged("catalog-assets/hahaland-surprise-barn.jpg", "https://hahaland.com/products/montessori-sensory-farm-animal-set-for-6-12-months", "official_cdn", "image/jpeg", "sha256:d6e2024358fcc018fea9b2419ae01fb133cd15668d85b2df18d505f6dba91735"), imageOwnerCanonicalKey: "hahaland-surprise-barn", officialProductName: "My First Barn Animal Toys", sourceImageUrl: "https://hahaland.com/cdn/shop/files/img_v3_02ro_319e676e-0387-4446-8207-aaed6789d84g.jpg?v=1762321751", sourceImageMime: "image/jpeg" },
@@ -4097,7 +4052,11 @@ var CATALOG_IMAGE_ASSETS = Object.freeze({
   ...BATCH13_OFFICIAL_IMAGE_ASSETS,
   ...HAPE_PRIORITY_BATCH1_IMAGE_ASSETS,
   ...HAPE_PRIORITY_BATCH2_IMAGE_ASSETS,
-  ...HAPE_FINAL_RESOLUTION_IMAGE_ASSETS
+  ...HAPE_FINAL_RESOLUTION_IMAGE_ASSETS,
+  // The former official VTech image endpoint is protected by an anti-bot
+  // redirect loop on mobile browsers.  Keep the exact 80-574100 identity but
+  // ship the independently MIME-verified retailer image with the artifact.
+  "vtech-busy-learners-music-activity-cube": { ...packaged("catalog-assets/vtech-busy-learners-music-activity-cube-80-574100.jpg", "https://www.walmart.com/ip/14710012504", "authorized_retailer_exact_sku", "image/jpeg", "sha256:383931a359dca748e531e8ec6f9a88e45d9db8eebb1f4c64d7dbe2d08920d79e"), imageOwnerCanonicalKey: "vtech-busy-learners-music-activity-cube", sku: "80-574100", officialProductName: "VTech Baby Busy Learners Music Activity Cube", sourceImageUrl: "https://i5.walmartimages.com/seo/VTech-Baby-Busy-Learners-Music-Activity-Cube-Green_ddaab418-2598-452d-b8cc-696548517c75.0af9cd134c98f4e52566f2cf052e5e8b.jpeg", sourceImageMime: "image/jpeg" }
 });
 function catalogImageAsset(key) {
   const canonical = String(key || "").toLowerCase();
@@ -4124,19 +4083,17 @@ function isPublicCatalogVisible(toy) {
 }
 
 // src/domain/catalog-repository.js
-var _base, _remote, _serverEdits, _active, _byKey, _mergedInto, _childByParentPart, _store, _CatalogRepository_instances, hydrateServer_fn, rebuild_fn;
 var CatalogRepository = class {
+  #base = [];
+  #remote = [];
+  #serverEdits = {};
+  #active = [];
+  #byKey = /* @__PURE__ */ new Map();
+  #mergedInto = /* @__PURE__ */ new Map();
+  #childByParentPart = /* @__PURE__ */ new Map();
+  #store;
   constructor(store2, { baseUrl = "" } = {}) {
-    __privateAdd(this, _CatalogRepository_instances);
-    __privateAdd(this, _base, []);
-    __privateAdd(this, _remote, []);
-    __privateAdd(this, _serverEdits, {});
-    __privateAdd(this, _active, []);
-    __privateAdd(this, _byKey, /* @__PURE__ */ new Map());
-    __privateAdd(this, _mergedInto, /* @__PURE__ */ new Map());
-    __privateAdd(this, _childByParentPart, /* @__PURE__ */ new Map());
-    __privateAdd(this, _store);
-    __privateSet(this, _store, store2);
+    this.#store = store2;
     this.baseUrl = String(baseUrl || "").replace(/\/$/, "");
   }
   async hydrate({ onStage = () => {
@@ -4147,18 +4104,34 @@ var CatalogRepository = class {
       fetchJson("./catalog-base.json"),
       fetchJson("./catalog-candidates.json")
     ]);
-    __privateSet(this, _remote, entries(remote2));
+    this.#remote = entries(remote2);
     this.applyBase([...entries(base), ...entries(candidates)]);
-    onStage("catalog_static_load_end", { activeCatalogCount: __privateGet(this, _active).length });
-    if (this.baseUrl) void __privateMethod(this, _CatalogRepository_instances, hydrateServer_fn).call(this, onStage);
-    return __privateGet(this, _active);
+    onStage("catalog_static_load_end", { activeCatalogCount: this.#active.length });
+    if (this.baseUrl) void this.#hydrateServer(onStage);
+    return this.#active;
+  }
+  async #hydrateServer(onStage) {
+    try {
+      onStage("remote_catalog_request_start");
+      const [learned, overrides] = await Promise.all([
+        fetchJson(`${this.baseUrl}/learned-catalog`, { timeoutMs: 4500 }),
+        fetchJson(`${this.baseUrl}/catalog-overrides`, { timeoutMs: 4500 })
+      ]);
+      this.#remote = [...this.#remote, ...entries(learned)];
+      this.#serverEdits = overrides?.overrides || {};
+      this.#rebuild();
+      this.ensureSetChildren();
+      onStage("remote_catalog_request_end", { activeCatalogCount: this.#active.length });
+    } catch {
+      onStage("remote_catalog_request_end", { status: "unavailable" });
+    }
   }
   get active() {
-    return __privateGet(this, _active);
+    return this.#active;
   }
   getByKey(key) {
     const requested = canonicalKey(key);
-    return __privateGet(this, _byKey).get(requested) || __privateGet(this, _byKey).get(__privateGet(this, _mergedInto).get(requested)) || null;
+    return this.#byKey.get(requested) || this.#byKey.get(this.#mergedInto.get(requested)) || null;
   }
   reviewMetadata(reference) {
     return catalogReviewMetadata(typeof reference === "string" ? reference : reference?.canonicalKey);
@@ -4171,10 +4144,10 @@ var CatalogRepository = class {
     const parent = canonicalKey(reference?.set?.parentCanonicalKey || reference?.parentCanonicalKey);
     const part = childPartIndex(reference);
     if (parent && part > 0) {
-      const match = __privateGet(this, _childByParentPart).get(`${parent}|${part}`);
+      const match = this.#childByParentPart.get(`${parent}|${part}`);
       if (match) return match;
     }
-    return resolveCatalogReference(reference, __privateGet(this, _active));
+    return resolveCatalogReference(reference, this.#active);
   }
   // Recognition is an input to the same Catalog identity layer as every other
   // entry point.  This method classifies only with the existing identity
@@ -4183,9 +4156,9 @@ var CatalogRepository = class {
     const exact = this.resolve(reference);
     if (exact) return { kind: "catalog_match", catalog: exact };
     const requestedKey = canonicalKey(reference.canonicalKey || reference.catalogKey || `${reference.brand || ""}-${reference.productName || reference.name || ""}`);
-    const tombstone = __privateGet(this, _store).state.catalogState?.tombstones?.[requestedKey];
+    const tombstone = this.#store.state.catalogState?.tombstones?.[requestedKey];
     if (tombstone && !tombstone.mergedInto) return { kind: "tombstoned", canonicalKey: requestedKey, tombstone };
-    const conflicts = __privateGet(this, _active).map((candidate) => compare(reference, candidate)).filter((match) => match.kind === "strong_probable_duplicate");
+    const conflicts = this.#active.map((candidate) => compare(reference, candidate)).filter((match) => match.kind === "strong_probable_duplicate");
     if (conflicts.length) return { kind: "duplicate_review_required", conflicts };
     return { kind: "genuinely_new", canonicalKey: requestedKey };
   }
@@ -4205,10 +4178,9 @@ var CatalogRepository = class {
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     });
     let catalog2 = row;
-    __privateGet(this, _store).update((state) => {
-      var _a;
-      state.catalogState || (state.catalogState = { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} });
-      (_a = state.catalogState).learnedEntries || (_a.learnedEntries = []);
+    this.#store.update((state) => {
+      state.catalogState ||= { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} };
+      state.catalogState.learnedEntries ||= [];
       const existing = state.catalogState.learnedEntries.find((item) => sameCatalogIdentity(item, row));
       if (existing) {
         catalog2 = normalizeCatalogToy(existing);
@@ -4216,99 +4188,99 @@ var CatalogRepository = class {
       }
       state.catalogState.learnedEntries.push(row);
     }, "catalog-learned-create");
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
+    this.#rebuild();
     return { created: catalog2 === row, catalog: this.resolve(catalog2) || catalog2, decision };
   }
   pendingLearned() {
-    return __privateGet(this, _active).filter((item) => item.source === "learned" && item.reviewStatus === "pending");
+    return this.#active.filter((item) => item.source === "learned" && item.reviewStatus === "pending");
   }
   // Learned candidates live in the one active catalog. Approval is an admin
   // state transition on that same record, not an AI-specific second catalog.
   approveLearnedCandidate(key) {
     const canonical = canonicalKey(key);
     let approved = null;
-    __privateGet(this, _store).update((state) => {
-      state.catalogState || (state.catalogState = { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} });
+    this.#store.update((state) => {
+      state.catalogState ||= { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} };
       const entry = (state.catalogState.learnedEntries || []).find((item) => canonicalKey(item.canonicalKey) === canonical);
       if (!entry) return;
       entry.reviewStatus = "approved";
       state.catalogState.adminEdits[canonical] = { ...state.catalogState.adminEdits[canonical] || {}, reviewStatus: "approved" };
       approved = entry;
     }, "catalog-learned-approve");
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
+    this.#rebuild();
     return approved ? this.resolve(approved) : null;
   }
   search({ query = "", brand = "", categoryCode: categoryCode2 = "", skillCode: skillCode2 = "", playMechanic = "", includeReview = true } = {}) {
     const text2 = String(query).trim().toLowerCase();
-    const rows = text2 ? __privateGet(this, _active).flatMap((parent) => [parent, ...(parent.children || []).map((child, index) => catalogChildPresentation(parent, child, index))]) : __privateGet(this, _active);
+    const rows = text2 ? this.#active.flatMap((parent) => [parent, ...(parent.children || []).map((child, index) => catalogChildPresentation(parent, child, index))]) : this.#active;
     return rows.filter((toy) => (includeReview || isPublicCatalogVisible(toy)) && (!brand || toy.brand === brand) && (!categoryCode2 || toy.categoryCode === categoryCode2) && (!skillCode2 || toy.skillCodes.includes(skillCode2)) && (!playMechanic || toy.playMechanics.includes(playMechanic)) && (!text2 || [toy.brand, toy.productName, ...toy.aliases].join(" ").toLowerCase().includes(text2)));
   }
   getPublicVisibleCatalogCount() {
-    return __privateGet(this, _active).filter(isPublicCatalogVisible).length;
+    return this.#active.filter(isPublicCatalogVisible).length;
   }
   catalogCountSnapshot() {
-    const state = __privateGet(this, _store).state.catalogState || {};
+    const state = this.#store.state.catalogState || {};
     const localLearned = entries(state.learnedEntries), localRemote = entries(state.remoteEntries);
-    const sources = [...__privateGet(this, _base), ...__privateGet(this, _remote), ...localLearned, ...localRemote];
+    const sources = [...this.#base, ...this.#remote, ...localLearned, ...localRemote];
     const key = (value) => canonicalKey(value?.canonicalKey || value?.id);
     const counts = /* @__PURE__ */ new Map();
     for (const row of sources) {
       const value = key(row);
       if (value) counts.set(value, (counts.get(value) || 0) + 1);
     }
-    const bundledIds = new Set([...__privateGet(this, _base), ...__privateGet(this, _remote)].map(key).filter(Boolean));
+    const bundledIds = new Set([...this.#base, ...this.#remote].map(key).filter(Boolean));
     return {
-      raw: { base: __privateGet(this, _base).length, remote: __privateGet(this, _remote).length, localLearned: localLearned.length, localRemote: localRemote.length, total: sources.length },
+      raw: { base: this.#base.length, remote: this.#remote.length, localLearned: localLearned.length, localRemote: localRemote.length, total: sources.length },
       localAdditions: localLearned.length + localRemote.length,
       adminEdits: Object.keys(state.adminEdits || {}).length,
       tombstoneCount: Object.values(state.tombstones || {}).filter((record) => record && !record.mergedInto).length,
       mergedRaw: sources.length,
       canonicalDeduped: counts.size,
-      active: __privateGet(this, _active).length,
+      active: this.#active.length,
       publicVisible: this.getPublicVisibleCatalogCount(),
-      remoteIds: [...new Set(__privateGet(this, _remote).map(key).filter(Boolean))].sort(),
+      remoteIds: [...new Set(this.#remote.map(key).filter(Boolean))].sort(),
       localOnlyIds: [...new Set([...localLearned, ...localRemote].map(key).filter((value) => value && !bundledIds.has(value)))].sort(),
       collisionSummary: { canonicalKeyCollisions: [...counts.entries()].filter(([, count4]) => count4 > 1).map(([canonicalKey2, count4]) => ({ canonicalKey: canonicalKey2, count: count4 })).sort((a, b) => a.canonicalKey.localeCompare(b.canonicalKey)), total: [...counts.values()].filter((count4) => count4 > 1).length }
     };
   }
   applyRemote(entriesValue) {
-    __privateSet(this, _remote, entries(entriesValue));
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
+    this.#remote = entries(entriesValue);
+    this.#rebuild();
     this.ensureSetChildren();
   }
   applyBase(entriesValue) {
-    __privateSet(this, _base, entries(entriesValue));
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
+    this.#base = entries(entriesValue);
+    this.#rebuild();
     this.ensureSetChildren();
   }
   applyServerEdits(value) {
-    __privateSet(this, _serverEdits, value?.overrides || value || {});
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
+    this.#serverEdits = value?.overrides || value || {};
+    this.#rebuild();
     this.ensureSetChildren();
   }
   refresh() {
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
+    this.#rebuild();
   }
   deleteStandardToy(key) {
     const canonical = canonicalKey(key);
     if (!canonical) return;
-    __privateGet(this, _store).update((state) => {
+    this.#store.update((state) => {
       state.catalogState.tombstones[canonical] = { deletedAt: (/* @__PURE__ */ new Date()).toISOString() };
     }, "catalog-delete");
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
+    this.#rebuild();
   }
   updateAdminEdit(key, patch) {
     const canonical = canonicalKey(key);
-    __privateGet(this, _store).update((state) => {
+    this.#store.update((state) => {
       state.catalogState.adminEdits[canonical] = { ...state.catalogState.adminEdits[canonical] || {}, ...patch };
     }, "catalog-edit");
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
+    this.#rebuild();
   }
   mergeReferences(key, targetKey) {
     const from = canonicalKey(key), to = canonicalKey(targetKey);
     if (!from || !to || from === to) return;
-    const source = __privateGet(this, _byKey).get(from), target = __privateGet(this, _byKey).get(to);
-    __privateGet(this, _store).update((state) => {
+    const source = this.#byKey.get(from), target = this.#byKey.get(to);
+    this.#store.update((state) => {
       for (const toy of state.toys || []) if (canonicalKey(toy.canonicalKey) === from) {
         toy.canonicalKey = to;
         toy.legacyCanonicalKeys = [.../* @__PURE__ */ new Set([...toy.legacyCanonicalKeys || [], from])];
@@ -4331,14 +4303,13 @@ var CatalogRepository = class {
       if (state.catalogState.imageRefsByKey?.[from]) delete state.catalogState.imageRefsByKey[from];
       state.catalogState.tombstones[from] = { deletedAt: (/* @__PURE__ */ new Date()).toISOString(), mergedInto: to };
     }, "catalog-merge");
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
+    this.#rebuild();
   }
   ensureSetChildren() {
-    if (!(__privateGet(this, _store).state.toys || []).some((toy) => toy.set?.kind === "parent" || toy.set?.kind === "child" || (toy.set?.legacyParentIds || []).length)) return;
-    const definitions = new Map(__privateGet(this, _active).map((toy) => [toy.canonicalKey, toy]));
-    __privateGet(this, _store).update((state) => {
-      var _a;
-      state.toys || (state.toys = []);
+    if (!(this.#store.state.toys || []).some((toy) => toy.set?.kind === "parent" || toy.set?.kind === "child" || (toy.set?.legacyParentIds || []).length)) return;
+    const definitions = new Map(this.#active.map((toy) => [toy.canonicalKey, toy]));
+    this.#store.update((state) => {
+      state.toys ||= [];
       const qa6CanonicalRepair = repairQa6MideerCanonicalState(state, definitions);
       const knownMideerLegacyBackfill = backfillKnownMideerLegacySixSlot(state, definitions);
       const orphanLifecycle = reconcileOrphanedSplitOwnership(state, definitions);
@@ -4347,7 +4318,7 @@ var CatalogRepository = class {
       const ownership = establishParentChildOwnership(state);
       const imageProvenance = repairChildImageProvenance(state);
       const legacyChildImageBindings = repairLegacyChildImageBindings(state, this);
-      (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
+      state.catalogState.syncMetadata ||= {};
       const pending = (result2.residualDuplicateChildren || 0) > 0;
       state.catalogState.syncMetadata.parentChildReconciliationV12 = { reconciledAt: (/* @__PURE__ */ new Date()).toISOString(), pending, executionRequired: pending, ...result2, remainingCandidates: result2.residualDuplicateChildren || 0 };
       state.catalogState.syncMetadata.parentChildDataRepair = { repairedAt: (/* @__PURE__ */ new Date()).toISOString(), ...repair };
@@ -4356,75 +4327,50 @@ var CatalogRepository = class {
   }
   repairSetStructure() {
     this.ensureSetChildren();
-    return __privateGet(this, _store).state.catalogState?.syncMetadata?.parentChildReconciliationV12 || null;
+    return this.#store.state.catalogState?.syncMetadata?.parentChildReconciliationV12 || null;
   }
-};
-_base = new WeakMap();
-_remote = new WeakMap();
-_serverEdits = new WeakMap();
-_active = new WeakMap();
-_byKey = new WeakMap();
-_mergedInto = new WeakMap();
-_childByParentPart = new WeakMap();
-_store = new WeakMap();
-_CatalogRepository_instances = new WeakSet();
-hydrateServer_fn = async function(onStage) {
-  try {
-    onStage("remote_catalog_request_start");
-    const [learned, overrides] = await Promise.all([
-      fetchJson(`${this.baseUrl}/learned-catalog`, { timeoutMs: 4500 }),
-      fetchJson(`${this.baseUrl}/catalog-overrides`, { timeoutMs: 4500 })
-    ]);
-    __privateSet(this, _remote, [...__privateGet(this, _remote), ...entries(learned)]);
-    __privateSet(this, _serverEdits, overrides?.overrides || {});
-    __privateMethod(this, _CatalogRepository_instances, rebuild_fn).call(this);
-    this.ensureSetChildren();
-    onStage("remote_catalog_request_end", { activeCatalogCount: __privateGet(this, _active).length });
-  } catch {
-    onStage("remote_catalog_request_end", { status: "unavailable" });
-  }
-};
-rebuild_fn = function() {
-  const { tombstones = {}, adminEdits = {}, imageRefsByKey = {}, imageRefsByIdentity = {}, learnedEntries = [], remoteEntries = [] } = __privateGet(this, _store).state.catalogState;
-  const merged = /* @__PURE__ */ new Map();
-  const allRows = [...__privateGet(this, _base), ...__privateGet(this, _remote), ...entries(learnedEntries), ...entries(remoteEntries)];
-  const tombstonedIdentities = new Set(allRows.map(normalizeCatalogToy).filter((toy) => {
-    const key = qa6CatalogCanonical(canonicalKey(toy.canonicalKey));
-    const record = tombstones[key];
-    return record && !record.mergedInto && !qa6ResurrectionWins(key, toy, {}, record);
-  }).map(exactProductIdentityKey).filter(Boolean));
-  for (const raw of allRows) {
-    const toy = normalizeCatalogToy(raw);
-    const originalKey = canonicalKey(toy.canonicalKey);
-    const key = qa6CatalogCanonical(originalKey);
-    const previous = merged.get(key);
-    const redirected = key !== originalKey;
-    const combined = previous ? normalizeCatalogToy({ ...previous, ...toy, canonicalKey: key, aliases: [...previous.aliases || [], ...toy.aliases || []], legacyCanonicalKeys: [...previous.legacyCanonicalKeys || [], ...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []], names: { ...previous.names, ...toy.names }, children: toy.children?.length ? toy.children : previous.children }) : normalizeCatalogToy({ ...toy, canonicalKey: key, legacyCanonicalKeys: [...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []] });
-    const serverEdit = __privateGet(this, _serverEdits)[key] || {};
-    const resurrected = qa6ResurrectionWins(key, combined, serverEdit, tombstones[key]);
-    if (!key || tombstones[key] && !tombstones[key].mergedInto && !resurrected || (serverEdit.hidden === true || serverEdit.deleted === true) && !resurrected) continue;
-    const serverToy = normalizeCatalogToy({ ...combined, ...serverEdit, productName: serverEdit.productName || serverEdit.name || combined.productName, names: { ...combined.names, en: serverEdit.nameEn || serverEdit.name || combined.names?.en, zh: serverEdit.nameZh || combined.names?.zh } });
-    const legacyImage = imageRefsByKey[key] || imageRefsByIdentity[catalogIdentity(serverToy)];
-    const asset = catalogImageAsset(key);
-    const edited = normalizeCatalogToy({ ...serverToy, ...asset ? { imageRef: asset } : {}, ...legacyImage ? { imageRef: legacyImage } : {}, ...adminEdits[key] || {} });
-    merged.set(key, { ...edited, playMechanics: deriveCatalogMechanics(edited), imageRef: catalogImageRef(edited) });
-  }
-  __privateSet(this, _mergedInto, new Map(Object.entries(tombstones).filter(([, record]) => record?.mergedInto).map(([from, record]) => [canonicalKey(from), canonicalKey(record.mergedInto)])));
-  for (const [from, to] of __privateGet(this, _mergedInto)) if (merged.has(to)) {
-    const target = merged.get(to);
-    merged.set(to, normalizeCatalogToy({ ...target, legacyCanonicalKeys: [...target.legacyCanonicalKeys || [], from] }));
-  }
-  __privateSet(this, _active, consolidateCatalog([...merged.values()].filter((toy) => !tombstonedIdentities.has(exactProductIdentityKey(toy)))).sort(catalogSort));
-  __privateSet(this, _byKey, /* @__PURE__ */ new Map());
-  __privateSet(this, _childByParentPart, /* @__PURE__ */ new Map());
-  for (const toy of __privateGet(this, _active)) for (const key of [toy.canonicalKey, ...toy.legacyCanonicalKeys || []]) __privateGet(this, _byKey).set(canonicalKey(key), toy);
-  for (const parent of __privateGet(this, _active)) {
-    for (const [index, rawChild] of (parent.children || []).entries()) {
-      const child = catalogChildPresentation(parent, rawChild, index);
-      for (const key of [child.canonicalKey, ...child.legacyCanonicalKeys || []]) if (!__privateGet(this, _byKey).has(canonicalKey(key))) __privateGet(this, _byKey).set(canonicalKey(key), child);
-      const parentKey = canonicalKey(child.set?.parentCanonicalKey);
-      const part = childPartIndex(child);
-      if (parentKey && part > 0 && !__privateGet(this, _childByParentPart).has(`${parentKey}|${part}`)) __privateGet(this, _childByParentPart).set(`${parentKey}|${part}`, child);
+  #rebuild() {
+    const { tombstones = {}, adminEdits = {}, imageRefsByKey = {}, imageRefsByIdentity = {}, learnedEntries = [], remoteEntries = [] } = this.#store.state.catalogState;
+    const merged = /* @__PURE__ */ new Map();
+    const allRows = [...this.#base, ...this.#remote, ...entries(learnedEntries), ...entries(remoteEntries)];
+    const tombstonedIdentities = new Set(allRows.map(normalizeCatalogToy).filter((toy) => {
+      const key = qa6CatalogCanonical(canonicalKey(toy.canonicalKey));
+      const record = tombstones[key];
+      return record && !record.mergedInto && !qa6ResurrectionWins(key, toy, {}, record);
+    }).map(exactProductIdentityKey).filter(Boolean));
+    for (const raw of allRows) {
+      const toy = normalizeCatalogToy(raw);
+      const originalKey = canonicalKey(toy.canonicalKey);
+      const key = qa6CatalogCanonical(originalKey);
+      const previous = merged.get(key);
+      const redirected = key !== originalKey;
+      const combined = previous ? normalizeCatalogToy({ ...previous, ...toy, canonicalKey: key, aliases: [...previous.aliases || [], ...toy.aliases || []], legacyCanonicalKeys: [...previous.legacyCanonicalKeys || [], ...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []], names: { ...previous.names, ...toy.names }, children: toy.children?.length ? toy.children : previous.children }) : normalizeCatalogToy({ ...toy, canonicalKey: key, legacyCanonicalKeys: [...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []] });
+      const serverEdit = this.#serverEdits[key] || {};
+      const resurrected = qa6ResurrectionWins(key, combined, serverEdit, tombstones[key]);
+      if (!key || tombstones[key] && !tombstones[key].mergedInto && !resurrected || (serverEdit.hidden === true || serverEdit.deleted === true) && !resurrected) continue;
+      const serverToy = normalizeCatalogToy({ ...combined, ...serverEdit, productName: serverEdit.productName || serverEdit.name || combined.productName, names: { ...combined.names, en: serverEdit.nameEn || serverEdit.name || combined.names?.en, zh: serverEdit.nameZh || combined.names?.zh } });
+      const legacyImage = imageRefsByKey[key] || imageRefsByIdentity[catalogIdentity(serverToy)];
+      const asset = catalogImageAsset(key);
+      const edited = normalizeCatalogToy({ ...serverToy, ...asset ? { imageRef: asset } : {}, ...legacyImage ? { imageRef: legacyImage } : {}, ...adminEdits[key] || {} });
+      merged.set(key, { ...edited, playMechanics: deriveCatalogMechanics(edited), imageRef: catalogImageRef(edited) });
+    }
+    this.#mergedInto = new Map(Object.entries(tombstones).filter(([, record]) => record?.mergedInto).map(([from, record]) => [canonicalKey(from), canonicalKey(record.mergedInto)]));
+    for (const [from, to] of this.#mergedInto) if (merged.has(to)) {
+      const target = merged.get(to);
+      merged.set(to, normalizeCatalogToy({ ...target, legacyCanonicalKeys: [...target.legacyCanonicalKeys || [], from] }));
+    }
+    this.#active = consolidateCatalog([...merged.values()].filter((toy) => !tombstonedIdentities.has(exactProductIdentityKey(toy)))).sort(catalogSort);
+    this.#byKey = /* @__PURE__ */ new Map();
+    this.#childByParentPart = /* @__PURE__ */ new Map();
+    for (const toy of this.#active) for (const key of [toy.canonicalKey, ...toy.legacyCanonicalKeys || []]) this.#byKey.set(canonicalKey(key), toy);
+    for (const parent of this.#active) {
+      for (const [index, rawChild] of (parent.children || []).entries()) {
+        const child = catalogChildPresentation(parent, rawChild, index);
+        for (const key of [child.canonicalKey, ...child.legacyCanonicalKeys || []]) if (!this.#byKey.has(canonicalKey(key))) this.#byKey.set(canonicalKey(key), child);
+        const parentKey = canonicalKey(child.set?.parentCanonicalKey);
+        const part = childPartIndex(child);
+        if (parentKey && part > 0 && !this.#childByParentPart.has(`${parentKey}|${part}`)) this.#childByParentPart.set(`${parentKey}|${part}`, child);
+      }
     }
   }
 };
@@ -4603,9 +4549,8 @@ function detachChildFromParent(child, parent) {
   child.set = { ...child.set, kind: "none", parentId: null, parentCanonicalKey: null, legacyParentIds: [...child.set?.legacyParentIds || [], parent.id], setName: "", partIndex: null, childIds: [], rotationMode: "whole", ownershipSource: source, generatedFromParentId: null, ownershipGroupId: null, detachedFromSet: true, detachedFromParentOwnershipId: parent.id, detachedAt: (/* @__PURE__ */ new Date()).toISOString() };
 }
 function archiveRemovedOwnerships2(state, toys, reason2) {
-  var _a;
-  state.catalogState || (state.catalogState = {});
-  (_a = state.catalogState).removedOwnerships || (_a.removedOwnerships = {});
+  state.catalogState ||= {};
+  state.catalogState.removedOwnerships ||= {};
   for (const toy of toys) {
     if (state.catalogState.removedOwnerships[toy.id]) continue;
     state.catalogState.removedOwnerships[toy.id] = {
@@ -4662,19 +4607,16 @@ function saveProfileAndRotationSettings(store2, { childName, childBirthDate, rot
 // src/domain/substitution-engine.js
 var GENERIC_MECHANICS = /* @__PURE__ */ new Set(["fine_motor_general", "construction_general", "pretend_play_general", "sensory_general"]);
 var SPECIFIC_SKILLS = /* @__PURE__ */ new Set(["logic", "math", "sorting", "memory", "problem_solving", "cause_effect", "spatial_awareness", "visual_spatial", "matching", "practical_life"]);
-var _cache2, _libraryRevision;
 var SubstitutionEngine = class {
-  constructor() {
-    __privateAdd(this, _cache2, /* @__PURE__ */ new Map());
-    __privateAdd(this, _libraryRevision, -1);
-  }
+  #cache = /* @__PURE__ */ new Map();
+  #libraryRevision = -1;
   result(candidate, toys, revision, { childAgeMonths: childAgeMonths3 = null } = {}) {
-    if (__privateGet(this, _libraryRevision) !== revision) {
-      __privateGet(this, _cache2).clear();
-      __privateSet(this, _libraryRevision, revision);
+    if (this.#libraryRevision !== revision) {
+      this.#cache.clear();
+      this.#libraryRevision = revision;
     }
     const key = `${canonicalKey(candidate.canonicalKey)}|${revision}|${childAgeMonths3 ?? "all"}`;
-    if (__privateGet(this, _cache2).has(key)) return __privateGet(this, _cache2).get(key);
+    if (this.#cache.has(key)) return this.#cache.get(key);
     const allRelationships = toys.filter((toy) => !toy.hidden && !toy.archived && toy.set?.kind !== "parent").map((toy) => assess(candidate, toy, { childAgeMonths: childAgeMonths3 })).filter((item) => item.level !== "none").sort(compareRelationship);
     const relationships = allRelationships.filter((item) => item.level !== "skill_similarity_only");
     const skillRelationships = allRelationships.filter((item) => item.level === "skill_similarity_only");
@@ -4688,12 +4630,10 @@ var SubstitutionEngine = class {
       ageAppropriateCounts: count(purchaseAffecting.filter((item) => item.ageAppropriate)),
       purchaseImpact: priority(purchaseAffecting.filter((item) => item.ageAppropriate))
     };
-    __privateGet(this, _cache2).set(key, result2);
+    this.#cache.set(key, result2);
     return result2;
   }
 };
-_cache2 = new WeakMap();
-_libraryRevision = new WeakMap();
 function assess(a, b, { childAgeMonths: childAgeMonths3 = null } = {}) {
   const exact = canonicalKey(a.canonicalKey) && canonicalKey(a.canonicalKey) === canonicalKey(b.canonicalKey);
   const aMechanics = specificMechanics(a), bMechanics = specificMechanics(b);
@@ -4824,7 +4764,7 @@ function updateDevelopmentProfile(history = []) {
   for (const record of history) {
     if (!record || record.interestFeedback === "not_interested") continue;
     for (const mechanic of unique(record.mechanisms || [])) {
-      const entry = profile[mechanic] || (profile[mechanic] = { currentLevel: 1, confidence: 0.35, evidenceCount: 0, lastUpdated: null });
+      const entry = profile[mechanic] ||= { currentLevel: 1, confidence: 0.35, evidenceCount: 0, lastUpdated: null };
       entry.evidenceCount++;
       entry.lastUpdated = record.timestamp || entry.lastUpdated;
       const level = clamp(Number(record.progressionLevel) || 1, 1, 5);
@@ -4852,7 +4792,7 @@ function recordDevelopmentFeedback(state, toy, { difficultyFeedback = null, inte
   const record = { id: `${toy.id}:${rotationCycleId || "current"}`, toyId: toy.id, canonicalKey: toy.canonicalKey || null, mechanisms: developmentMechanics(toy), progressionLevel: fields.progressionLevel, challengeLevel: fields.challengeLevel, difficultyFeedback: difficulty, interestFeedback: interest, timestamp: now3, rotationCycleId: rotationCycleId || null };
   const previous = Array.isArray(state.developmentFeedbackHistory) ? state.developmentFeedbackHistory : [];
   state.developmentFeedbackHistory = [...previous.filter((item) => item.id !== record.id), record].slice(-240);
-  state.profile || (state.profile = {});
+  state.profile ||= {};
   state.profile.developmentProfile = updateDevelopmentProfile(state.developmentFeedbackHistory);
   return record;
 }
@@ -4976,7 +4916,7 @@ function persistRotationSelection(state, { selected, diagnostics, now: now3 = (/
   }
   const normalizedDiagnostics = withShelfCounts(diagnostics, ids.size, permanentIds.size, 0);
   state.lastRotationAt = now3;
-  state.rotationHistory || (state.rotationHistory = []);
+  state.rotationHistory ||= [];
   state.rotationHistory.unshift({ id: crypto.randomUUID(), at: now3, toyIds: [...ids], mechanisms: selected.flatMap((toy) => toy.playMechanics || []), rotationDiagnostics: normalizedDiagnostics });
   return { selectedIds: ids, selectedCount: ids.size, permanentIds, totalShelfCount: ids.size + permanentIds.size };
 }
@@ -5055,7 +4995,7 @@ function setCustomPermanent(state, toyId, permanent, { childAgeMonths: childAgeM
     toy.permanentSetAt = now3;
     toy.manualShelfMode = null;
     toy.status = "active";
-    toy.lastActivatedAt || (toy.lastActivatedAt = now3);
+    toy.lastActivatedAt ||= now3;
     if (plan) {
       plan.toyIds = (plan.toyIds || []).filter((id) => id !== toy.id);
       refillCurrentRotation(state, { childAgeMonths: childAgeMonths3, now: now3 });
@@ -5304,26 +5244,24 @@ function matchesAge(toy, age, childAgeMonths3) {
 // src/features/admin-service.js
 var TOKEN_KEY = "toyRotationAdminTokenV095";
 var VERIFIED_KEY = "toyRotationAdminVerifiedV095";
-var _store2, _catalog, _base2, _AdminService_instances, post_fn, governancePost_fn, probe_fn;
 var AdminService = class {
+  #store;
+  #catalog;
+  #base;
   constructor({ store: store2, catalog: catalog2, baseUrl = "" }) {
-    __privateAdd(this, _AdminService_instances);
-    __privateAdd(this, _store2);
-    __privateAdd(this, _catalog);
-    __privateAdd(this, _base2);
-    __privateSet(this, _store2, store2);
-    __privateSet(this, _catalog, catalog2);
-    __privateSet(this, _base2, String(baseUrl || window.TOY_ROTATION_CONFIG?.API_BASE || "").replace(/\/+$/, ""));
+    this.#store = store2;
+    this.#catalog = catalog2;
+    this.#base = String(baseUrl || window.TOY_ROTATION_CONFIG?.API_BASE || "").replace(/\/+$/, "");
   }
   get enabled() {
     return Boolean(sessionStorage.getItem(VERIFIED_KEY) && sessionStorage.getItem(TOKEN_KEY));
   }
   async signIn(password) {
     if (!password) throw new Error("adminPasswordRequired");
-    if (!__privateGet(this, _base2)) throw new Error("adminUnconfigured");
+    if (!this.#base) throw new Error("adminUnconfigured");
     const headers = { Authorization: `Bearer ${password}` };
-    let response = await fetch(`${__privateGet(this, _base2)}/admin-auth`, { headers, cache: "no-store" });
-    if (response.status === 404) response = await fetch(`${__privateGet(this, _base2)}/admin-catalog`, { headers, cache: "no-store" });
+    let response = await fetch(`${this.#base}/admin-auth`, { headers, cache: "no-store" });
+    if (response.status === 404) response = await fetch(`${this.#base}/admin-catalog`, { headers, cache: "no-store" });
     if (!response.ok) throw new Error(response.status === 401 ? "adminIncorrectPassword" : "adminSignInFailed");
     sessionStorage.setItem(TOKEN_KEY, password);
     sessionStorage.setItem(VERIFIED_KEY, "1");
@@ -5334,28 +5272,28 @@ var AdminService = class {
     sessionStorage.removeItem(VERIFIED_KEY);
   }
   async syncEdits() {
-    if (!__privateGet(this, _base2)) return;
-    const response = await fetch(`${__privateGet(this, _base2)}/catalog-overrides`, { cache: "no-store" });
+    if (!this.#base) return;
+    const response = await fetch(`${this.#base}/catalog-overrides`, { cache: "no-store" });
     if (!response.ok) throw new Error("catalogSyncFailed");
     const payload = await response.json();
-    __privateGet(this, _catalog).applyServerEdits(payload);
+    this.#catalog.applyServerEdits(payload);
   }
   async diagnostics() {
     if (!this.enabled) throw new Error("adminVerificationRequired");
     await this.retryPendingDeletes();
-    const pendingDeletes = __privateGet(this, _store2).state.catalogState.syncMetadata.pendingAdminDeletes || [];
-    if (!__privateGet(this, _base2)) return { configured: false, backend: "unconfigured", quota: null, pendingDeletes };
+    const pendingDeletes = this.#store.state.catalogState.syncMetadata.pendingAdminDeletes || [];
+    if (!this.#base) return { configured: false, backend: "unconfigured", quota: null, pendingDeletes };
     const headers = { Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY)}` };
-    const [health, quota] = await Promise.all([__privateMethod(this, _AdminService_instances, probe_fn).call(this, "/health", headers), __privateMethod(this, _AdminService_instances, probe_fn).call(this, "/quota", headers)]);
+    const [health, quota] = await Promise.all([this.#probe("/health", headers), this.#probe("/quota", headers)]);
     return { configured: true, backend: health.ok ? "available" : "unavailable", health: health.payload, quota: quota.ok ? quota.payload : null, pendingDeletes };
   }
   async replaceCatalogImage(key, dataUrl2, { trace = () => {
   } } = {}) {
     if (!this.enabled) throw new Error("adminVerificationRequired");
-    if (!__privateGet(this, _base2)) throw new Error("adminUnconfigured");
+    if (!this.#base) throw new Error("adminUnconfigured");
     let response;
     try {
-      response = await fetch(`${__privateGet(this, _base2)}/admin-catalog-image`, {
+      response = await fetch(`${this.#base}/admin-catalog-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY)}` },
         body: JSON.stringify({ key, imageDataUrl: dataUrl2, action: "replace" })
@@ -5366,104 +5304,99 @@ var AdminService = class {
     }
     emitTrace(trace, "catalog_image_response", { status: response.status, ok: response.ok });
     if (!response.ok) throw new Error("catalogImageUploadFailed");
-    return `${__privateGet(this, _base2)}/catalog-image/${encodeURIComponent(key)}`;
+    return `${this.#base}/catalog-image/${encodeURIComponent(key)}`;
   }
   async governance() {
     if (!this.enabled) throw new Error("adminVerificationRequired");
     const headers = { Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY)}` };
     const [version, candidates, reports, pending] = await Promise.all([
-      __privateMethod(this, _AdminService_instances, probe_fn).call(this, "/catalog-version", {}),
-      __privateMethod(this, _AdminService_instances, probe_fn).call(this, "/admin-catalog-candidates", headers),
-      __privateMethod(this, _AdminService_instances, probe_fn).call(this, "/admin-catalog-reports", headers),
-      __privateMethod(this, _AdminService_instances, probe_fn).call(this, "/admin-catalog-pending-materializations", headers)
+      this.#probe("/catalog-version", {}),
+      this.#probe("/admin-catalog-candidates", headers),
+      this.#probe("/admin-catalog-reports", headers),
+      this.#probe("/admin-catalog-pending-materializations", headers)
     ]);
     if (!candidates.ok || !reports.ok) throw new Error("catalogGovernanceUnavailable");
     return { version: version.payload?.version ?? null, candidates: candidates.payload?.candidates || [], reports: reports.payload?.reports || [], pending: pending.payload?.pending || [], candidateUnread: candidates.payload?.unreadCount || 0, reportUnread: reports.payload?.unreadCount || 0 };
   }
   async reviewCandidate(candidateId, action2, targetCanonicalKey = "", patch = null, options = {}) {
-    return __privateMethod(this, _AdminService_instances, governancePost_fn).call(this, "/admin-catalog-candidate", { candidateId, action: action2, targetCanonicalKey, patch, mutationId: action2 === "accept_new" ? `candidate-accept-${candidateId}` : void 0, ...options });
+    return this.#governancePost("/admin-catalog-candidate", { candidateId, action: action2, targetCanonicalKey, patch, mutationId: action2 === "accept_new" ? `candidate-accept-${candidateId}` : void 0, ...options });
   }
   async researchCandidateImage(candidate) {
     if (!this.enabled) throw new Error("adminVerificationRequired");
-    const response = await fetch(`${__privateGet(this, _base2)}/admin-catalog-image-candidate`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY)}` }, body: JSON.stringify({ action: "research", key: candidate.proposedCanonicalKey, brand: candidate.brand, productName: candidate.nameEn, nameEn: candidate.nameEn, nameZh: candidate.nameZh, sku: candidate.sku, aliases: candidate.aliases || [] }) });
+    const response = await fetch(`${this.#base}/admin-catalog-image-candidate`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY)}` }, body: JSON.stringify({ action: "research", key: candidate.proposedCanonicalKey, brand: candidate.brand, productName: candidate.nameEn, nameEn: candidate.nameEn, nameZh: candidate.nameZh, sku: candidate.sku, aliases: candidate.aliases || [] }) });
     if (!response.ok) throw new Error("catalogImageResearchFailed");
     return response.json();
   }
   async reviewReport(reportId, action2) {
-    return __privateMethod(this, _AdminService_instances, governancePost_fn).call(this, "/admin-catalog-report", { reportId, action: action2 });
+    return this.#governancePost("/admin-catalog-report", { reportId, action: action2 });
   }
   async retryMaterialization(mutationId) {
-    return __privateMethod(this, _AdminService_instances, governancePost_fn).call(this, "/admin-catalog-retry-materialization", { mutationId });
+    return this.#governancePost("/admin-catalog-retry-materialization", { mutationId });
   }
   async edit(key, patch, { trace = () => {
   } } = {}) {
-    await __privateMethod(this, _AdminService_instances, post_fn).call(this, { action: "edit", key, patch }, trace);
-    __privateGet(this, _catalog).updateAdminEdit(key, patch);
+    await this.#post({ action: "edit", key, patch }, trace);
+    this.#catalog.updateAdminEdit(key, patch);
   }
   async merge(key, targetKey) {
-    await __privateMethod(this, _AdminService_instances, post_fn).call(this, { action: "merge", key, targetKey });
-    __privateGet(this, _catalog).mergeReferences(key, targetKey);
+    await this.#post({ action: "merge", key, targetKey });
+    this.#catalog.mergeReferences(key, targetKey);
   }
   async delete(key, snapshot) {
-    __privateGet(this, _catalog).deleteStandardToy(key);
+    this.#catalog.deleteStandardToy(key);
     try {
-      await __privateMethod(this, _AdminService_instances, post_fn).call(this, { action: "delete", key, sourceSnapshot: snapshot });
+      await this.#post({ action: "delete", key, sourceSnapshot: snapshot });
       return { deleted: true, synced: true };
     } catch (error) {
-      __privateGet(this, _store2).update((state) => {
-        var _a;
-        (_a = state.catalogState.syncMetadata).pendingAdminDeletes || (_a.pendingAdminDeletes = []);
+      this.#store.update((state) => {
+        state.catalogState.syncMetadata.pendingAdminDeletes ||= [];
         if (!state.catalogState.syncMetadata.pendingAdminDeletes.includes(key)) state.catalogState.syncMetadata.pendingAdminDeletes.push(key);
       }, "catalog-delete-pending-sync");
       return { deleted: true, synced: false, error: error.message };
     }
   }
   async retryPendingDeletes() {
-    if (!this.enabled || !__privateGet(this, _base2)) return;
-    const pending = [...__privateGet(this, _store2).state.catalogState.syncMetadata.pendingAdminDeletes || []];
+    if (!this.enabled || !this.#base) return;
+    const pending = [...this.#store.state.catalogState.syncMetadata.pendingAdminDeletes || []];
     for (const key of pending) {
       try {
-        await __privateMethod(this, _AdminService_instances, post_fn).call(this, { action: "delete", key, retry: true });
-        __privateGet(this, _store2).update((state) => {
+        await this.#post({ action: "delete", key, retry: true });
+        this.#store.update((state) => {
           state.catalogState.syncMetadata.pendingAdminDeletes = (state.catalogState.syncMetadata.pendingAdminDeletes || []).filter((value) => value !== key);
         }, "catalog-delete-synced");
       } catch {
       }
     }
   }
-};
-_store2 = new WeakMap();
-_catalog = new WeakMap();
-_base2 = new WeakMap();
-_AdminService_instances = new WeakSet();
-post_fn = async function(body, trace = () => {
-}) {
-  if (!this.enabled) throw new Error("adminVerificationRequired");
-  if (!__privateGet(this, _base2)) throw new Error("adminUnconfigured");
-  let response;
-  try {
-    response = await fetch(`${__privateGet(this, _base2)}/admin-catalog`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY)}` }, body: JSON.stringify({ ...body, mutationId: body.mutationId || crypto.randomUUID() }) });
-  } catch (error) {
-    emitTrace(trace, "catalog_update_request_error", { errorType: error?.name || "UnknownError" });
-    throw error;
+  async #post(body, trace = () => {
+  }) {
+    if (!this.enabled) throw new Error("adminVerificationRequired");
+    if (!this.#base) throw new Error("adminUnconfigured");
+    let response;
+    try {
+      response = await fetch(`${this.#base}/admin-catalog`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY)}` }, body: JSON.stringify({ ...body, mutationId: body.mutationId || crypto.randomUUID() }) });
+    } catch (error) {
+      emitTrace(trace, "catalog_update_request_error", { errorType: error?.name || "UnknownError" });
+      throw error;
+    }
+    emitTrace(trace, "catalog_update_response", { status: response.status, ok: response.ok });
+    if (!response.ok) throw new Error("adminOperationFailed");
+    return response.json();
   }
-  emitTrace(trace, "catalog_update_response", { status: response.status, ok: response.ok });
-  if (!response.ok) throw new Error("adminOperationFailed");
-  return response.json();
-};
-governancePost_fn = async function(path, body) {
-  if (!this.enabled) throw new Error("adminVerificationRequired");
-  if (!__privateGet(this, _base2)) throw new Error("adminUnconfigured");
-  const response = await fetch(`${__privateGet(this, _base2)}${path}`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY)}` }, body: JSON.stringify(body) });
-  if (!response.ok) throw new Error("catalogGovernanceUpdateFailed");
-  return response.json();
-};
-probe_fn = async function(path, headers) {
-  try {
-    const response = await fetch(`${__privateGet(this, _base2)}${path}`, { headers, cache: "no-store" });
-    return { ok: response.ok, payload: response.ok ? await response.json().catch(() => ({})) : null };
-  } catch {
-    return { ok: false, payload: null };
+  async #governancePost(path, body) {
+    if (!this.enabled) throw new Error("adminVerificationRequired");
+    if (!this.#base) throw new Error("adminUnconfigured");
+    const response = await fetch(`${this.#base}${path}`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionStorage.getItem(TOKEN_KEY)}` }, body: JSON.stringify(body) });
+    if (!response.ok) throw new Error("catalogGovernanceUpdateFailed");
+    return response.json();
+  }
+  async #probe(path, headers) {
+    try {
+      const response = await fetch(`${this.#base}${path}`, { headers, cache: "no-store" });
+      return { ok: response.ok, payload: response.ok ? await response.json().catch(() => ({})) : null };
+    } catch {
+      return { ok: false, payload: null };
+    }
   }
 };
 function emitTrace(trace, stage, details) {
@@ -5487,10 +5420,9 @@ function visibleCandidates(state, { archived = false } = {}) {
   return localCandidates(state).filter((candidate) => archived ? Boolean(candidate.archivedAt) : !candidate.archivedAt);
 }
 function upsertLocalCandidate(state, payload) {
-  var _a, _b;
-  state.catalogState || (state.catalogState = {});
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
-  const queue = (_b = state.catalogState.syncMetadata).localCandidates || (_b.localCandidates = []);
+  state.catalogState ||= {};
+  state.catalogState.syncMetadata ||= {};
+  const queue = state.catalogState.syncMetadata.localCandidates ||= [];
   const index = queue.findIndex((candidate2) => candidate2.candidateId === payload.candidateId);
   const previous = index < 0 ? null : queue[index];
   const candidate = {
@@ -5562,7 +5494,7 @@ function unarchiveLocalCandidate(state, candidateId, now3 = (/* @__PURE__ */ new
 function reopenLocalCandidateReview(state, candidateId, now3 = (/* @__PURE__ */ new Date()).toISOString()) {
   const candidate = localCandidates(state).find((entry) => entry.candidateId === candidateId);
   if (!candidate || !["approved", "linked", "rejected"].includes(candidate.reviewStatus)) return null;
-  candidate.reviewHistory || (candidate.reviewHistory = []);
+  candidate.reviewHistory ||= [];
   candidate.reviewHistory.push({ previousStatus: candidate.reviewStatus, reviewedAt: candidate.reviewedAt || candidate.updatedAt || candidate.createdAt || null, reopenedAt: now3, linkedCanonicalKey: candidate.linkedCanonicalKey || null, resolutionReason: candidate.resolutionReason || null });
   candidate.reviewStatus = "reviewing";
   candidate.archivedAt = null;
@@ -5571,32 +5503,30 @@ function reopenLocalCandidateReview(state, candidateId, now3 = (/* @__PURE__ */ 
 }
 
 // src/features/recognition-service.js
-var _store3, _images, _catalog2, _base3, _governance, _diagnostic2, _submissions, _completed, _RecognitionService_instances, commit_fn, atomicLibraryCommit_fn, atomicWishlistCommit_fn, confirmWishlist_fn, setError_fn, setDecision_fn, markAlreadyOwned_fn;
 var RecognitionService = class {
+  #store;
+  #images;
+  #catalog;
+  #base;
+  #governance;
+  #diagnostic;
+  #submissions = /* @__PURE__ */ new Map();
+  #completed = /* @__PURE__ */ new Map();
   constructor({ store: store2, images: images2, catalog: catalog2 = null, governance: governance2 = null, baseUrl = "", diagnostic = null }) {
-    __privateAdd(this, _RecognitionService_instances);
-    __privateAdd(this, _store3);
-    __privateAdd(this, _images);
-    __privateAdd(this, _catalog2);
-    __privateAdd(this, _base3);
-    __privateAdd(this, _governance);
-    __privateAdd(this, _diagnostic2);
-    __privateAdd(this, _submissions, /* @__PURE__ */ new Map());
-    __privateAdd(this, _completed, /* @__PURE__ */ new Map());
-    __privateSet(this, _store3, store2);
-    __privateSet(this, _images, images2);
-    __privateSet(this, _catalog2, catalog2);
-    __privateSet(this, _governance, governance2);
-    __privateSet(this, _diagnostic2, diagnostic);
-    __privateSet(this, _base3, String(baseUrl || window.TOY_ROTATION_CONFIG?.API_BASE || "").replace(/\/+$/, ""));
+    this.#store = store2;
+    this.#images = images2;
+    this.#catalog = catalog2;
+    this.#governance = governance2;
+    this.#diagnostic = diagnostic;
+    this.#base = String(baseUrl || window.TOY_ROTATION_CONFIG?.API_BASE || "").replace(/\/+$/, "");
   }
   async createDraft(file, setMode = "auto", { onPersisted = null } = {}) {
-    if (!__privateGet(this, _base3)) throw new RecognitionError("recognitionServiceUnconfigured");
+    if (!this.#base) throw new RecognitionError("recognitionServiceUnconfigured");
     const image = await dataUrl(file);
     const id = crypto.randomUUID();
-    const imageRef = await __privateGet(this, _images).savePersonal(image, `draft-${id}`);
+    const imageRef = await this.#images.savePersonal(image, `draft-${id}`);
     const draft = { id, status: "queued", imageRef, setMode, productName: "", brand: "", categoryCode: "uncategorized", skillCodes: [], playMechanics: [], minAgeMonths: null, maxAgeMonths: null, isSet: false, children: [], error: null, createdAt: (/* @__PURE__ */ new Date()).toISOString() };
-    __privateGet(this, _store3).update((state) => state.drafts.unshift(draft), "recognition-queued");
+    this.#store.update((state) => state.drafts.unshift(draft), "recognition-queued");
     onPersisted?.(draft.id);
     setTimeout(() => {
       void this.analyze(draft.id, { image });
@@ -5604,22 +5534,22 @@ var RecognitionService = class {
     return draft.id;
   }
   async analyze(id, { force = false, image: preloadedImage = null } = {}) {
-    const draft = __privateGet(this, _store3).state.drafts.find((item) => item.id === id);
+    const draft = this.#store.state.drafts.find((item) => item.id === id);
     if (!draft) return;
-    if (!__privateGet(this, _base3)) return __privateMethod(this, _RecognitionService_instances, setError_fn).call(this, id, "recognitionServiceUnconfigured");
-    __privateGet(this, _store3).update((state) => {
+    if (!this.#base) return this.#setError(id, "recognitionServiceUnconfigured");
+    this.#store.update((state) => {
       const item = state.drafts.find((x) => x.id === id);
       item.status = "processing";
       item.error = null;
     }, "recognition-start");
     try {
-      const image = preloadedImage || await __privateGet(this, _images).resolve(draft.imageRef);
+      const image = preloadedImage || await this.#images.resolve(draft.imageRef);
       if (!image) throw new RecognitionError("recognitionImageUnavailable");
       const requestId = crypto.randomUUID();
-      const response = await requestRecognition(`${__privateGet(this, _base3)}/analyze-batch`, {
+      const response = await requestRecognition(`${this.#base}/analyze-batch`, {
         items: [{ id, image }],
         deviceId: deviceId(),
-        locale: appLocale(__privateGet(this, _store3)),
+        locale: appLocale(this.#store),
         setMode: draft.setMode,
         forceRefresh: force,
         testMode: Boolean(globalThis.TOY_ROTATION_CONFIG?.TEST_MODE),
@@ -5628,58 +5558,173 @@ var RecognitionService = class {
       const result2 = (response.payload.results || response.payload.items || [])[0];
       if (!result2) throw new RecognitionError("recognitionNoResult");
       const normalized2 = normalizeDraft(result2);
-      const decision = __privateGet(this, _catalog2)?.resolveRecognition(normalized2) || { kind: "genuinely_new", canonicalKey: canonicalKey(`${normalized2.brand}-${normalized2.productName}`) };
+      const decision = this.#catalog?.resolveRecognition(normalized2) || { kind: "genuinely_new", canonicalKey: canonicalKey(`${normalized2.brand}-${normalized2.productName}`) };
       const catalogMatch = decision.catalog || null;
-      const owned = catalogMatch ? findOwnedToy(catalogMatch, __privateGet(this, _store3).state.toys || []) : null;
+      const owned = catalogMatch ? findOwnedToy(catalogMatch, this.#store.state.toys || []) : null;
       const status = owned ? "already_owned" : decision.kind === "catalog_match" ? "ready" : decision.kind === "genuinely_new" ? "ready_catalog_unmatched" : decision.kind;
       const diagnostics = recognitionDiagnostics({ requestId, response, catalogMatch, catalogDecision: decision.kind, result: "received" });
-      __privateGet(this, _store3).update((state) => {
+      this.#store.update((state) => {
         const item = state.drafts.find((x) => x.id === id);
         if (!item) return;
         Object.assign(item, normalized2, { status, imageRef: draft.imageRef, catalogMatch: catalogMatch ? catalogSummary(catalogMatch) : null, ownedToyId: owned?.id || null, duplicateCandidates: (decision.conflicts || []).map((match) => catalogSummary(match.b)), diagnostics });
       }, "recognition-ready");
     } catch (error) {
-      __privateMethod(this, _RecognitionService_instances, setError_fn).call(this, id, normalizeErrorCode(error), error.diagnostics || null);
+      this.#setError(id, normalizeErrorCode(error), error.diagnostics || null);
     }
   }
   async confirm(id, { destination = "library" } = {}) {
-    const completed = __privateGet(this, _completed).get(id);
+    const completed = this.#completed.get(id);
     if (completed) {
       recognitionTrace("duplicate_click_blocked", { recognitionDraftId: id, destination });
       return completed;
     }
-    if (__privateGet(this, _submissions).has(id)) {
+    if (this.#submissions.has(id)) {
       recognitionTrace("inflight_reused", { recognitionDraftId: id, destination });
-      return __privateGet(this, _submissions).get(id);
+      return this.#submissions.get(id);
     }
-    const draft = __privateGet(this, _store3).state.drafts.find((item) => item.id === id);
-    __privateGet(this, _diagnostic2)?.state("confirm_enter", __privateGet(this, _store3).state, { draftId: id, destination, draftStatus: draft?.status || null });
+    const draft = this.#store.state.drafts.find((item) => item.id === id);
+    this.#diagnostic?.state("confirm_enter", this.#store.state, { draftId: id, destination, draftStatus: draft?.status || null });
     if (!draft || !String(draft.status).startsWith("ready")) return;
     const operation = (async () => {
       recognitionTrace("submit_started", { recognitionDraftId: id, destination, canonicalProposal: draft.canonicalKey || null });
-      __privateGet(this, _diagnostic2)?.record("confirm_destination", { draftId: id, destination });
+      this.#diagnostic?.record("confirm_destination", { draftId: id, destination });
       try {
-        const result2 = await __privateMethod(this, _RecognitionService_instances, commit_fn).call(this, draft, { destination });
-        __privateGet(this, _completed).set(id, result2);
-        __privateGet(this, _diagnostic2)?.state("confirm_commit_completed", __privateGet(this, _store3).state, { draftId: id, destination, localToyId: result2?.toy?.id || null, wishlistId: result2?.wishlist?.id || null });
+        const result2 = await this.#commit(draft, { destination });
+        this.#completed.set(id, result2);
+        this.#diagnostic?.state("confirm_commit_completed", this.#store.state, { draftId: id, destination, localToyId: result2?.toy?.id || null, wishlistId: result2?.wishlist?.id || null });
         return result2;
       } catch (error) {
-        __privateGet(this, _diagnostic2)?.record("confirm_persist_failed", { draftId: id, destination, error: normalizeErrorCode(error) });
+        this.#diagnostic?.record("confirm_persist_failed", { draftId: id, destination, error: normalizeErrorCode(error) });
         throw error;
       }
     })();
-    __privateGet(this, _submissions).set(id, operation);
+    this.#submissions.set(id, operation);
     try {
       return await operation;
     } finally {
-      __privateGet(this, _submissions).delete(id);
+      this.#submissions.delete(id);
     }
   }
+  async #commit(idDraft, { destination = "library" } = {}) {
+    const draft = idDraft;
+    const id = draft.id;
+    recognitionTrace("existing_toy_lookup", { recognitionDraftId: id, destination, canonicalProposal: draft.canonicalKey || null });
+    if (destination === "wishlist") return this.#confirmWishlist(draft);
+    this.#diagnostic?.record("identity_resolution_started", { draftId: id, destination });
+    const decision = draft.resolutionOverride === "genuinely_new" ? { kind: "genuinely_new", canonicalKey: canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`) } : this.#catalog?.resolveRecognition(draft) || { kind: "genuinely_new" };
+    this.#diagnostic?.record("identity_resolution_completed", { draftId: id, destination, kind: decision.kind, existingCatalogMatch: decision.kind === "catalog_match", ambiguous: decision.kind === "duplicate_review_required", genuinelyNew: decision.kind === "genuinely_new" });
+    if (decision.kind === "tombstoned") return this.#setDecision(id, decision);
+    return this.#atomicLibraryCommit(draft, decision);
+    let catalog2 = decision.catalog, governanceCandidateId = null, candidatePayload = null;
+    if (!catalog2) {
+      const key = canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`);
+      catalog2 = { ...draft, canonicalKey: key, productName: draft.productName, names: draft.names, imageRef: null, catalogStatus: "provisional" };
+      const candidateType = draft.candidateTypeOverride === "identity_review_candidate" || decision.kind === "duplicate_review_required" ? "identity_review_candidate" : "new_product_candidate";
+      const payload = { candidateId: `candidate-${draft.id}`, source: "recognition", candidateType, proposedCanonicalKey: key, brand: draft.brand, productName: draft.productName, nameEn: draft.names?.en || draft.productName, nameZh: draft.names?.zh || "", aliases: draft.aliases || [], sku: draft.sku, minAgeMonths: draft.minAgeMonths, maxAgeMonths: draft.maxAgeMonths, categoryCode: draft.categoryCode, skillCodes: draft.skillCodes, playMechanics: draft.playMechanics, recognitionConfidence: draft.confidence, possibleMatches: (decision.conflicts || []).map((match) => catalogSummary(match.b)), imageConsent: draft.imageConsent === true, reviewAttachment: null, reviewAttachmentRef: draft.imageConsent === true ? draft.imageRef : null, appVersion: globalThis.TOY_ROTATION_CONFIG?.RELEASE || "" };
+      governanceCandidateId = payload.candidateId;
+      candidatePayload = payload;
+    }
+    const reviewedSource = { ...catalog2, brand: draft.brand || catalog2.brand, productName: draft.productName || catalog2.productName, names: draft.names || catalog2.names, sku: draft.sku || catalog2.sku, categoryCode: draft.categoryCode || catalog2.categoryCode, skillCodes: draft.skillCodes || catalog2.skillCodes, playMechanics: draft.playMechanics || catalog2.playMechanics, minAgeMonths: draft.minAgeMonths ?? catalog2.minAgeMonths, maxAgeMonths: draft.maxAgeMonths ?? catalog2.maxAgeMonths, rotationValue: draft.rotationValue || "medium", notes: draft.notes || "", rotationParticipation: draft.reviewRotationState === "paused" ? "paused" : "active", shelfMode: draft.reviewRotationState === "permanent" ? "permanent" : "rotate", permanentSource: draft.reviewRotationState === "permanent" ? "user" : null, pauseReason: draft.reviewRotationState === "paused" ? draft.pauseReason || "" : "", pauseReasonCode: draft.reviewRotationState === "paused" ? draft.pauseReasonCode || null : null };
+    this.#diagnostic?.state("toy_lookup_started", this.#store.state, { draftId: id });
+    recognitionTrace("toy_create_started", { recognitionDraftId: id, destination });
+    const result2 = createCatalogOwnership(this.#store, reviewedSource, draft.imageRef, { reason: "recognition-confirm" });
+    this.#diagnostic?.state(result2.added ? "toy_created" : "toy_existing_reused", this.#store.state, { draftId: id, localToyId: result2.toy?.id || null });
+    if (!result2.added) return this.#markAlreadyOwned(id, result2.toy);
+    recognitionTrace("toy_created", { recognitionDraftId: id, destination, localToyId: result2.toy.id });
+    recognitionTrace("ownership_written", { recognitionDraftId: id, destination, localToyId: result2.toy.id });
+    if (governanceCandidateId) this.#store.update((state) => {
+      const toy = state.toys.find((item) => item.id === result2.toy.id);
+      if (toy) toy.governanceCandidateId = governanceCandidateId;
+    }, "recognition-governance-candidate-link");
+    if (candidatePayload) {
+      this.#diagnostic?.state("candidate_required_decided", this.#store.state, { draftId: id, candidateId: governanceCandidateId, linkedLocalToyId: result2.toy.id });
+      recognitionTrace("candidate_required", { recognitionDraftId: id, destination, localToyId: result2.toy.id, candidateId: governanceCandidateId });
+      recognitionTrace("candidate_create_started", { recognitionDraftId: id, destination, localToyId: result2.toy.id, candidateId: governanceCandidateId });
+      this.#diagnostic?.record("candidate_create_requested", { draftId: id, candidateId: governanceCandidateId });
+      this.#governance?.createLocalCandidate({ ...candidatePayload, linkedLocalToyId: result2.toy.id });
+      this.#diagnostic?.state("candidate_persist_completed", this.#store.state, { draftId: id, candidateId: governanceCandidateId, linkedLocalToyId: result2.toy.id });
+      recognitionTrace("candidate_created", { recognitionDraftId: id, destination, localToyId: result2.toy.id, candidateId: governanceCandidateId });
+      void this.#governance?.flushOutbox();
+    } else this.#diagnostic?.record("candidate_create_skipped", { draftId: id, reason: "catalog_match" });
+    this.#catalog?.ensureSetChildren();
+    this.#store.update((state) => {
+      state.drafts = state.drafts.filter((item) => item.id !== id);
+    }, "recognition-confirmed");
+    return { kind: "created", toy: result2.toy, catalog: catalog2, learned: decision.kind !== "catalog_match" };
+  }
+  async #atomicLibraryCommit(draft, decision) {
+    const catalog2 = decision.catalog || { ...draft, canonicalKey: canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`), catalogStatus: "provisional" };
+    const candidateId = decision.catalog ? null : `candidate-${draft.id}`;
+    const reviewed = { ...catalog2, brand: draft.brand || catalog2.brand, productName: draft.productName || catalog2.productName, names: draft.names || catalog2.names, sku: draft.sku || catalog2.sku, categoryCode: draft.categoryCode || catalog2.categoryCode, skillCodes: draft.skillCodes || catalog2.skillCodes, playMechanics: draft.playMechanics || catalog2.playMechanics, minAgeMonths: draft.minAgeMonths ?? catalog2.minAgeMonths, maxAgeMonths: draft.maxAgeMonths ?? catalog2.maxAgeMonths, rotationValue: draft.rotationValue || "medium", notes: draft.notes || "", rotationParticipation: draft.reviewRotationState === "paused" ? "paused" : "active", shelfMode: draft.reviewRotationState === "permanent" ? "permanent" : "rotate", permanentSource: draft.reviewRotationState === "permanent" ? "user" : null, pauseReason: draft.reviewRotationState === "paused" ? draft.pauseReason || "" : "", pauseReasonCode: draft.reviewRotationState === "paused" ? draft.pauseReasonCode || null : null };
+    const existing = findOwnedToy(reviewed, this.#store.state.toys || []);
+    if (existing) return this.#markAlreadyOwned(draft.id, existing);
+    const toy = normalizeToy({ ...reviewed, imageRef: draft.imageRef, governanceCandidateId: candidateId });
+    const candidate = candidateId ? { candidateId, source: "recognition", candidateType: draft.candidateTypeOverride === "identity_review_candidate" || decision.kind === "duplicate_review_required" ? "identity_review_candidate" : "new_product_candidate", proposedCanonicalKey: catalog2.canonicalKey, brand: draft.brand, productName: draft.productName, nameEn: draft.names?.en || draft.productName, nameZh: draft.names?.zh || "", aliases: draft.aliases || [], sku: draft.sku, minAgeMonths: draft.minAgeMonths, maxAgeMonths: draft.maxAgeMonths, categoryCode: draft.categoryCode, skillCodes: draft.skillCodes, playMechanics: draft.playMechanics, recognitionConfidence: draft.confidence, possibleMatches: (decision.conflicts || []).map((match) => catalogSummary(match.b)), imageConsent: draft.imageConsent === true, reviewAttachmentRef: draft.imageConsent === true ? draft.imageRef : null, linkedLocalToyId: toy.id, appVersion: globalThis.TOY_ROTATION_CONFIG?.RELEASE || "" } : null;
+    this.#store.update((state) => {
+      if (findOwnedToy(reviewed, state.toys || [])) throw new RecognitionError("recognitionAlreadyOwned");
+      state.toys.push(toy);
+      if (candidate) upsertLocalCandidate(state, candidate);
+      state.drafts = state.drafts.filter((item) => item.id !== draft.id);
+    }, "recognition-atomic-confirm");
+    if (candidate) {
+      this.#diagnostic?.record("candidate_persist_completed", { draftId: draft.id, candidateId, linkedLocalToyId: toy.id });
+      try {
+        Promise.resolve(this.#governance?.enqueueRemoteCandidate?.(candidate)).catch((error) => this.#diagnostic?.record("remote_candidate_enqueue_failed", { message: error?.message || String(error) }));
+      } catch (error) {
+        this.#diagnostic?.record("remote_candidate_enqueue_failed", { message: error?.message || String(error) });
+      }
+    }
+    this.#catalog?.ensureSetChildren();
+    return { kind: "created", toy, catalog: catalog2, learned: decision.kind !== "catalog_match" };
+  }
+  async #atomicWishlistCommit(draft, decision) {
+    const catalog2 = decision.catalog || null;
+    const snapshot = { ...catalog2 || draft, canonicalKey: catalog2?.canonicalKey || canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`), brand: draft.brand || catalog2?.brand, productName: draft.productName || catalog2?.productName, names: draft.names || catalog2?.names, sku: draft.sku || catalog2?.sku, categoryCode: draft.categoryCode || catalog2?.categoryCode, skillCodes: draft.skillCodes || catalog2?.skillCodes, playMechanics: draft.playMechanics || catalog2?.playMechanics, minAgeMonths: draft.minAgeMonths ?? catalog2?.minAgeMonths, maxAgeMonths: draft.maxAgeMonths ?? catalog2?.maxAgeMonths, imageRef: draft.imageRef };
+    let item = null;
+    const candidateId = catalog2 ? null : `candidate-${draft.id}`;
+    this.#store.update((state) => {
+      const existing = state.wishlist.find((entry) => canonicalKey(entry.canonicalKey) === snapshot.canonicalKey);
+      if (existing) {
+        item = existing;
+        return;
+      }
+      item = { id: crypto.randomUUID(), canonicalKey: snapshot.canonicalKey, catalogId: catalog2?.id || null, catalogSnapshot: snapshot, status: "want", priority: draft.wishlistPriority || "medium", notes: draft.wishlistNotes || draft.notes || "", recognizedMetadata: { confidence: draft.confidence ?? null, diagnostics: draft.diagnostics || null }, addedAt: (/* @__PURE__ */ new Date()).toISOString() };
+      state.wishlist.push(item);
+      if (candidateId) upsertLocalCandidate(state, { candidateId, source: "recognition", candidateType: "new_product_candidate", proposedCanonicalKey: snapshot.canonicalKey, brand: draft.brand, productName: draft.productName, nameEn: draft.names?.en || draft.productName, nameZh: draft.names?.zh || "", aliases: draft.aliases || [], sku: draft.sku, minAgeMonths: draft.minAgeMonths, maxAgeMonths: draft.maxAgeMonths, categoryCode: draft.categoryCode, skillCodes: draft.skillCodes, playMechanics: draft.playMechanics, recognitionConfidence: draft.confidence, imageConsent: draft.imageConsent === true, reviewAttachmentRef: draft.imageConsent === true ? draft.imageRef : null, linkedWishlistId: item.id, appVersion: globalThis.TOY_ROTATION_CONFIG?.RELEASE || "" });
+      state.drafts = state.drafts.filter((entry) => entry.id !== draft.id);
+    }, "recognition-atomic-wishlist");
+    return { kind: item ? "wishlisted" : "already_wishlisted", wishlist: item, catalog: catalog2 };
+  }
+  async #confirmWishlist(draft) {
+    const decision = draft.resolutionOverride === "genuinely_new" ? { kind: "genuinely_new", canonicalKey: canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`) } : this.#catalog?.resolveRecognition(draft) || { kind: "genuinely_new" };
+    if (decision.kind === "tombstoned") return this.#setDecision(draft.id, decision);
+    const catalog2 = decision.catalog || null;
+    return this.#atomicWishlistCommit(draft, decision);
+    const snapshot = { ...catalog2 || draft, canonicalKey: catalog2?.canonicalKey || canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`), brand: draft.brand || catalog2?.brand, productName: draft.productName || catalog2?.productName, names: draft.names || catalog2?.names, sku: draft.sku || catalog2?.sku, categoryCode: draft.categoryCode || catalog2?.categoryCode, skillCodes: draft.skillCodes || catalog2?.skillCodes, playMechanics: draft.playMechanics || catalog2?.playMechanics, minAgeMonths: draft.minAgeMonths ?? catalog2?.minAgeMonths, maxAgeMonths: draft.maxAgeMonths ?? catalog2?.maxAgeMonths, imageRef: draft.imageRef };
+    let item;
+    this.#store.update((state) => {
+      const existing = state.wishlist.find((entry) => canonicalKey(entry.canonicalKey) === snapshot.canonicalKey);
+      if (existing) {
+        item = existing;
+        return;
+      }
+      item = { id: crypto.randomUUID(), canonicalKey: snapshot.canonicalKey, catalogId: catalog2?.id || null, catalogSnapshot: snapshot, status: "want", priority: draft.wishlistPriority || "medium", notes: draft.wishlistNotes || draft.notes || "", recognizedMetadata: { confidence: draft.confidence ?? null, diagnostics: draft.diagnostics || null }, addedAt: (/* @__PURE__ */ new Date()).toISOString() };
+      state.wishlist.push(item);
+      state.drafts = state.drafts.filter((entry) => entry.id !== draft.id);
+    }, "recognition-confirm-wishlist");
+    if (!catalog2 && item) {
+      const key = canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`);
+      const payload = { candidateId: `candidate-${draft.id}`, source: "recognition", candidateType: "new_product_candidate", proposedCanonicalKey: key, brand: draft.brand, productName: draft.productName, nameEn: draft.names?.en || draft.productName, nameZh: draft.names?.zh || "", aliases: draft.aliases || [], sku: draft.sku, minAgeMonths: draft.minAgeMonths, maxAgeMonths: draft.maxAgeMonths, categoryCode: draft.categoryCode, skillCodes: draft.skillCodes, playMechanics: draft.playMechanics, recognitionConfidence: draft.confidence, imageConsent: draft.imageConsent === true, reviewAttachment: null, reviewAttachmentRef: draft.imageConsent === true ? draft.imageRef : null, linkedWishlistId: item.id, appVersion: globalThis.TOY_ROTATION_CONFIG?.RELEASE || "" };
+      this.#governance?.createLocalCandidate(payload);
+      void this.#governance?.flushOutbox();
+    }
+    return { kind: item ? "wishlisted" : "already_wishlisted", wishlist: item, catalog: catalog2 };
+  }
   async resolveDuplicateReview(id, choice) {
-    const draft = __privateGet(this, _store3).state.drafts.find((item) => item.id === id);
+    const draft = this.#store.state.drafts.find((item) => item.id === id);
     if (!draft || draft.status !== "duplicate_review_required") return;
     if (choice === "not_same") {
-      __privateGet(this, _store3).update((state) => {
+      this.#store.update((state) => {
         const item = state.drafts.find((x) => x.id === id);
         if (item) {
           item.status = "ready_catalog_unmatched";
@@ -5689,9 +5734,9 @@ var RecognitionService = class {
       }, "recognition-duplicate-review-not-same");
       return;
     }
-    const candidate = __privateGet(this, _catalog2)?.getByKey(draft.duplicateCandidates?.[0]?.canonicalKey);
-    if (!candidate) return __privateMethod(this, _RecognitionService_instances, setError_fn).call(this, id, "recognitionCatalogResolutionFailed");
-    __privateGet(this, _store3).update((state) => {
+    const candidate = this.#catalog?.getByKey(draft.duplicateCandidates?.[0]?.canonicalKey);
+    if (!candidate) return this.#setError(id, "recognitionCatalogResolutionFailed");
+    this.#store.update((state) => {
       const item = state.drafts.find((entry) => entry.id === id);
       if (item) {
         item.status = "ready";
@@ -5702,169 +5747,45 @@ var RecognitionService = class {
     }, "recognition-duplicate-review-resolved");
   }
   async remove(id) {
-    const draft = __privateGet(this, _store3).state.drafts.find((item) => item.id === id);
-    __privateGet(this, _store3).update((state) => {
+    const draft = this.#store.state.drafts.find((item) => item.id === id);
+    this.#store.update((state) => {
       state.drafts = state.drafts.filter((item) => item.id !== id);
     }, "recognition-remove");
-    if (draft?.imageRef?.kind === "personal") await __privateGet(this, _images).removePersonal(draft.imageRef);
+    if (draft?.imageRef?.kind === "personal") await this.#images.removePersonal(draft.imageRef);
   }
-};
-_store3 = new WeakMap();
-_images = new WeakMap();
-_catalog2 = new WeakMap();
-_base3 = new WeakMap();
-_governance = new WeakMap();
-_diagnostic2 = new WeakMap();
-_submissions = new WeakMap();
-_completed = new WeakMap();
-_RecognitionService_instances = new WeakSet();
-commit_fn = async function(idDraft, { destination = "library" } = {}) {
-  const draft = idDraft;
-  const id = draft.id;
-  recognitionTrace("existing_toy_lookup", { recognitionDraftId: id, destination, canonicalProposal: draft.canonicalKey || null });
-  if (destination === "wishlist") return __privateMethod(this, _RecognitionService_instances, confirmWishlist_fn).call(this, draft);
-  __privateGet(this, _diagnostic2)?.record("identity_resolution_started", { draftId: id, destination });
-  const decision = draft.resolutionOverride === "genuinely_new" ? { kind: "genuinely_new", canonicalKey: canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`) } : __privateGet(this, _catalog2)?.resolveRecognition(draft) || { kind: "genuinely_new" };
-  __privateGet(this, _diagnostic2)?.record("identity_resolution_completed", { draftId: id, destination, kind: decision.kind, existingCatalogMatch: decision.kind === "catalog_match", ambiguous: decision.kind === "duplicate_review_required", genuinelyNew: decision.kind === "genuinely_new" });
-  if (decision.kind === "tombstoned") return __privateMethod(this, _RecognitionService_instances, setDecision_fn).call(this, id, decision);
-  return __privateMethod(this, _RecognitionService_instances, atomicLibraryCommit_fn).call(this, draft, decision);
-  let catalog2 = decision.catalog, governanceCandidateId = null, candidatePayload = null;
-  if (!catalog2) {
-    const key = canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`);
-    catalog2 = { ...draft, canonicalKey: key, productName: draft.productName, names: draft.names, imageRef: null, catalogStatus: "provisional" };
-    const candidateType = draft.candidateTypeOverride === "identity_review_candidate" || decision.kind === "duplicate_review_required" ? "identity_review_candidate" : "new_product_candidate";
-    const payload = { candidateId: `candidate-${draft.id}`, source: "recognition", candidateType, proposedCanonicalKey: key, brand: draft.brand, productName: draft.productName, nameEn: draft.names?.en || draft.productName, nameZh: draft.names?.zh || "", aliases: draft.aliases || [], sku: draft.sku, minAgeMonths: draft.minAgeMonths, maxAgeMonths: draft.maxAgeMonths, categoryCode: draft.categoryCode, skillCodes: draft.skillCodes, playMechanics: draft.playMechanics, recognitionConfidence: draft.confidence, possibleMatches: (decision.conflicts || []).map((match) => catalogSummary(match.b)), imageConsent: draft.imageConsent === true, reviewAttachment: null, reviewAttachmentRef: draft.imageConsent === true ? draft.imageRef : null, appVersion: globalThis.TOY_ROTATION_CONFIG?.RELEASE || "" };
-    governanceCandidateId = payload.candidateId;
-    candidatePayload = payload;
+  #setError(id, error, diagnostics) {
+    this.#store.update((state) => {
+      const item = state.drafts.find((x) => x.id === id);
+      if (item) {
+        item.status = "error";
+        item.error = error;
+        if (diagnostics) item.diagnostics = diagnostics;
+      }
+    }, "recognition-error");
   }
-  const reviewedSource = { ...catalog2, brand: draft.brand || catalog2.brand, productName: draft.productName || catalog2.productName, names: draft.names || catalog2.names, sku: draft.sku || catalog2.sku, categoryCode: draft.categoryCode || catalog2.categoryCode, skillCodes: draft.skillCodes || catalog2.skillCodes, playMechanics: draft.playMechanics || catalog2.playMechanics, minAgeMonths: draft.minAgeMonths ?? catalog2.minAgeMonths, maxAgeMonths: draft.maxAgeMonths ?? catalog2.maxAgeMonths, rotationValue: draft.rotationValue || "medium", notes: draft.notes || "", rotationParticipation: draft.reviewRotationState === "paused" ? "paused" : "active", shelfMode: draft.reviewRotationState === "permanent" ? "permanent" : "rotate", permanentSource: draft.reviewRotationState === "permanent" ? "user" : null, pauseReason: draft.reviewRotationState === "paused" ? draft.pauseReason || "" : "", pauseReasonCode: draft.reviewRotationState === "paused" ? draft.pauseReasonCode || null : null };
-  __privateGet(this, _diagnostic2)?.state("toy_lookup_started", __privateGet(this, _store3).state, { draftId: id });
-  recognitionTrace("toy_create_started", { recognitionDraftId: id, destination });
-  const result2 = createCatalogOwnership(__privateGet(this, _store3), reviewedSource, draft.imageRef, { reason: "recognition-confirm" });
-  __privateGet(this, _diagnostic2)?.state(result2.added ? "toy_created" : "toy_existing_reused", __privateGet(this, _store3).state, { draftId: id, localToyId: result2.toy?.id || null });
-  if (!result2.added) return __privateMethod(this, _RecognitionService_instances, markAlreadyOwned_fn).call(this, id, result2.toy);
-  recognitionTrace("toy_created", { recognitionDraftId: id, destination, localToyId: result2.toy.id });
-  recognitionTrace("ownership_written", { recognitionDraftId: id, destination, localToyId: result2.toy.id });
-  if (governanceCandidateId) __privateGet(this, _store3).update((state) => {
-    const toy = state.toys.find((item) => item.id === result2.toy.id);
-    if (toy) toy.governanceCandidateId = governanceCandidateId;
-  }, "recognition-governance-candidate-link");
-  if (candidatePayload) {
-    __privateGet(this, _diagnostic2)?.state("candidate_required_decided", __privateGet(this, _store3).state, { draftId: id, candidateId: governanceCandidateId, linkedLocalToyId: result2.toy.id });
-    recognitionTrace("candidate_required", { recognitionDraftId: id, destination, localToyId: result2.toy.id, candidateId: governanceCandidateId });
-    recognitionTrace("candidate_create_started", { recognitionDraftId: id, destination, localToyId: result2.toy.id, candidateId: governanceCandidateId });
-    __privateGet(this, _diagnostic2)?.record("candidate_create_requested", { draftId: id, candidateId: governanceCandidateId });
-    __privateGet(this, _governance)?.createLocalCandidate({ ...candidatePayload, linkedLocalToyId: result2.toy.id });
-    __privateGet(this, _diagnostic2)?.state("candidate_persist_completed", __privateGet(this, _store3).state, { draftId: id, candidateId: governanceCandidateId, linkedLocalToyId: result2.toy.id });
-    recognitionTrace("candidate_created", { recognitionDraftId: id, destination, localToyId: result2.toy.id, candidateId: governanceCandidateId });
-    void __privateGet(this, _governance)?.flushOutbox();
-  } else __privateGet(this, _diagnostic2)?.record("candidate_create_skipped", { draftId: id, reason: "catalog_match" });
-  __privateGet(this, _catalog2)?.ensureSetChildren();
-  __privateGet(this, _store3).update((state) => {
-    state.drafts = state.drafts.filter((item) => item.id !== id);
-  }, "recognition-confirmed");
-  return { kind: "created", toy: result2.toy, catalog: catalog2, learned: decision.kind !== "catalog_match" };
-};
-atomicLibraryCommit_fn = async function(draft, decision) {
-  const catalog2 = decision.catalog || { ...draft, canonicalKey: canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`), catalogStatus: "provisional" };
-  const candidateId = decision.catalog ? null : `candidate-${draft.id}`;
-  const reviewed = { ...catalog2, brand: draft.brand || catalog2.brand, productName: draft.productName || catalog2.productName, names: draft.names || catalog2.names, sku: draft.sku || catalog2.sku, categoryCode: draft.categoryCode || catalog2.categoryCode, skillCodes: draft.skillCodes || catalog2.skillCodes, playMechanics: draft.playMechanics || catalog2.playMechanics, minAgeMonths: draft.minAgeMonths ?? catalog2.minAgeMonths, maxAgeMonths: draft.maxAgeMonths ?? catalog2.maxAgeMonths, rotationValue: draft.rotationValue || "medium", notes: draft.notes || "", rotationParticipation: draft.reviewRotationState === "paused" ? "paused" : "active", shelfMode: draft.reviewRotationState === "permanent" ? "permanent" : "rotate", permanentSource: draft.reviewRotationState === "permanent" ? "user" : null, pauseReason: draft.reviewRotationState === "paused" ? draft.pauseReason || "" : "", pauseReasonCode: draft.reviewRotationState === "paused" ? draft.pauseReasonCode || null : null };
-  const existing = findOwnedToy(reviewed, __privateGet(this, _store3).state.toys || []);
-  if (existing) return __privateMethod(this, _RecognitionService_instances, markAlreadyOwned_fn).call(this, draft.id, existing);
-  const toy = normalizeToy({ ...reviewed, imageRef: draft.imageRef, governanceCandidateId: candidateId });
-  const candidate = candidateId ? { candidateId, source: "recognition", candidateType: draft.candidateTypeOverride === "identity_review_candidate" || decision.kind === "duplicate_review_required" ? "identity_review_candidate" : "new_product_candidate", proposedCanonicalKey: catalog2.canonicalKey, brand: draft.brand, productName: draft.productName, nameEn: draft.names?.en || draft.productName, nameZh: draft.names?.zh || "", aliases: draft.aliases || [], sku: draft.sku, minAgeMonths: draft.minAgeMonths, maxAgeMonths: draft.maxAgeMonths, categoryCode: draft.categoryCode, skillCodes: draft.skillCodes, playMechanics: draft.playMechanics, recognitionConfidence: draft.confidence, possibleMatches: (decision.conflicts || []).map((match) => catalogSummary(match.b)), imageConsent: draft.imageConsent === true, reviewAttachmentRef: draft.imageConsent === true ? draft.imageRef : null, linkedLocalToyId: toy.id, appVersion: globalThis.TOY_ROTATION_CONFIG?.RELEASE || "" } : null;
-  __privateGet(this, _store3).update((state) => {
-    if (findOwnedToy(reviewed, state.toys || [])) throw new RecognitionError("recognitionAlreadyOwned");
-    state.toys.push(toy);
-    if (candidate) upsertLocalCandidate(state, candidate);
-    state.drafts = state.drafts.filter((item) => item.id !== draft.id);
-  }, "recognition-atomic-confirm");
-  if (candidate) {
-    __privateGet(this, _diagnostic2)?.record("candidate_persist_completed", { draftId: draft.id, candidateId, linkedLocalToyId: toy.id });
-    try {
-      Promise.resolve(__privateGet(this, _governance)?.enqueueRemoteCandidate?.(candidate)).catch((error) => __privateGet(this, _diagnostic2)?.record("remote_candidate_enqueue_failed", { message: error?.message || String(error) }));
-    } catch (error) {
-      __privateGet(this, _diagnostic2)?.record("remote_candidate_enqueue_failed", { message: error?.message || String(error) });
-    }
+  #setDecision(id, decision) {
+    this.#store.update((state) => {
+      const item = state.drafts.find((x) => x.id === id);
+      if (!item) return;
+      item.status = decision.kind;
+      item.error = decision.kind === "tombstoned" ? "recognitionCatalogTombstoned" : null;
+      item.duplicateCandidates = (decision.conflicts || []).map((match) => catalogSummary(match.b));
+    }, "recognition-catalog-decision");
   }
-  __privateGet(this, _catalog2)?.ensureSetChildren();
-  return { kind: "created", toy, catalog: catalog2, learned: decision.kind !== "catalog_match" };
-};
-atomicWishlistCommit_fn = async function(draft, decision) {
-  const catalog2 = decision.catalog || null;
-  const snapshot = { ...catalog2 || draft, canonicalKey: catalog2?.canonicalKey || canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`), brand: draft.brand || catalog2?.brand, productName: draft.productName || catalog2?.productName, names: draft.names || catalog2?.names, sku: draft.sku || catalog2?.sku, categoryCode: draft.categoryCode || catalog2?.categoryCode, skillCodes: draft.skillCodes || catalog2?.skillCodes, playMechanics: draft.playMechanics || catalog2?.playMechanics, minAgeMonths: draft.minAgeMonths ?? catalog2?.minAgeMonths, maxAgeMonths: draft.maxAgeMonths ?? catalog2?.maxAgeMonths, imageRef: draft.imageRef };
-  let item = null;
-  const candidateId = catalog2 ? null : `candidate-${draft.id}`;
-  __privateGet(this, _store3).update((state) => {
-    const existing = state.wishlist.find((entry) => canonicalKey(entry.canonicalKey) === snapshot.canonicalKey);
-    if (existing) {
-      item = existing;
-      return;
-    }
-    item = { id: crypto.randomUUID(), canonicalKey: snapshot.canonicalKey, catalogId: catalog2?.id || null, catalogSnapshot: snapshot, status: "want", priority: draft.wishlistPriority || "medium", notes: draft.wishlistNotes || draft.notes || "", recognizedMetadata: { confidence: draft.confidence ?? null, diagnostics: draft.diagnostics || null }, addedAt: (/* @__PURE__ */ new Date()).toISOString() };
-    state.wishlist.push(item);
-    if (candidateId) upsertLocalCandidate(state, { candidateId, source: "recognition", candidateType: "new_product_candidate", proposedCanonicalKey: snapshot.canonicalKey, brand: draft.brand, productName: draft.productName, nameEn: draft.names?.en || draft.productName, nameZh: draft.names?.zh || "", aliases: draft.aliases || [], sku: draft.sku, minAgeMonths: draft.minAgeMonths, maxAgeMonths: draft.maxAgeMonths, categoryCode: draft.categoryCode, skillCodes: draft.skillCodes, playMechanics: draft.playMechanics, recognitionConfidence: draft.confidence, imageConsent: draft.imageConsent === true, reviewAttachmentRef: draft.imageConsent === true ? draft.imageRef : null, linkedWishlistId: item.id, appVersion: globalThis.TOY_ROTATION_CONFIG?.RELEASE || "" });
-    state.drafts = state.drafts.filter((entry) => entry.id !== draft.id);
-  }, "recognition-atomic-wishlist");
-  return { kind: item ? "wishlisted" : "already_wishlisted", wishlist: item, catalog: catalog2 };
-};
-confirmWishlist_fn = async function(draft) {
-  const decision = draft.resolutionOverride === "genuinely_new" ? { kind: "genuinely_new", canonicalKey: canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`) } : __privateGet(this, _catalog2)?.resolveRecognition(draft) || { kind: "genuinely_new" };
-  if (decision.kind === "tombstoned") return __privateMethod(this, _RecognitionService_instances, setDecision_fn).call(this, draft.id, decision);
-  const catalog2 = decision.catalog || null;
-  return __privateMethod(this, _RecognitionService_instances, atomicWishlistCommit_fn).call(this, draft, decision);
-  const snapshot = { ...catalog2 || draft, canonicalKey: catalog2?.canonicalKey || canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`), brand: draft.brand || catalog2?.brand, productName: draft.productName || catalog2?.productName, names: draft.names || catalog2?.names, sku: draft.sku || catalog2?.sku, categoryCode: draft.categoryCode || catalog2?.categoryCode, skillCodes: draft.skillCodes || catalog2?.skillCodes, playMechanics: draft.playMechanics || catalog2?.playMechanics, minAgeMonths: draft.minAgeMonths ?? catalog2?.minAgeMonths, maxAgeMonths: draft.maxAgeMonths ?? catalog2?.maxAgeMonths, imageRef: draft.imageRef };
-  let item;
-  __privateGet(this, _store3).update((state) => {
-    const existing = state.wishlist.find((entry) => canonicalKey(entry.canonicalKey) === snapshot.canonicalKey);
-    if (existing) {
-      item = existing;
-      return;
-    }
-    item = { id: crypto.randomUUID(), canonicalKey: snapshot.canonicalKey, catalogId: catalog2?.id || null, catalogSnapshot: snapshot, status: "want", priority: draft.wishlistPriority || "medium", notes: draft.wishlistNotes || draft.notes || "", recognizedMetadata: { confidence: draft.confidence ?? null, diagnostics: draft.diagnostics || null }, addedAt: (/* @__PURE__ */ new Date()).toISOString() };
-    state.wishlist.push(item);
-    state.drafts = state.drafts.filter((entry) => entry.id !== draft.id);
-  }, "recognition-confirm-wishlist");
-  if (!catalog2 && item) {
-    const key = canonicalKey(draft.canonicalKey || `${draft.brand}-${draft.productName}`);
-    const payload = { candidateId: `candidate-${draft.id}`, source: "recognition", candidateType: "new_product_candidate", proposedCanonicalKey: key, brand: draft.brand, productName: draft.productName, nameEn: draft.names?.en || draft.productName, nameZh: draft.names?.zh || "", aliases: draft.aliases || [], sku: draft.sku, minAgeMonths: draft.minAgeMonths, maxAgeMonths: draft.maxAgeMonths, categoryCode: draft.categoryCode, skillCodes: draft.skillCodes, playMechanics: draft.playMechanics, recognitionConfidence: draft.confidence, imageConsent: draft.imageConsent === true, reviewAttachment: null, reviewAttachmentRef: draft.imageConsent === true ? draft.imageRef : null, linkedWishlistId: item.id, appVersion: globalThis.TOY_ROTATION_CONFIG?.RELEASE || "" };
-    __privateGet(this, _governance)?.createLocalCandidate(payload);
-    void __privateGet(this, _governance)?.flushOutbox();
+  #markAlreadyOwned(id, toy) {
+    this.#store.update((state) => {
+      const item = state.drafts.find((x) => x.id === id);
+      if (item) {
+        item.status = "already_owned";
+        item.ownedToyId = toy?.id || null;
+        item.catalogMatch = catalogSummary(toy);
+      }
+    }, "recognition-already-owned");
+    return { kind: "already_owned", toy };
   }
-  return { kind: item ? "wishlisted" : "already_wishlisted", wishlist: item, catalog: catalog2 };
-};
-setError_fn = function(id, error, diagnostics) {
-  __privateGet(this, _store3).update((state) => {
-    const item = state.drafts.find((x) => x.id === id);
-    if (item) {
-      item.status = "error";
-      item.error = error;
-      if (diagnostics) item.diagnostics = diagnostics;
-    }
-  }, "recognition-error");
-};
-setDecision_fn = function(id, decision) {
-  __privateGet(this, _store3).update((state) => {
-    const item = state.drafts.find((x) => x.id === id);
-    if (!item) return;
-    item.status = decision.kind;
-    item.error = decision.kind === "tombstoned" ? "recognitionCatalogTombstoned" : null;
-    item.duplicateCandidates = (decision.conflicts || []).map((match) => catalogSummary(match.b));
-  }, "recognition-catalog-decision");
-};
-markAlreadyOwned_fn = function(id, toy) {
-  __privateGet(this, _store3).update((state) => {
-    const item = state.drafts.find((x) => x.id === id);
-    if (item) {
-      item.status = "already_owned";
-      item.ownedToyId = toy?.id || null;
-      item.catalogMatch = catalogSummary(toy);
-    }
-  }, "recognition-already-owned");
-  return { kind: "already_owned", toy };
 };
 function recognitionTrace(stage, detail = {}) {
-  const trace = globalThis.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ || (globalThis.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ = []);
+  const trace = globalThis.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ ||= [];
   trace.push({ stage, timestamp: (/* @__PURE__ */ new Date()).toISOString(), ...detail });
   if (trace.length > 120) trace.splice(0, trace.length - 120);
 }
@@ -5946,9 +5867,8 @@ function dataUrl(file) {
 // src/features/catalog-report-store.js
 var REPORT_STATUSES = /* @__PURE__ */ new Set(["pending", "reviewing", "resolved", "dismissed"]);
 function reportsContainer(state) {
-  var _a;
-  state.catalogState || (state.catalogState = {});
-  return (_a = state.catalogState).catalogReports || (_a.catalogReports = []);
+  state.catalogState ||= {};
+  return state.catalogState.catalogReports ||= [];
 }
 function getCatalogReports(state) {
   return state?.catalogState?.catalogReports || [];
@@ -5997,10 +5917,9 @@ function createCatalogReport(state, payload = {}) {
   return report;
 }
 function enqueueCatalogReportSyncIntent(state, report) {
-  var _a, _b;
-  state.catalogState || (state.catalogState = {});
-  (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
-  const outbox = (_b = state.catalogState.syncMetadata).governanceOutbox || (_b.governanceOutbox = []);
+  state.catalogState ||= {};
+  state.catalogState.syncMetadata ||= {};
+  const outbox = state.catalogState.syncMetadata.governanceOutbox ||= [];
   const id = report.id;
   if (!outbox.some((job) => job.id === id && job.kind === "report")) {
     outbox.push({
@@ -6078,75 +5997,71 @@ function hasRawAttachment(payload = {}) {
 }
 
 // src/features/shared-catalog-governance.js
-var _store4, _catalog3, _base4, _diagnostic3, _images2, _SharedCatalogGovernance_instances, get_fn, applyCandidateResolutions_fn;
 var SharedCatalogGovernance = class {
+  #store;
+  #catalog;
+  #base;
+  #diagnostic;
+  #images;
   constructor({ store: store2, catalog: catalog2, images: images2 = null, baseUrl = "", diagnostic = null }) {
-    __privateAdd(this, _SharedCatalogGovernance_instances);
-    __privateAdd(this, _store4);
-    __privateAdd(this, _catalog3);
-    __privateAdd(this, _base4);
-    __privateAdd(this, _diagnostic3);
-    __privateAdd(this, _images2);
-    __privateSet(this, _store4, store2);
-    __privateSet(this, _catalog3, catalog2);
-    __privateSet(this, _images2, images2);
-    __privateSet(this, _base4, String(baseUrl || "").replace(/\/$/, ""));
-    __privateSet(this, _diagnostic3, diagnostic);
+    this.#store = store2;
+    this.#catalog = catalog2;
+    this.#images = images2;
+    this.#base = String(baseUrl || "").replace(/\/$/, "");
+    this.#diagnostic = diagnostic;
     globalThis.addEventListener?.("online", () => {
       void this.flushOutbox();
       void this.syncInBackground();
     });
   }
   async syncInBackground() {
-    var _a;
-    __privateGet(this, _diagnostic3)?.record("remote_candidate_sync_requested", {});
-    if (!__privateGet(this, _base4) || !navigator.onLine) {
-      __privateGet(this, _diagnostic3)?.record("remote_candidate_sync_skipped", { baseConfigured: Boolean(__privateGet(this, _base4)), online: navigator.onLine });
+    this.#diagnostic?.record("remote_candidate_sync_requested", {});
+    if (!this.#base || !navigator.onLine) {
+      this.#diagnostic?.record("remote_candidate_sync_skipped", { baseConfigured: Boolean(this.#base), online: navigator.onLine });
       return { skipped: true };
     }
-    __privateGet(this, _diagnostic3)?.record("remote_candidate_sync_started", {});
-    const local = Number(__privateGet(this, _store4).state.catalogState?.syncMetadata?.lastAppliedRemoteCatalogVersion || 0);
-    const version = await __privateMethod(this, _SharedCatalogGovernance_instances, get_fn).call(this, "/catalog-version");
+    this.#diagnostic?.record("remote_candidate_sync_started", {});
+    const local = Number(this.#store.state.catalogState?.syncMetadata?.lastAppliedRemoteCatalogVersion || 0);
+    const version = await this.#get("/catalog-version");
     if (!version || Number(version.version) <= local) {
-      __privateGet(this, _diagnostic3)?.record("remote_candidate_sync_completed", { current: local, changed: false });
+      this.#diagnostic?.record("remote_candidate_sync_completed", { current: local, changed: false });
       return { current: local, changed: false };
     }
-    const delta = await __privateMethod(this, _SharedCatalogGovernance_instances, get_fn).call(this, `/catalog-delta?after=${local}`);
+    const delta = await this.#get(`/catalog-delta?after=${local}`);
     if (!delta || delta.fullRefreshRequired) {
-      __privateGet(this, _diagnostic3)?.record("remote_candidate_sync_failed", { current: local, reason: delta ? "full_refresh_required" : "delta_unavailable" });
+      this.#diagnostic?.record("remote_candidate_sync_failed", { current: local, reason: delta ? "full_refresh_required" : "delta_unavailable" });
       return { current: local, changed: false, fullRefreshRequired: true };
     }
-    const staged = structuredClone(__privateGet(this, _store4).state);
+    const staged = structuredClone(this.#store.state);
     for (const change of delta.changes || []) applySharedCatalogChange(staged, change);
-    (_a = staged.catalogState).syncMetadata || (_a.syncMetadata = {});
+    staged.catalogState.syncMetadata ||= {};
     staged.catalogState.syncMetadata.lastAppliedRemoteCatalogVersion = Number(delta.currentVersion);
-    __privateGet(this, _store4).commit(staged, "shared-catalog-delta-apply");
-    __privateGet(this, _catalog3).refresh();
-    await __privateMethod(this, _SharedCatalogGovernance_instances, applyCandidateResolutions_fn).call(this);
-    __privateGet(this, _diagnostic3)?.record("remote_candidate_sync_completed", { current: delta.currentVersion, changed: true });
+    this.#store.commit(staged, "shared-catalog-delta-apply");
+    this.#catalog.refresh();
+    await this.#applyCandidateResolutions();
+    this.#diagnostic?.record("remote_candidate_sync_completed", { current: delta.currentVersion, changed: true });
     return { current: delta.currentVersion, changed: true };
   }
   enqueue(kind, payload) {
     const id = payload.candidateId || payload.reportId || crypto.randomUUID();
-    const before = pendingCandidateCount(__privateGet(this, _store4).state);
-    __privateGet(this, _diagnostic3)?.record("candidate_create_requested", { id, kind, pendingBefore: before });
-    __privateGet(this, _diagnostic3)?.record("candidate_persist_started", { id });
+    const before = pendingCandidateCount(this.#store.state);
+    this.#diagnostic?.record("candidate_create_requested", { id, kind, pendingBefore: before });
+    this.#diagnostic?.record("candidate_persist_started", { id });
     candidateTrace("candidate_create_called", { id, kind, pending_count_before: before });
     try {
-      __privateGet(this, _store4).update((s) => {
-        var _a, _b;
-        (_a = s.catalogState).syncMetadata || (_a.syncMetadata = {});
+      this.#store.update((s) => {
+        s.catalogState.syncMetadata ||= {};
         if (kind === "candidate") upsertLocalCandidate(s, { ...payload, candidateId: id });
-        const o = (_b = s.catalogState.syncMetadata).governanceOutbox || (_b.governanceOutbox = []);
+        const o = s.catalogState.syncMetadata.governanceOutbox ||= [];
         if (!o.some((x) => x.id === id)) o.push({ id, kind, payload: { ...payload, [kind === "candidate" ? "candidateId" : "reportId"]: id }, createdAt: (/* @__PURE__ */ new Date()).toISOString() });
       }, "governance-outbox-enqueue");
     } catch (error) {
-      __privateGet(this, _diagnostic3)?.record("candidate_persist_failed", { id, message: error?.message || String(error) });
+      this.#diagnostic?.record("candidate_persist_failed", { id, message: error?.message || String(error) });
       throw error;
     }
-    const after = pendingCandidateCount(__privateGet(this, _store4).state);
-    __privateGet(this, _diagnostic3)?.record("candidate_created", { id, pendingBefore: before, pendingAfter: after });
-    __privateGet(this, _diagnostic3)?.record("candidate_persist_completed", { id, pendingAfter: after });
+    const after = pendingCandidateCount(this.#store.state);
+    this.#diagnostic?.record("candidate_created", { id, pendingBefore: before, pendingAfter: after });
+    this.#diagnostic?.record("candidate_persist_completed", { id, pendingAfter: after });
     candidateTrace("candidate_created", { id, pending_count_after: after });
     candidateTrace("candidate_persisted", { id });
     candidateTrace("badge_refresh_requested", { pending_count_after: after });
@@ -6154,18 +6069,17 @@ var SharedCatalogGovernance = class {
     return id;
   }
   async flushOutbox() {
-    if (!__privateGet(this, _base4) || !navigator.onLine) return { flushed: 0 };
-    const jobs = [...__privateGet(this, _store4).state.catalogState?.syncMetadata?.governanceOutbox || []];
+    if (!this.#base || !navigator.onLine) return { flushed: 0 };
+    const jobs = [...this.#store.state.catalogState?.syncMetadata?.governanceOutbox || []];
     let flushed = 0;
     for (const job of jobs) {
       try {
-        const r = await fetch(`${__privateGet(this, _base4)}/${job.kind === "candidate" ? "catalog-candidate" : "catalog-report"}`, { method: "POST", headers: { "Content-Type": "application/json", "X-Device-Id": deviceId2() }, body: JSON.stringify(job.payload) });
+        const r = await fetch(`${this.#base}/${job.kind === "candidate" ? "catalog-candidate" : "catalog-report"}`, { method: "POST", headers: { "Content-Type": "application/json", "X-Device-Id": deviceId2() }, body: JSON.stringify(job.payload) });
         if (!r.ok) continue;
-        __privateGet(this, _store4).update((s) => {
-          var _a;
+        this.#store.update((s) => {
           s.catalogState.syncMetadata.governanceOutbox = s.catalogState.syncMetadata.governanceOutbox.filter((x) => x.id !== job.id);
           if (job.kind === "candidate") {
-            (_a = s.catalogState.syncMetadata).candidateReceipts || (_a.candidateReceipts = []);
+            s.catalogState.syncMetadata.candidateReceipts ||= [];
             if (!s.catalogState.syncMetadata.candidateReceipts.includes(job.id)) s.catalogState.syncMetadata.candidateReceipts.push(job.id);
           }
         }, "governance-outbox-sent");
@@ -6173,7 +6087,7 @@ var SharedCatalogGovernance = class {
       } catch {
       }
     }
-    await __privateMethod(this, _SharedCatalogGovernance_instances, applyCandidateResolutions_fn).call(this);
+    await this.#applyCandidateResolutions();
     return { flushed };
   }
   createLocalCandidate(payload) {
@@ -6185,36 +6099,36 @@ var SharedCatalogGovernance = class {
   }
   async submitReport(payload) {
     const reportId = payload.reportId || crypto.randomUUID();
-    __privateGet(this, _store4).update((state) => {
+    this.#store.update((state) => {
       const report = createCatalogReport(state, { ...payload, id: reportId, attachmentRef: payload.attachmentRef || null, syncStatus: "pending_local" });
       enqueueCatalogReportSyncIntent(state, report);
     }, "catalog-report-create");
     void this.flushOutbox();
-    return getCatalogReportById(__privateGet(this, _store4).state, reportId);
+    return getCatalogReportById(this.#store.state, reportId);
   }
   async migrateLegacyReports() {
-    const jobs = [...__privateGet(this, _store4).state.catalogState?.syncMetadata?.governanceOutbox || []].filter((job) => job?.kind === "report");
+    const jobs = [...this.#store.state.catalogState?.syncMetadata?.governanceOutbox || []].filter((job) => job?.kind === "report");
     if (!jobs.length) return { migrated: 0, pending: 0, errors: [] };
     const prepared = [];
     const errors = [];
-    const seenIds = new Set((__privateGet(this, _store4).state.catalogState?.catalogReports || []).map((report) => report.id));
+    const seenIds = new Set((this.#store.state.catalogState?.catalogReports || []).map((report) => report.id));
     for (const job of jobs) {
       const id = legacyReportId(job);
       if (seenIds.has(id)) continue;
       seenIds.add(id);
-      const existing = getCatalogReportById(__privateGet(this, _store4).state, id);
+      const existing = getCatalogReportById(this.#store.state, id);
       let attachmentRef = existing?.attachmentRef || job.payload?.attachmentRef || null;
       if (existing && (!hasRawAttachment(job.payload) || attachmentRef)) {
         prepared.push({ job, report: existing, migrated: false, attachmentRef });
         continue;
       }
       if (hasRawAttachment(job.payload)) {
-        if (!__privateGet(this, _images2)) {
+        if (!this.#images) {
           errors.push({ id: job.id, reason: "attachment_repository_unavailable" });
           continue;
         }
         try {
-          attachmentRef = await __privateGet(this, _images2).savePersonal(job.payload.optionalAttachment);
+          attachmentRef = await this.#images.savePersonal(job.payload.optionalAttachment);
         } catch (error) {
           errors.push({ id: job.id, reason: "attachment_migration_failed", message: String(error?.message || error) });
           continue;
@@ -6222,7 +6136,7 @@ var SharedCatalogGovernance = class {
       }
       prepared.push({ job, report: existing ? { ...existing, attachmentRef } : legacyReportPayload(job, attachmentRef), migrated: !existing, attachmentRef });
     }
-    if (prepared.length) __privateGet(this, _store4).update((state) => {
+    if (prepared.length) this.#store.update((state) => {
       const outbox = state.catalogState.syncMetadata.governanceOutbox || [];
       for (const entry of prepared) {
         const report = createCatalogReport(state, entry.report);
@@ -6240,50 +6154,43 @@ var SharedCatalogGovernance = class {
     }, "catalog-report-legacy-import");
     return { migrated: prepared.filter((item) => item.migrated).length, pending: errors.length, errors };
   }
-};
-_store4 = new WeakMap();
-_catalog3 = new WeakMap();
-_base4 = new WeakMap();
-_diagnostic3 = new WeakMap();
-_images2 = new WeakMap();
-_SharedCatalogGovernance_instances = new WeakSet();
-get_fn = async function(path) {
-  try {
-    const r = await fetch(`${__privateGet(this, _base4)}${path}`, { cache: "no-store" });
-    return r.ok ? await r.json() : null;
-  } catch {
-    return null;
-  }
-};
-applyCandidateResolutions_fn = async function() {
-  const ids = [...__privateGet(this, _store4).state.catalogState?.syncMetadata?.candidateReceipts || []];
-  for (const candidateId of ids) {
-    const resolution = await __privateMethod(this, _SharedCatalogGovernance_instances, get_fn).call(this, `/catalog-candidate-resolution?candidateId=${encodeURIComponent(candidateId)}`);
-    const target = canonicalKey(resolution?.resolvedCanonicalKey);
-    if (!target) continue;
-    const staged = structuredClone(__privateGet(this, _store4).state);
-    let changed = false;
-    for (const toy of staged.toys || []) if (toy.governanceCandidateId === candidateId || canonicalKey(toy.canonicalKey) === canonicalKey(resolution?.proposedCanonicalKey)) {
-      toy.legacyCanonicalKeys = [...new Set([...toy.legacyCanonicalKeys || [], toy.canonicalKey].filter(Boolean))];
-      toy.canonicalKey = target;
-      toy.governanceCandidateResolvedAt = (/* @__PURE__ */ new Date()).toISOString();
-      changed = true;
+  async #get(path) {
+    try {
+      const r = await fetch(`${this.#base}${path}`, { cache: "no-store" });
+      return r.ok ? await r.json() : null;
+    } catch {
+      return null;
     }
-    if (changed) __privateGet(this, _store4).commit(staged, "candidate-resolution-apply");
+  }
+  async #applyCandidateResolutions() {
+    const ids = [...this.#store.state.catalogState?.syncMetadata?.candidateReceipts || []];
+    for (const candidateId of ids) {
+      const resolution = await this.#get(`/catalog-candidate-resolution?candidateId=${encodeURIComponent(candidateId)}`);
+      const target = canonicalKey(resolution?.resolvedCanonicalKey);
+      if (!target) continue;
+      const staged = structuredClone(this.#store.state);
+      let changed = false;
+      for (const toy of staged.toys || []) if (toy.governanceCandidateId === candidateId || canonicalKey(toy.canonicalKey) === canonicalKey(resolution?.proposedCanonicalKey)) {
+        toy.legacyCanonicalKeys = [...new Set([...toy.legacyCanonicalKeys || [], toy.canonicalKey].filter(Boolean))];
+        toy.canonicalKey = target;
+        toy.governanceCandidateResolvedAt = (/* @__PURE__ */ new Date()).toISOString();
+        changed = true;
+      }
+      if (changed) this.#store.commit(staged, "candidate-resolution-apply");
+    }
   }
 };
 function candidateTrace(stage, detail = {}) {
-  const trace = globalThis.__TOY_ROTATION_CANDIDATE_TRACE__ || (globalThis.__TOY_ROTATION_CANDIDATE_TRACE__ = []);
+  const trace = globalThis.__TOY_ROTATION_CANDIDATE_TRACE__ ||= [];
   trace.push({ stage, detail, at: (/* @__PURE__ */ new Date()).toISOString() });
   if (trace.length > 80) trace.splice(0, trace.length - 80);
 }
 function applySharedCatalogChange(state, change) {
-  var _a, _b, _c;
   const key = canonicalKey(change.canonicalKey);
-  state.catalogState || (state.catalogState = { tombstones: {}, adminEdits: {}, syncMetadata: {} });
-  (_a = state.catalogState).tombstones || (_a.tombstones = {});
-  (_b = state.catalogState).adminEdits || (_b.adminEdits = {});
-  (_c = state.catalogState).remoteEntries || (_c.remoteEntries = []);
+  state.catalogState ||= { tombstones: {}, adminEdits: {}, syncMetadata: {} };
+  state.catalogState.tombstones ||= {};
+  state.catalogState.adminEdits ||= {};
+  state.catalogState.remoteEntries ||= [];
   if (change.type === "merge") {
     const survivor = canonicalKey(change.targetCanonicalKey);
     state.catalogState.tombstones[key] = { deletedAt: change.updatedAt, mergedInto: survivor };
@@ -6734,25 +6641,23 @@ function buildRestoreDiagnostic({ trace = null, release = null } = {}) {
 var IMAGE_RESOLVER_BUILD_MARKER = "runtime-child-image-trace-20260827-a";
 var MAX_EVENTS = 500;
 var MAX_ROWS = 24;
-var _events, _resolutions, _dom, _activeLookup, _originalGetByKey, _RuntimeImageDiagnostics_instances, append_fn;
 var RuntimeImageDiagnostics = class {
+  #events = [];
+  #resolutions = /* @__PURE__ */ new Map();
+  #dom = /* @__PURE__ */ new Map();
+  #activeLookup = null;
+  #originalGetByKey = null;
   constructor({ release = "development", clock = () => (/* @__PURE__ */ new Date()).toISOString() } = {}) {
-    __privateAdd(this, _RuntimeImageDiagnostics_instances);
-    __privateAdd(this, _events, []);
-    __privateAdd(this, _resolutions, /* @__PURE__ */ new Map());
-    __privateAdd(this, _dom, /* @__PURE__ */ new Map());
-    __privateAdd(this, _activeLookup, null);
-    __privateAdd(this, _originalGetByKey, null);
     this.release = release;
     this.clock = clock;
     this.mark("diagnostic_initialized", { imageResolverBuildMarker: IMAGE_RESOLVER_BUILD_MARKER });
   }
   installCatalogLookupProbe(catalog2) {
-    if (!catalog2?.getByKey || __privateGet(this, _originalGetByKey)) return;
-    __privateSet(this, _originalGetByKey, catalog2.getByKey.bind(catalog2));
+    if (!catalog2?.getByKey || this.#originalGetByKey) return;
+    this.#originalGetByKey = catalog2.getByKey.bind(catalog2);
     catalog2.getByKey = (key) => {
-      const hit = __privateGet(this, _originalGetByKey).call(this, key);
-      if (__privateGet(this, _activeLookup)) __privateGet(this, _activeLookup).lookupKeysActuallyTried.push({
+      const hit = this.#originalGetByKey(key);
+      if (this.#activeLookup) this.#activeLookup.lookupKeysActuallyTried.push({
         key: key ?? null,
         normalizedKey: normalizeKey(key),
         hit: Boolean(hit),
@@ -6763,12 +6668,12 @@ var RuntimeImageDiagnostics = class {
     };
   }
   mark(type, details = {}) {
-    __privateGet(this, _events).push({ at: this.clock(), type, ...clone(details) });
-    if (__privateGet(this, _events).length > MAX_EVENTS) __privateGet(this, _events).shift();
+    this.#events.push({ at: this.clock(), type, ...clone(details) });
+    if (this.#events.length > MAX_EVENTS) this.#events.shift();
   }
   traceResolution(toy, { phase = "renderer", catalog: catalog2, parentImageRef = null, resolve } = {}) {
     const row = baseToyRow(toy, phase, this.clock());
-    __privateSet(this, _activeLookup, row);
+    this.#activeLookup = row;
     let catalogToy = null, returned = null, error = null;
     try {
       catalogToy = catalog2?.resolve?.(toy) || null;
@@ -6776,7 +6681,7 @@ var RuntimeImageDiagnostics = class {
     } catch (caught) {
       error = caught?.message || String(caught);
     } finally {
-      __privateSet(this, _activeLookup, null);
+      this.#activeLookup = null;
     }
     Object.assign(row, {
       catalogRecordMatched: Boolean(catalogToy),
@@ -6791,12 +6696,12 @@ var RuntimeImageDiagnostics = class {
       resolutionPath: resolutionPath(row, catalogToy),
       error
     });
-    __privateMethod(this, _RuntimeImageDiagnostics_instances, append_fn).call(this, __privateGet(this, _resolutions), toy.id, row);
+    this.#append(this.#resolutions, toy.id, row);
     return returned;
   }
   recordDom({ toyId, rendererImageRef, src, currentSrc = "", complete = false, naturalWidth = 0, state = "assigned", error = null } = {}) {
     if (!toyId) return;
-    __privateMethod(this, _RuntimeImageDiagnostics_instances, append_fn).call(this, __privateGet(this, _dom), toyId, {
+    this.#append(this.#dom, toyId, {
       at: this.clock(),
       toyLibraryId: toyId,
       rendererReceivedImageRef: clone(rendererImageRef),
@@ -6810,12 +6715,12 @@ var RuntimeImageDiagnostics = class {
     });
   }
   snapshot() {
-    return { events: clone(__privateGet(this, _events)), resolutions: mapObject(__privateGet(this, _resolutions)), dom: mapObject(__privateGet(this, _dom)) };
+    return { events: clone(this.#events), resolutions: mapObject(this.#resolutions), dom: mapObject(this.#dom) };
   }
   async buildExport({ store: store2, catalog: catalog2, documentObject = globalThis.document, navigatorObject = globalThis.navigator, cacheStorage = globalThis.caches } = {}) {
     const liveDom = collectLiveDom(documentObject);
     const rows = (store2?.state?.toys || []).filter(isLoveveryChild).map((toy) => {
-      const resolutions = clone(__privateGet(this, _resolutions).get(toy.id) || []), domHistory = clone(__privateGet(this, _dom).get(toy.id) || []);
+      const resolutions = clone(this.#resolutions.get(toy.id) || []), domHistory = clone(this.#dom.get(toy.id) || []);
       const latest2 = resolutions.at(-1) || baseToyRow(toy, "not_rendered", this.clock());
       const dom = liveDom[toy.id] || domHistory.at(-1) || null;
       return {
@@ -6830,7 +6735,7 @@ var RuntimeImageDiagnostics = class {
         activeOwnership: !toy.archived && !toy.hidden
       };
     });
-    const stages = summarizeStages(__privateGet(this, _events), __privateGet(this, _resolutions));
+    const stages = summarizeStages(this.#events, this.#resolutions);
     return {
       format: "toy-rotation-runtime-child-image-diagnostic",
       diagnosticVersion: 1,
@@ -6861,22 +6766,16 @@ var RuntimeImageDiagnostics = class {
         successfulRows: rows.filter((row) => /first puzzle|treasure basket|第一块拼图|探索篮/i.test(`${row.name || ""} ${row.nameEn || ""} ${row.nameZh || ""}`)),
         placeholderExamples: rows.filter((row) => row.isPlaceholder).slice(0, 5)
       },
-      lifecycleEvents: clone(__privateGet(this, _events)),
+      lifecycleEvents: clone(this.#events),
       loveveryChildren: rows
     };
   }
-};
-_events = new WeakMap();
-_resolutions = new WeakMap();
-_dom = new WeakMap();
-_activeLookup = new WeakMap();
-_originalGetByKey = new WeakMap();
-_RuntimeImageDiagnostics_instances = new WeakSet();
-append_fn = function(map, id, row) {
-  const rows = map.get(id) || [];
-  rows.push(row);
-  if (rows.length > MAX_ROWS) rows.shift();
-  map.set(id, rows);
+  #append(map, id, row) {
+    const rows = map.get(id) || [];
+    rows.push(row);
+    if (rows.length > MAX_ROWS) rows.shift();
+    map.set(id, rows);
+  }
 };
 function baseToyRow(toy = {}, phase, at) {
   const imageRef = clone(toy.imageRef || null);
@@ -6964,50 +6863,48 @@ var MAX_EVENTS2 = 500;
 var SNAPSHOT_LIMIT = 2e4;
 var now = () => (/* @__PURE__ */ new Date()).toISOString();
 var environment = () => ({ userAgent: navigator.userAgent || "", platform: navigator.platform || "", language: navigator.language || "", standalone: navigator.standalone === true, displayModeStandalone: matchMedia?.("(display-mode: standalone)")?.matches === true, viewport: { width: innerWidth, height: innerHeight, devicePixelRatio }, visibility: document.visibilityState, serviceWorkerController: Boolean(navigator.serviceWorker?.controller), url: location.href, origin: location.origin });
-var _sessions, _armed, _active2, _errorListener, _rejectionListener, _appendRestore, _RecognitionDeviceDiagnostic_instances, installErrorCapture_fn, removeErrorCapture_fn, installAppendInstrumentation_fn, restoreAppendInstrumentation_fn;
 var RecognitionDeviceDiagnostic = class {
+  #sessions = [];
+  #armed = false;
+  #active = null;
+  #errorListener = null;
+  #rejectionListener = null;
+  #appendRestore = null;
   constructor({ build = globalThis.TOY_ROTATION_CONFIG || {} } = {}) {
-    __privateAdd(this, _RecognitionDeviceDiagnostic_instances);
-    __privateAdd(this, _sessions, []);
-    __privateAdd(this, _armed, false);
-    __privateAdd(this, _active2, null);
-    __privateAdd(this, _errorListener, null);
-    __privateAdd(this, _rejectionListener, null);
-    __privateAdd(this, _appendRestore, null);
     this.build = build;
   }
   get recording() {
-    return __privateGet(this, _armed);
+    return this.#armed;
   }
   get sessions() {
-    return __privateGet(this, _sessions).map((session) => structuredClone(session));
+    return this.#sessions.map((session) => structuredClone(session));
   }
   start() {
-    __privateSet(this, _armed, true);
-    __privateMethod(this, _RecognitionDeviceDiagnostic_instances, installErrorCapture_fn).call(this);
+    this.#armed = true;
+    this.#installErrorCapture();
     return this.record("trace_armed", {});
   }
   stop() {
     this.record("trace_stopped", {});
-    __privateMethod(this, _RecognitionDeviceDiagnostic_instances, restoreAppendInstrumentation_fn).call(this);
-    __privateMethod(this, _RecognitionDeviceDiagnostic_instances, removeErrorCapture_fn).call(this);
-    __privateSet(this, _armed, false);
-    __privateSet(this, _active2, null);
+    this.#restoreAppendInstrumentation();
+    this.#removeErrorCapture();
+    this.#armed = false;
+    this.#active = null;
   }
   clear() {
     this.stop();
-    __privateSet(this, _sessions, []);
+    this.#sessions = [];
   }
   begin(draftId) {
-    if (!__privateGet(this, _armed)) return null;
+    if (!this.#armed) return null;
     const session = { sessionId: crypto.randomUUID(), recognitionDraftId: draftId, startedAt: now(), buildId: this.build.buildId || null, appVersion: this.build.appVersion || this.build.RELEASE || null, environment: environment(), events: [], finalStateSummary: null };
-    __privateGet(this, _sessions).push(session);
-    __privateSet(this, _active2, session);
+    this.#sessions.push(session);
+    this.#active = session;
     this.record("review_open_requested", { draftId });
     return session;
   }
   record(eventName, payload = {}) {
-    const session = __privateGet(this, _active2);
+    const session = this.#active;
     if (!session) return null;
     if (session.events.length >= MAX_EVENTS2) return null;
     const event = { seq: session.events.length + 1, timestamp: now(), performanceTime: globalThis.performance?.now?.() ?? null, eventName, payload };
@@ -7035,9 +6932,9 @@ var RecognitionDeviceDiagnostic = class {
     this.record(`badge_render_${stage}`, detail);
   }
   observeReview({ root: root2, form, dialog, draftId }) {
-    if (!__privateGet(this, _active2)) return () => {
+    if (!this.#active) return () => {
     };
-    __privateMethod(this, _RecognitionDeviceDiagnostic_instances, installAppendInstrumentation_fn).call(this, root2, draftId);
+    this.#installAppendInstrumentation(root2, draftId);
     const listen = (target, name, handler, opts) => target.addEventListener(name, handler, opts);
     const clicks = { library: 0, wishlist: 0 };
     const eventPayload = (event) => ({ target: event.target?.tagName || null, currentTarget: event.currentTarget?.tagName || null, button: event.button ?? null, detail: event.detail ?? null, isTrusted: event.isTrusted, defaultPrevented: event.defaultPrevented, eventPhase: event.eventPhase, timeStamp: event.timeStamp });
@@ -7050,7 +6947,7 @@ var RecognitionDeviceDiagnostic = class {
       }, { capture: true, passive: true });
     }
     this.record("form_created", { checkValidity: form.checkValidity(), method: form.method, action: form.action, noValidate: form.noValidate });
-    listen(form, "submit", (event) => this.record("form_submit_received", { submitCount: (__privateGet(this, _active2)?.events.filter((e) => e.eventName === "form_submit_received").length || 0) + 1, submitter: event.submitter ? { tag: event.submitter.tagName, name: event.submitter.name, value: event.submitter.value, destination: event.submitter.dataset?.destination || null } : null, defaultPrevented: event.defaultPrevented, checkValidity: form.checkValidity(), activeElement: document.activeElement?.tagName || null, draftId }), { capture: true });
+    listen(form, "submit", (event) => this.record("form_submit_received", { submitCount: (this.#active?.events.filter((e) => e.eventName === "form_submit_received").length || 0) + 1, submitter: event.submitter ? { tag: event.submitter.tagName, name: event.submitter.name, value: event.submitter.value, destination: event.submitter.dataset?.destination || null } : null, defaultPrevented: event.defaultPrevented, checkValidity: form.checkValidity(), activeElement: document.activeElement?.tagName || null, draftId }), { capture: true });
     const inspect = (node) => {
       const text2 = node?.nodeType === Node.TEXT_NODE ? node.textContent : "";
       if (/^\d+$/.test(String(text2).trim())) {
@@ -7072,72 +6969,64 @@ var RecognitionDeviceDiagnostic = class {
     listen(dialog, "close", close, { once: true });
     return () => {
       observer.disconnect();
-      __privateMethod(this, _RecognitionDeviceDiagnostic_instances, restoreAppendInstrumentation_fn).call(this);
+      this.#restoreAppendInstrumentation();
     };
   }
   finish(state, { reviewClosed = false } = {}) {
-    if (!__privateGet(this, _active2)) return;
+    if (!this.#active) return;
     this.state("review_final_state", state, { reviewClosed });
-    __privateGet(this, _active2).finalStateSummary = { toyCount: state.toys?.length || 0, wishlistCount: state.wishlist?.length || 0, candidateCount: localCandidates(state).length, pendingCandidateCount: pendingCandidateCount(state), pendingDraftCount: (state.drafts || []).filter((d) => String(d.status).startsWith("ready")).length, reviewClosed, numeric22Detected: __privateGet(this, _active2).events.some((event) => event.eventName === "text_22_detected") };
+    this.#active.finalStateSummary = { toyCount: state.toys?.length || 0, wishlistCount: state.wishlist?.length || 0, candidateCount: localCandidates(state).length, pendingCandidateCount: pendingCandidateCount(state), pendingDraftCount: (state.drafts || []).filter((d) => String(d.status).startsWith("ready")).length, reviewClosed, numeric22Detected: this.#active.events.some((event) => event.eventName === "text_22_detected") };
   }
   export() {
     return { diagnosticVersion: 1, appVersion: this.build.appVersion || this.build.RELEASE || null, buildId: this.build.buildId || null, exportedAt: now(), environment: environment(), sessions: this.sessions };
   }
-};
-_sessions = new WeakMap();
-_armed = new WeakMap();
-_active2 = new WeakMap();
-_errorListener = new WeakMap();
-_rejectionListener = new WeakMap();
-_appendRestore = new WeakMap();
-_RecognitionDeviceDiagnostic_instances = new WeakSet();
-installErrorCapture_fn = function() {
-  if (__privateGet(this, _errorListener)) return;
-  __privateSet(this, _errorListener, (event) => this.record("window_error", { message: event.message || event.error?.message || "", filename: event.filename || null, line: event.lineno || null, column: event.colno || null, stack: event.error?.stack || null }));
-  __privateSet(this, _rejectionListener, (event) => {
-    const reason2 = event.reason;
-    this.record("unhandled_rejection", { message: reason2?.message || String(reason2 || ""), stack: reason2?.stack || null });
-  });
-  window.addEventListener("error", __privateGet(this, _errorListener));
-  window.addEventListener("unhandledrejection", __privateGet(this, _rejectionListener));
-};
-removeErrorCapture_fn = function() {
-  if (__privateGet(this, _errorListener)) window.removeEventListener("error", __privateGet(this, _errorListener));
-  if (__privateGet(this, _rejectionListener)) window.removeEventListener("unhandledrejection", __privateGet(this, _rejectionListener));
-  __privateSet(this, _errorListener, null);
-  __privateSet(this, _rejectionListener, null);
-};
-installAppendInstrumentation_fn = function(root2, draftId) {
-  __privateMethod(this, _RecognitionDeviceDiagnostic_instances, restoreAppendInstrumentation_fn).call(this);
-  const instrument = (prototype, name) => {
-    const original = prototype[name];
-    const diagnostic = this;
-    prototype[name] = function(...values) {
-      if (__privateGet(diagnostic, _active2) && root2.contains(this)) {
-        for (const value of values) {
-          const text2 = typeof value === "number" ? String(value) : typeof value === "string" ? value.trim() : "";
-          if (/^\d+$/.test(text2)) {
-            const target = { tag: this.tagName || null, id: this.id || null, class: this.className || "" };
-            diagnostic.record("numeric_append_detected", { value: text2, target, draftId, stack: new Error().stack || null });
-            if (text2 === "22") diagnostic.record("text_22_append_detected", { value: text2, target, stack: new Error().stack || null });
+  #installErrorCapture() {
+    if (this.#errorListener) return;
+    this.#errorListener = (event) => this.record("window_error", { message: event.message || event.error?.message || "", filename: event.filename || null, line: event.lineno || null, column: event.colno || null, stack: event.error?.stack || null });
+    this.#rejectionListener = (event) => {
+      const reason2 = event.reason;
+      this.record("unhandled_rejection", { message: reason2?.message || String(reason2 || ""), stack: reason2?.stack || null });
+    };
+    window.addEventListener("error", this.#errorListener);
+    window.addEventListener("unhandledrejection", this.#rejectionListener);
+  }
+  #removeErrorCapture() {
+    if (this.#errorListener) window.removeEventListener("error", this.#errorListener);
+    if (this.#rejectionListener) window.removeEventListener("unhandledrejection", this.#rejectionListener);
+    this.#errorListener = null;
+    this.#rejectionListener = null;
+  }
+  #installAppendInstrumentation(root2, draftId) {
+    this.#restoreAppendInstrumentation();
+    const instrument = (prototype, name) => {
+      const original = prototype[name];
+      const diagnostic = this;
+      prototype[name] = function(...values) {
+        if (diagnostic.#active && root2.contains(this)) {
+          for (const value of values) {
+            const text2 = typeof value === "number" ? String(value) : typeof value === "string" ? value.trim() : "";
+            if (/^\d+$/.test(text2)) {
+              const target = { tag: this.tagName || null, id: this.id || null, class: this.className || "" };
+              diagnostic.record("numeric_append_detected", { value: text2, target, draftId, stack: new Error().stack || null });
+              if (text2 === "22") diagnostic.record("text_22_append_detected", { value: text2, target, stack: new Error().stack || null });
+            }
           }
         }
-      }
-      return original.apply(this, values);
+        return original.apply(this, values);
+      };
+      return () => {
+        prototype[name] = original;
+      };
     };
-    return () => {
-      prototype[name] = original;
+    const restores = [instrument(Element.prototype, "append"), instrument(Node.prototype, "appendChild")];
+    this.#appendRestore = () => {
+      restores.forEach((restore) => restore());
+      this.#appendRestore = null;
     };
-  };
-  const restores = [instrument(Element.prototype, "append"), instrument(Node.prototype, "appendChild")];
-  __privateSet(this, _appendRestore, () => {
-    restores.forEach((restore) => restore());
-    __privateSet(this, _appendRestore, null);
-  });
-};
-restoreAppendInstrumentation_fn = function() {
-  var _a;
-  (_a = __privateGet(this, _appendRestore)) == null ? void 0 : _a.call(this);
+  }
+  #restoreAppendInstrumentation() {
+    this.#appendRestore?.();
+  }
 };
 function storeSnapshot(state = {}) {
   return { toys: state.toys?.length || 0, wishlist: state.wishlist?.length || 0, localCandidates: localCandidates(state).length, drafts: state.drafts?.length || 0, schemaVersion: state.schemaVersion ?? null };
@@ -7145,56 +7034,52 @@ function storeSnapshot(state = {}) {
 
 // src/features/admin-catalog-save-diagnostic.js
 var MAX_EVENTS3 = 120;
-var _recording, _events2, _clock;
 var AdminCatalogSaveDiagnostic = class {
+  #recording = false;
+  #events = [];
+  #clock;
   constructor({ clock = () => (/* @__PURE__ */ new Date()).toISOString(), createId = () => crypto.randomUUID() } = {}) {
-    __privateAdd(this, _recording, false);
-    __privateAdd(this, _events2, []);
-    __privateAdd(this, _clock);
-    __privateSet(this, _clock, clock);
+    this.#clock = clock;
     this.createId = createId;
   }
   get recording() {
-    return __privateGet(this, _recording);
+    return this.#recording;
   }
   get eventCount() {
-    return __privateGet(this, _events2).length;
+    return this.#events.length;
   }
   start() {
-    __privateSet(this, _recording, true);
+    this.#recording = true;
   }
   stop() {
-    __privateSet(this, _recording, false);
+    this.#recording = false;
   }
   clear() {
-    __privateSet(this, _events2, []);
+    this.#events = [];
   }
   begin({ editedImagePresent = false } = {}) {
-    if (!__privateGet(this, _recording)) return null;
+    if (!this.#recording) return null;
     const attemptId = this.createId();
     this.record(attemptId, "submit_received", { editedImagePresent: Boolean(editedImagePresent) });
     return attemptId;
   }
   record(attemptId, stage, details = {}) {
-    if (!__privateGet(this, _recording) || !attemptId) return;
-    __privateGet(this, _events2).push({ attemptId, at: __privateGet(this, _clock).call(this), stage, ...sanitize(details) });
-    if (__privateGet(this, _events2).length > MAX_EVENTS3) __privateGet(this, _events2).splice(0, __privateGet(this, _events2).length - MAX_EVENTS3);
+    if (!this.#recording || !attemptId) return;
+    this.#events.push({ attemptId, at: this.#clock(), stage, ...sanitize(details) });
+    if (this.#events.length > MAX_EVENTS3) this.#events.splice(0, this.#events.length - MAX_EVENTS3);
   }
   export({ release = null } = {}) {
     return {
       format: "toy-rotation-admin-catalog-save-diagnostic",
       diagnosticVersion: 1,
-      exportedAt: __privateGet(this, _clock).call(this),
+      exportedAt: this.#clock(),
       readOnly: true,
       release,
-      recording: __privateGet(this, _recording),
-      events: structuredClone(__privateGet(this, _events2))
+      recording: this.#recording,
+      events: structuredClone(this.#events)
     };
   }
 };
-_recording = new WeakMap();
-_events2 = new WeakMap();
-_clock = new WeakMap();
 function adminCatalogSaveErrorType(error) {
   const code = String(error?.message || "");
   return ["adminVerificationRequired", "adminUnconfigured", "catalogImageUploadFailed", "adminOperationFailed"].includes(code) ? code : String(error?.name || "UnknownError");
@@ -7413,7 +7298,7 @@ function markStartupStage(trace, name, details = void 0) {
   if (!trace) return;
   trace.stages[name] = now2();
   trace.latestStage = name;
-  if (details !== void 0) (trace.details || (trace.details = {}))[name] = details;
+  if (details !== void 0) (trace.details ||= {})[name] = details;
 }
 function markStartupError(trace, stage, error) {
   if (!trace) return;
@@ -8273,43 +8158,40 @@ function createI18n(store2) {
 }
 
 // src/ui/modal-manager.js
-var _scrollY, _dialog, _touchStartY, _onTouchStart, _onTouchMove;
 var ModalManager = class {
-  constructor() {
-    __privateAdd(this, _scrollY, 0);
-    __privateAdd(this, _dialog, null);
-    __privateAdd(this, _touchStartY, null);
-    __privateAdd(this, _onTouchStart, (event) => {
-      __privateSet(this, _touchStartY, event.touches[0]?.clientY ?? null);
-    });
-    __privateAdd(this, _onTouchMove, (event) => {
-      const dialog = __privateGet(this, _dialog);
-      if (!dialog || !dialog.contains(event.target)) {
-        event.preventDefault();
-        return;
-      }
-      const scroller = event.target instanceof Element ? event.target.closest(".form, .sheet") : null;
-      if (!scroller || !dialog.contains(scroller)) {
-        event.preventDefault();
-        return;
-      }
-      const currentY = event.touches[0]?.clientY;
-      if (__privateGet(this, _touchStartY) == null || currentY == null) return;
-      const pullingDown = currentY > __privateGet(this, _touchStartY);
-      const pushingUp = currentY < __privateGet(this, _touchStartY);
-      const atTop = scroller.scrollTop <= 0;
-      const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
-      if (atTop && pullingDown || atBottom && pushingUp) event.preventDefault();
-    });
-  }
+  #scrollY = 0;
+  #dialog = null;
+  #touchStartY = null;
+  #onTouchStart = (event) => {
+    this.#touchStartY = event.touches[0]?.clientY ?? null;
+  };
+  #onTouchMove = (event) => {
+    const dialog = this.#dialog;
+    if (!dialog || !dialog.contains(event.target)) {
+      event.preventDefault();
+      return;
+    }
+    const scroller = event.target instanceof Element ? event.target.closest(".form, .sheet") : null;
+    if (!scroller || !dialog.contains(scroller)) {
+      event.preventDefault();
+      return;
+    }
+    const currentY = event.touches[0]?.clientY;
+    if (this.#touchStartY == null || currentY == null) return;
+    const pullingDown = currentY > this.#touchStartY;
+    const pushingUp = currentY < this.#touchStartY;
+    const atTop = scroller.scrollTop <= 0;
+    const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+    if (atTop && pullingDown || atBottom && pushingUp) event.preventDefault();
+  };
   open(dialog) {
     this.forceClose();
-    __privateSet(this, _dialog, dialog);
-    __privateSet(this, _scrollY, window.scrollY);
+    this.#dialog = dialog;
+    this.#scrollY = window.scrollY;
     document.documentElement.classList.add("modal-open");
-    document.body.style.top = `-${__privateGet(this, _scrollY)}px`;
-    document.addEventListener("touchstart", __privateGet(this, _onTouchStart), { passive: true, capture: true });
-    document.addEventListener("touchmove", __privateGet(this, _onTouchMove), { passive: false, capture: true });
+    document.body.style.top = `-${this.#scrollY}px`;
+    document.addEventListener("touchstart", this.#onTouchStart, { passive: true, capture: true });
+    document.addEventListener("touchmove", this.#onTouchMove, { passive: false, capture: true });
     try {
       dialog.showModal();
       dialog.addEventListener("close", () => this.close(), { once: true });
@@ -8321,24 +8203,19 @@ var ModalManager = class {
   }
   close() {
     if (!document.documentElement.classList.contains("modal-open")) return;
-    document.removeEventListener("touchstart", __privateGet(this, _onTouchStart), true);
-    document.removeEventListener("touchmove", __privateGet(this, _onTouchMove), true);
-    __privateSet(this, _touchStartY, null);
+    document.removeEventListener("touchstart", this.#onTouchStart, true);
+    document.removeEventListener("touchmove", this.#onTouchMove, true);
+    this.#touchStartY = null;
     document.documentElement.classList.remove("modal-open");
     document.body.style.top = "";
-    __privateSet(this, _dialog, null);
-    window.scrollTo(0, __privateGet(this, _scrollY));
+    this.#dialog = null;
+    window.scrollTo(0, this.#scrollY);
   }
   forceClose() {
-    if (__privateGet(this, _dialog)?.open) __privateGet(this, _dialog).close();
+    if (this.#dialog?.open) this.#dialog.close();
     this.close();
   }
 };
-_scrollY = new WeakMap();
-_dialog = new WeakMap();
-_touchStartY = new WeakMap();
-_onTouchStart = new WeakMap();
-_onTouchMove = new WeakMap();
 
 // src/ui/admin-workspace-controller.js
 function createAdminWorkspaceController({ dialog, getAdminAuthenticated, getPendingCount, renderSettings, renderWorkspace, closeSettingsDialog, trace = () => {
@@ -8366,7 +8243,7 @@ function createAdminWorkspaceController({ dialog, getAdminAuthenticated, getPend
       record("open_requested");
       try {
         if (!dialog?.open) throw new Error("settings_dialog_not_open");
-        dialog.__settingsBody || (dialog.__settingsBody = dialog.innerHTML);
+        dialog.__settingsBody ||= dialog.innerHTML;
         record("workspace_render_started");
         renderWorkspace({ pendingCount: getPendingCount(), onBack: () => controller.back(), onClose: () => controller.closeWorkspace() });
         setView("adminWorkspace");
@@ -8759,7 +8636,7 @@ var admin = new AdminService({ store, catalog });
 var adminCatalogSaveDiagnostic = new AdminCatalogSaveDiagnostic();
 var governance = new SharedCatalogGovernance({ store, catalog, images, baseUrl: window.TOY_ROTATION_CONFIG?.API_BASE, diagnostic: recognitionDeviceDiagnostic });
 var recognition = null;
-var getRecognition = () => recognition || (recognition = new RecognitionService({ store, images, catalog, governance, diagnostic: recognitionDeviceDiagnostic }));
+var getRecognition = () => recognition ||= new RecognitionService({ store, images, catalog, governance, diagnostic: recognitionDeviceDiagnostic });
 var modalManager = new ModalManager();
 var view = "home";
 var onboardingQueued = false;
@@ -9461,7 +9338,7 @@ function openRecognitionReview(id) {
   }, render, trace: recognitionSaveTrace, diagnostic: recognitionDeviceDiagnostic });
 }
 function recognitionSaveTrace(stage, detail = {}) {
-  const trace = window.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ || (window.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ = []);
+  const trace = window.__TOY_ROTATION_RECOGNITION_SAVE_TRACE__ ||= [];
   trace.push({ stage, timestamp: (/* @__PURE__ */ new Date()).toISOString(), ...detail });
   if (trace.length > 120) trace.splice(0, trace.length - 120);
 }
@@ -10037,9 +9914,8 @@ async function openManagerDashboard({ repairMessage = "", returnToSettings = fal
   });
   dialog.querySelectorAll("[data-admin-ignore]").forEach((button) => button.onclick = () => {
     store.update((state) => {
-      var _a, _b;
-      (_a = state.catalogState).syncMetadata || (_a.syncMetadata = {});
-      const entry = (_b = state.catalogState.syncMetadata).identityReviewV10 || (_b.identityReviewV10 = { ignoredPairs: [] });
+      state.catalogState.syncMetadata ||= {};
+      const entry = state.catalogState.syncMetadata.identityReviewV10 ||= { ignoredPairs: [] };
       entry.ignoredPairs = [.../* @__PURE__ */ new Set([...entry.ignoredPairs || [], button.dataset.adminIgnore])];
     }, "admin-identity-ignore");
     dialog.close();
@@ -10333,7 +10209,7 @@ function openAdminInSettings(dialog) {
   };
 }
 function traceAdminWorkspace(stage, detail = {}) {
-  const trace = window.__TOY_ROTATION_ADMIN_WORKSPACE_TRACE__ || (window.__TOY_ROTATION_ADMIN_WORKSPACE_TRACE__ = []);
+  const trace = window.__TOY_ROTATION_ADMIN_WORKSPACE_TRACE__ ||= [];
   trace.push({ stage, detail, at: (/* @__PURE__ */ new Date()).toISOString() });
   if (trace.length > 40) trace.splice(0, trace.length - 40);
 }
@@ -10394,7 +10270,7 @@ function refreshAdminCandidateBadges() {
   recognitionDeviceDiagnostic.badge("started", { pendingCandidateCount: count4 });
   document.querySelectorAll("[data-admin-pending-badge]").forEach((node) => node.textContent = String(count4));
   recognitionDeviceDiagnostic.badge("completed", { pendingCandidateCount: count4 });
-  const trace = window.__TOY_ROTATION_CANDIDATE_TRACE__ || (window.__TOY_ROTATION_CANDIDATE_TRACE__ = []);
+  const trace = window.__TOY_ROTATION_CANDIDATE_TRACE__ ||= [];
   trace.push({ stage: "badge_rendered", detail: { pending_count: count4 }, at: (/* @__PURE__ */ new Date()).toISOString() });
   if (trace.length > 80) trace.splice(0, trace.length - 80);
 }
