@@ -1,277 +1,820 @@
 {
   "manifestVersion": 1,
+  "generatedAt": "2026-09-22T19:31:01.899Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 iPhone QA Candidate 7 R5 Image Reliability",
+    "buildName": "Toy Rotation v0.11.6 Image Expansion QA8",
     "buildDate": "20260922",
-    "buildId": "v0.11.6-iphone-qa7-r5-20260922"
+    "buildId": "v0.11.6-image-expansion-qa8-20260922"
   },
+  "entries": [
+    "index.html",
+    "storage-recovery-diagnostic.html",
+    "startup-diagnostic.html"
+  ],
   "files": [
     {
       "path": "app.bundle.js",
-      "bytes": 791392,
-      "sha256": "bb7163d04a4eda631467e6d392eb6496e6e800001b7f2bf44220ebfcd549f40f"
+      "resolvedDeployPath": "./app.bundle.js",
+      "bytes": 801192,
+      "sha256": "41a7c64f6bcec7f41d45c33d52c26da03e51e8d1ce1f4d98391ea1ae52f8226c",
+      "importedBy": [
+        "index.html"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/bduck-bounce-catch-game.webp",
+      "resolvedDeployPath": "./catalog-assets/bduck-bounce-catch-game.webp",
       "bytes": 41674,
-      "sha256": "dd8d8a0503709001d51df3929570b2d1897e8d25b26c49a0cbc95e04f49aa664"
+      "sha256": "dd8d8a0503709001d51df3929570b2d1897e8d25b26c49a0cbc95e04f49aa664",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/cherrypick-dustless-chalk-crayons.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-dustless-chalk-crayons.jpg",
       "bytes": 23977,
-      "sha256": "3c0a08b8bdce7a4bed2065f3050fd63b6058a9b599cc00fc36de50d5a9e5ba70"
+      "sha256": "3c0a08b8bdce7a4bed2065f3050fd63b6058a9b599cc00fc36de50d5a9e5ba70",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/cherrypick-emotions-magnets-soft-foam-20pc.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-emotions-magnets-soft-foam-20pc.jpg",
       "bytes": 31634,
-      "sha256": "f7dbc7585e1dec66dfb620b8a19a86e2f198a8bb4a4abd59b3344054b62a7fa5"
+      "sha256": "f7dbc7585e1dec66dfb620b8a19a86e2f198a8bb4a4abd59b3344054b62a7fa5",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/cherrypick-original-magic-playwall.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-original-magic-playwall.jpg",
       "bytes": 65681,
-      "sha256": "49c4ef0ede77ba62d5c8ff385deb84005a5a05fac32c6cd45b96215785e097a3"
+      "sha256": "49c4ef0ede77ba62d5c8ff385deb84005a5a05fac32c6cd45b96215785e097a3",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/cherrypick-soft-foam-magnetic-letters.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-soft-foam-magnetic-letters.jpg",
       "bytes": 30365,
-      "sha256": "3c3fbf7c25b1c94c3e6879213d771f18bc1ead0903b2aa4f90b38ac95a4a8ad3"
+      "sha256": "3c3fbf7c25b1c94c3e6879213d771f18bc1ead0903b2aa4f90b38ac95a4a8ad3",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/hahaland-farm-busy-book-20in1.jpg",
+      "resolvedDeployPath": "./catalog-assets/hahaland-farm-busy-book-20in1.jpg",
       "bytes": 546707,
-      "sha256": "3e22ad2e37d1db06612ecefda6e99301a68383c3a212a22e769ab7bf06e26a5b"
+      "sha256": "3e22ad2e37d1db06612ecefda6e99301a68383c3a212a22e769ab7bf06e26a5b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/hahaland-mermaid-busy-board.jpg",
+      "resolvedDeployPath": "./catalog-assets/hahaland-mermaid-busy-board.jpg",
       "bytes": 483741,
-      "sha256": "ee54e47301030181df08d936e6437b276c4d1e82cf052f88136f4c79a874ba1b"
+      "sha256": "ee54e47301030181df08d936e6437b276c4d1e82cf052f88136f4c79a874ba1b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/hahaland-surprise-barn.jpg",
+      "resolvedDeployPath": "./catalog-assets/hahaland-surprise-barn.jpg",
       "bytes": 337931,
-      "sha256": "d6e2024358fcc018fea9b2419ae01fb133cd15668d85b2df18d505f6dba91735"
+      "sha256": "d6e2024358fcc018fea9b2419ae01fb133cd15668d85b2df18d505f6dba91735",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/lego-duplo-3in1-construction-vehicles-10475.png",
+      "resolvedDeployPath": "./catalog-assets/lego-duplo-3in1-construction-vehicles-10475.png",
       "bytes": 120435,
-      "sha256": "510aa25bcf9f1abd6385364236972e96c1673fb52044fd44ca9a8b1f5aa572d0"
+      "sha256": "510aa25bcf9f1abd6385364236972e96c1673fb52044fd44ca9a8b1f5aa572d0",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/lego-duplo-animal-train-10955.jpg",
+      "resolvedDeployPath": "./catalog-assets/lego-duplo-animal-train-10955.jpg",
       "bytes": 90764,
-      "sha256": "3736cac2185ac843f8ceed04a9ab7d4c042ef5afffb54ff1a09d0b7301de8ccd"
+      "sha256": "3736cac2185ac843f8ceed04a9ab7d4c042ef5afffb54ff1a09d0b7301de8ccd",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/lego-duplo-fire-truck-hose-firefighter-10473.jpg",
+      "resolvedDeployPath": "./catalog-assets/lego-duplo-fire-truck-hose-firefighter-10473.jpg",
       "bytes": 100919,
-      "sha256": "ad876feeb6209405527d7e3813de4aedc9509053471b6c9f59b874b741c0d174"
+      "sha256": "ad876feeb6209405527d7e3813de4aedc9509053471b6c9f59b874b741c0d174",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-animal-toys-set-15pcs.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-animal-toys-set-15pcs.jpg",
       "bytes": 56769,
-      "sha256": "e062bf4ff7b9136ce15263bd994abf587b26a1c9bfa896c4ff87975c89998e90"
+      "sha256": "e062bf4ff7b9136ce15263bd994abf587b26a1c9bfa896c4ff87975c89998e90",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-busy-cars-puzzle-1.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-1.jpg",
       "bytes": 34353,
-      "sha256": "40cd9bdc31b537c6497cd502ea6d51a1777eb3384ef93782a92b892cfba39237"
+      "sha256": "40cd9bdc31b537c6497cd502ea6d51a1777eb3384ef93782a92b892cfba39237",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-busy-cars-puzzle-2.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-2.jpg",
       "bytes": 38212,
-      "sha256": "1485fec9f9ea652b748d22cb854d87f415140201d01de567b2a0dfa5b2127eda"
+      "sha256": "1485fec9f9ea652b748d22cb854d87f415140201d01de567b2a0dfa5b2127eda",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-busy-cars-puzzle-3.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-3.jpg",
       "bytes": 39716,
-      "sha256": "13a3ebe749f7a7f71915e1fbc6f97cd9502c52ebe1c2cdfcd628cb01ef86069e"
+      "sha256": "13a3ebe749f7a7f71915e1fbc6f97cd9502c52ebe1c2cdfcd628cb01ef86069e",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-busy-cars-puzzle-4.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-4.jpg",
       "bytes": 30662,
-      "sha256": "972db788aadd40c8ca58c0be17d2e3b774875f758581dad8ac7fe24e05381dfe"
+      "sha256": "972db788aadd40c8ca58c0be17d2e3b774875f758581dad8ac7fe24e05381dfe",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-busy-cars-puzzle-5.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-5.jpg",
       "bytes": 30036,
-      "sha256": "98ae82eead9d904f1e122384232dcd962da970262b93b33836faa15764bdadbd"
+      "sha256": "98ae82eead9d904f1e122384232dcd962da970262b93b33836faa15764bdadbd",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-busy-cars-puzzle-6.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-busy-cars-puzzle-6.jpg",
       "bytes": 38489,
-      "sha256": "f038a4549bdb351ff2860cec47ced960c926b58dbf32ee4d5d7ee397e296e49b"
+      "sha256": "f038a4549bdb351ff2860cec47ced960c926b58dbf32ee4d5d7ee397e296e49b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-1.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-1.jpg",
       "bytes": 32941,
-      "sha256": "50a37b75207f08231087fd2ca946ecd8677110922a6de906f7d8db293c7f707b"
+      "sha256": "50a37b75207f08231087fd2ca946ecd8677110922a6de906f7d8db293c7f707b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-2.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-2.jpg",
       "bytes": 33261,
-      "sha256": "2f56da3269e237f87c4c24699271b74b4ac78d1197a028b5e9d7a55a5ee55825"
+      "sha256": "2f56da3269e237f87c4c24699271b74b4ac78d1197a028b5e9d7a55a5ee55825",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-3.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-3.jpg",
       "bytes": 41614,
-      "sha256": "cb0a06968a763966e5f1122a2a50602f9b304b44792d879209d347552d62f7ef"
+      "sha256": "cb0a06968a763966e5f1122a2a50602f9b304b44792d879209d347552d62f7ef",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-4.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-4.jpg",
       "bytes": 31803,
-      "sha256": "b528639f61013f52334c4089c2a8291e5d01a1b6e5b4846cc23b1e508cee2976"
+      "sha256": "b528639f61013f52334c4089c2a8291e5d01a1b6e5b4846cc23b1e508cee2976",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-5.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-5.jpg",
       "bytes": 30923,
-      "sha256": "1790aa814c576ef9ff42cbb969af90c2d0f50a921eb8bc6bb5ed97ee289e0f3b"
+      "sha256": "1790aa814c576ef9ff42cbb969af90c2d0f50a921eb8bc6bb5ed97ee289e0f3b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-dinosaurs-md1460-puzzle-6.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-dinosaurs-md1460-puzzle-6.jpg",
       "bytes": 38875,
-      "sha256": "28f1c34e738d981870f6b08343fbe26d66c4907c3ec4b6d74270084c31fb0f49"
+      "sha256": "28f1c34e738d981870f6b08343fbe26d66c4907c3ec4b6d74270084c31fb0f49",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-1.png",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-1.png",
       "bytes": 21308,
-      "sha256": "41b2a4ae3a622fb2685ad1bfac66acf2bcf1d924254ab960666355f374a398ed"
+      "sha256": "41b2a4ae3a622fb2685ad1bfac66acf2bcf1d924254ab960666355f374a398ed",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-2.png",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-2.png",
       "bytes": 17903,
-      "sha256": "4c873c64155dda52f579e36657938fca8274f53357dd78ba848fb6166ac773a3"
+      "sha256": "4c873c64155dda52f579e36657938fca8274f53357dd78ba848fb6166ac773a3",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-3.png",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-3.png",
       "bytes": 17377,
-      "sha256": "7eca507ad5b4f69fa7632a6c2686cfa9a4f24c6b480c055ba18cad80490c326e"
+      "sha256": "7eca507ad5b4f69fa7632a6c2686cfa9a4f24c6b480c055ba18cad80490c326e",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-4.png",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-4.png",
       "bytes": 15824,
-      "sha256": "9a84e514d49ea6d59a892d3ae9cff76bae3e8d72709191dd68edf2b87e6f4e5a"
+      "sha256": "9a84e514d49ea6d59a892d3ae9cff76bae3e8d72709191dd68edf2b87e6f4e5a",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-5.png",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-5.png",
       "bytes": 21941,
-      "sha256": "68ab8dae2db702d24573db5597aa11d4b2bf806de2160dd128d75ef6f1c7682f"
+      "sha256": "68ab8dae2db702d24573db5597aa11d4b2bf806de2160dd128d75ef6f1c7682f",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-6.png",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-6.png",
       "bytes": 21830,
-      "sha256": "1686ada094067eeec498ebc63bda9111177ce6a655765ebb921f7ae5bf6076e0"
+      "sha256": "1686ada094067eeec498ebc63bda9111177ce6a655765ebb921f7ae5bf6076e0",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-7.png",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-7.png",
       "bytes": 24794,
-      "sha256": "8ea3272fdd61f64c7cc3622f08fda57331a5922b6897d6044d722a1007165ceb"
+      "sha256": "8ea3272fdd61f64c7cc3622f08fda57331a5922b6897d6044d722a1007165ceb",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-home-sweet-home-md1673-puzzle-8.png",
+      "resolvedDeployPath": "./catalog-assets/mideer-home-sweet-home-md1673-puzzle-8.png",
       "bytes": 22971,
-      "sha256": "ed96a2c6ca4f4c6f4697cad7b6fe0b2110f384d237627e36e6952aeb99db3f77"
+      "sha256": "ed96a2c6ca4f4c6f4697cad7b6fe0b2110f384d237627e36e6952aeb99db3f77",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-level1-home-sweet-home-puzzle.jpg",
       "bytes": 60320,
-      "sha256": "b926afe91148eccc63e9ea4367482f0833d566a5b6b55fd09020b6d8466cd98b"
+      "sha256": "b926afe91148eccc63e9ea4367482f0833d566a5b6b55fd09020b6d8466cd98b",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/mideer-my-first-puzzle-dinosaurs-6in1.webp",
+      "resolvedDeployPath": "./catalog-assets/mideer-my-first-puzzle-dinosaurs-6in1.webp",
       "bytes": 32238,
-      "sha256": "e5fe90815379cd197aa58f5aeaaa5bb3cde546a2fb35882c2d2cbe9074043432"
+      "sha256": "e5fe90815379cd197aa58f5aeaaa5bb3cde546a2fb35882c2d2cbe9074043432",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-assets/vtech-busy-learners-music-activity-cube-80-574100.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-busy-learners-music-activity-cube-80-574100.jpg",
       "bytes": 189033,
-      "sha256": "383931a359dca748e531e8ec6f9a88e45d9db8eebb1f4c64d7dbe2d08920d79e"
+      "sha256": "383931a359dca748e531e8ec6f9a88e45d9db8eebb1f4c64d7dbe2d08920d79e",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-base.json",
+      "resolvedDeployPath": "./catalog-base.json",
       "bytes": 340837,
-      "sha256": "19f2a21d8fbd119541510a0b537cb2d5d72d2b04d4cb8654924f6bd633bda1d5"
+      "sha256": "19f2a21d8fbd119541510a0b537cb2d5d72d2b04d4cb8654924f6bd633bda1d5",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-candidates.json",
+      "resolvedDeployPath": "./catalog-candidates.json",
       "bytes": 87,
-      "sha256": "146ee5b4f0f289f45da61da784e45b175fb88b79080402aced0904544d091b1e"
+      "sha256": "146ee5b4f0f289f45da61da784e45b175fb88b79080402aced0904544d091b1e",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "catalog-remote.json",
+      "resolvedDeployPath": "./catalog-remote.json",
       "bytes": 56849,
-      "sha256": "d05578014df3947dcd1e6d303f58a1feb6d104bec04a391ef090c0e435e37523"
+      "sha256": "d05578014df3947dcd1e6d303f58a1feb6d104bec04a391ef090c0e435e37523",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "config.js",
-      "bytes": 581,
-      "sha256": "6ce177dc2fcc469d807804f15e4be3e471082a068997b3ae80c7992c58f63de2"
+      "resolvedDeployPath": "./config.js",
+      "bytes": 541,
+      "sha256": "7794289d31a7eafda4be9e892049d4a2855a6bde89cb9193515aa5cb7d8e7ae7",
+      "importedBy": [
+        "deployment-static",
+        "index.html"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "icons/header-logo.png",
+      "resolvedDeployPath": "./icons/header-logo.png",
       "bytes": 4516,
-      "sha256": "7a627f6b0b40811f903269b91a6f0ae7d7f2266539e51d86762141372941f395"
+      "sha256": "7a627f6b0b40811f903269b91a6f0ae7d7f2266539e51d86762141372941f395",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "icons/icon-192.png",
+      "resolvedDeployPath": "./icons/icon-192.png",
       "bytes": 14541,
-      "sha256": "cb018143c3b261061e975214ca827db3e62613dff4318f5625b0d0dba7c8249c"
+      "sha256": "cb018143c3b261061e975214ca827db3e62613dff4318f5625b0d0dba7c8249c",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "icons/icon-512.png",
+      "resolvedDeployPath": "./icons/icon-512.png",
       "bytes": 69653,
-      "sha256": "45af07e9c8d1a87077145fb4c72358a2575e9f98564488240977071c7f6981f7"
+      "sha256": "45af07e9c8d1a87077145fb4c72358a2575e9f98564488240977071c7f6981f7",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "index.html",
+      "resolvedDeployPath": "./index.html",
       "bytes": 5343,
-      "sha256": "adbbbaa0f6ce9b49d6ac316975d8d4649904ca4ec177b161225fe2e94db62ae7"
+      "sha256": "adbbbaa0f6ce9b49d6ac316975d8d4649904ca4ec177b161225fe2e94db62ae7",
+      "importedBy": [],
+      "staticImports": [
+        "config.js",
+        "app.bundle.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "manifest.webmanifest",
-      "bytes": 334,
-      "sha256": "aeeaca9f272e388d73cca4d37c0911067b2cfcf465340fb11346eb820c6762c1"
+      "resolvedDeployPath": "./manifest.webmanifest",
+      "bytes": 332,
+      "sha256": "2754f343fc6d3ebb1ba8b566cf17367cd2836bf71f91e6696d46b68426fe0181",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "src/ui/app.css",
+      "resolvedDeployPath": "./src/ui/app.css",
       "bytes": 19369,
-      "sha256": "612b36982ebae61201a07bec5dde4f13f4efed8aa1b28824b4f655aef779f4cd"
+      "sha256": "612b36982ebae61201a07bec5dde4f13f4efed8aa1b28824b4f655aef779f4cd",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "src/ui/theme.css",
+      "resolvedDeployPath": "./src/ui/theme.css",
       "bytes": 1462,
-      "sha256": "59aa726cc388f39b80577c5e2d73feb243ec7ebd7b06a6b8d393daf40ea9cac9"
+      "sha256": "59aa726cc388f39b80577c5e2d73feb243ec7ebd7b06a6b8d393daf40ea9cac9",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "startup-diagnostic.bundle.js",
-      "bytes": 5328,
-      "sha256": "d9f1f7757af8934d3615467879068af7d6fd3903a40354e3a9bbcafae92773ed"
+      "resolvedDeployPath": "./startup-diagnostic.bundle.js",
+      "bytes": 5149,
+      "sha256": "b93d62700d3ef412c17d6b98d18c8aa0a485c93f11bd70e9a6ec52e8eb720ffa",
+      "importedBy": [
+        "startup-diagnostic.html"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "startup-diagnostic.html",
+      "resolvedDeployPath": "./startup-diagnostic.html",
       "bytes": 1842,
-      "sha256": "362e0f37b24dbb716690f38245b7430fbb390b40816df6e339b7d8ba0f0be26d"
+      "sha256": "362e0f37b24dbb716690f38245b7430fbb390b40816df6e339b7d8ba0f0be26d",
+      "importedBy": [],
+      "staticImports": [
+        "startup-diagnostic.bundle.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "storage-recovery-diagnostic.bundle.js",
-      "bytes": 11152,
-      "sha256": "87e1d1d95c0025e91fd5c969aae26f27c0f9d6d16a391a67431064ba0126b47a"
+      "resolvedDeployPath": "./storage-recovery-diagnostic.bundle.js",
+      "bytes": 10781,
+      "sha256": "10924d548c3445b05f63f7df4e694b9d05bd6bce45c0eb4e4533a308b01232a5",
+      "importedBy": [
+        "storage-recovery-diagnostic.html"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "storage-recovery-diagnostic.html",
+      "resolvedDeployPath": "./storage-recovery-diagnostic.html",
       "bytes": 2478,
-      "sha256": "8113c28d3bbe6e5f312850d75c91159725bc841ecfd7f2f18dbdbbe14427fa99"
+      "sha256": "8113c28d3bbe6e5f312850d75c91159725bc841ecfd7f2f18dbdbbe14427fa99",
+      "importedBy": [],
+      "staticImports": [
+        "storage-recovery-diagnostic.bundle.js"
+      ],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "sw-precache-assets.js",
-      "bytes": 2219,
-      "sha256": "fffe7ab4d2f07d02d2e07644e6159e4ffecf61faa6c863f86bd86649e92ca6bd"
+      "resolvedDeployPath": "./sw-precache-assets.js",
+      "bytes": 2231,
+      "sha256": "6f2b7f66f756353d6865ea27664e7dc231af4f24890572e9450ae13df7d23750",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     },
     {
       "path": "sw.js",
-      "bytes": 2688,
-      "sha256": "d4dd6ea1fa3cbe7ed37f4944d230936aea46a5ce38931935cf9e335caebf840c"
+      "resolvedDeployPath": "./sw.js",
+      "bytes": 2694,
+      "sha256": "73cd7089370a421541161b2042ca9285bac9f05620767e0047b21928145e5518",
+      "importedBy": [
+        "deployment-static"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
     }
-  ]
+  ],
+  "browserTargetCompatibility": {
+    "target": "safari16",
+    "result": "pass",
+    "checkedInputs": 53
+  }
 }
