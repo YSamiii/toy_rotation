@@ -3905,6 +3905,35 @@ var HAPE_FINAL_RESOLUTION_IMAGE_ROWS = Object.freeze([
   })
 ]);
 
+// src/data/catalog-image-assets-expansion-qa9.js
+var IMAGE_EXPANSION_QA9_ROWS = Object.freeze([
+  ["lego-duplo-cargo-train", "https://www.lego.com/cdn/cs/set/assets/blt6da2b0a6f8fe7eb9/10875_Prod.png?fit=bounds&format=jpg&quality=80&width=1500&height=1500&dpr=1", "https://www.lego.com/en-us/product/cargo-train-10875", "10875", "Cargo Train"],
+  ["lego-duplo-steam-train", "https://www.lego.com/cdn/cs/set/assets/blt892b06b079302476/10874.jpg?fit=bounds&format=jpg&quality=80&width=1500&height=1500&dpr=1", "https://www.lego.com/en-ca/product/steam-train-10874", "10874", "Steam Train"],
+  ["lr-all-about-me-sorting-neighborhood", "https://www.learningresources.com/media/catalog/product/a/a/aafc3ce5f961b47690a1ec63c8e5d082fcb73ec8.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-all-about-me-sorting-neighborhood-set", "LER3369", "All About Me Sorting Neighborhood Set"],
+  ["lr-cool-down-cubes", "https://www.learningresources.com/media/catalog/product/f/1/f1bc39cdf3a4b8cbabb8c7f2b7e4861d21c32c21.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-cool-down-cubes-sensory-fidget-set", "LER5582", "Cool Down Cubes Sensory Fidget Set"],
+  ["lr-counting-surprise-party", "https://www.learningresources.com/media/catalog/product/7/c/7c184a29de0812304515ba3170d0ec0b3a5ee56c.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-counting-surprise-party", "LER6803", "Counting Surprise Party"],
+  ["lr-easy-grip-tweezers", "https://www.learningresources.com/media/catalog/product/2/6/263f4f934b62c71163d6847338f34e65a84a9b58.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-easy-grip-preschool-tweezers", "LER2965", "Easy-Grip Tweezers"],
+  ["lr-hide-seek-vegetable-garden", "https://www.learningresources.com/media/catalog/product/2/4/24ed0e8b4caa4e0188e6da16c8389ceb6235ed53.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-hide-seek-vegetable-garden", "LER3604", "Hide & Seek Vegetable Garden"],
+  ["lr-new-sprouts-bake-it", "https://www.learningresources.com/media/catalog/product/5/7/5774919bff6912b33bdc447247ab67cf9652d604.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sproutsr-bake-it", "LER9258-D", "New Sprouts Bake It!"],
+  ["lr-new-sprouts-breakfast-basket", "https://www.learningresources.com/media/catalog/product/7/a/7ac56eb8d94182f78dabe435b3d4904550ca31e0.png?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265&format=jpeg", "https://www.learningresources.com/item-new-sproutsr-breakfast-basket", "LER9730", "New Sprouts Breakfast Basket"],
+  ["lr-new-sprouts-cure-it-doctor", "https://www.learningresources.com/media/catalog/product/e/3/e37b181d7a9dab3e3c2f510e96e908ac80e8124e.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sproutsr-cure-it", "LER9248", "New Sprouts Cure It!"],
+  ["lr-new-sprouts-dinner-basket", "https://www.learningresources.com/media/catalog/product/f/d/fdc537de0000c3f94e5e43a197ec6ecae4126a54.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sproutsr-dinner-basket", "LER9732", "New Sprouts Dinner Basket"],
+  ["lr-new-sprouts-fix-it-tool-set", "https://www.learningresources.com/media/catalog/product/3/6/36b02e0c0b3baef0c4afe8c8ec1922cd393e40d5.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sproutsr-fix-it-my-very-own-tool-set", "LER9230", "New Sprouts Fix It!"],
+  ["lr-new-sprouts-lunch-basket", "https://www.learningresources.com/media/catalog/product/e/3/e3f5d962d6c7da9dea95a3efbd6148b319bf2382.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sproutsr-lunch-basket", "LER9731", "New Sprouts Lunch Basket"],
+  ["lr-new-sprouts-taco-night", "https://www.learningresources.com/media/catalog/product/0/8/08aab3e28a378e57533ddcd851d539abf24243ed.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sprouts-174-taco-time", "LER9748", "New Sprouts Taco Night!"],
+  ["lr-new-sprouts-grill-it", "https://www.learningresources.com/media/catalog/product/5/6/56e69755aad2dee3a8b29605662646b7fa3c7042.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sproutsr-grill-it", "LER9260-D", "New Sprouts Grill It!"],
+  ["lr-new-sprouts-munch-it", "https://www.learningresources.com/media/catalog/product/9/f/9f66d43c3bd04509087f111aef76aeb5b811f7e7.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sproutsr-munch-it-my-very-own-play-food", "LER7711", "New Sprouts Munch It!"],
+  ["lr-new-sprouts-pasta-time", "https://www.learningresources.com/media/catalog/product/6/c/6c819aace6c6de8f4e68eb58c3bf1b1ee24c4ef7.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sprouts-pasta-time", "LER9746", "New Sprouts Pasta Time"],
+  ["lr-new-sprouts-serve-it", "https://www.learningresources.com/media/catalog/product/a/1/a1612c2d32e703407173c8f5f8665dcf3aaf5d89.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sproutsr-serve-it-my-very-own-dish-set", "LER3294", "New Sprouts Serve It!"],
+  ["lr-new-sprouts-garden-fresh-salad", "https://www.learningresources.com/media/catalog/product/e/c/ec6297e98b50b9975c3dd3172357a8d26a66d548.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-new-sproutsr-garden-fresh-salad-set", "LER9745-D", "New Sprouts Garden Fresh Salad Set"],
+  ["lr-smart-snacks-alpha-pops", "https://www.learningresources.com/media/catalog/product/5/4/54ece4f48d95745b91c02335e6fb70e1dd3e8cc6.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/catalog/product/view/id/5204/s/item-smart-snacksr-alpha-popstm/link", "LER7345", "Smart Snacks Alpha Pops"],
+  ["lr-smart-snacks-counting-cookies", "https://www.learningresources.com/media/catalog/product/4/f/4f555f9c2717a46c75ec355ab5969dcb290cc6e8.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-smart-snacksr-counting-cookiestm", "LER7348", "Smart Snacks Counting Cookies"],
+  ["lr-smart-snacks-number-pops", "https://www.learningresources.com/media/catalog/product/5/6/567651cd25c596eda339af83d34dc20816df55d9.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-smart-snacksr-number-popstm", "LER7344", "Smart Snacks Number Pops"],
+  ["lr-smart-snacks-shape-sorting-cupcakes", "https://www.learningresources.com/media/catalog/product/4/2/422011c5eb7cef925b24a88461bc6130ca24d8cd.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-smart-snacksr-shape-sorting-cupcakes", "LER7347", "Smart Snacks Shape Sorting Cupcakes"],
+  ["lr-snap-learn-alphabet-alligators", "https://www.learningresources.com/media/catalog/product/0/c/0cd1ff3d417f622fa093bff949e39998ce0a13cd.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-snap-n-learntm-alphabet-alligators", "LER6704", "Snap-n-Learn Alphabet Alligators"],
+  ["lr-snap-n-learn-counting-cows", "https://www.learningresources.com/media/catalog/product/f/2/f288a2e87fede1858781c3426cf8a8b1682121be.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-snap-n-learntm-counting-cows", "LER6707", "Snap-n-Learn Counting Cows"]
+]);
+
 // src/data/catalog-image-assets.js
 var UPDATED_AT = "2026-08-24T00:00:00.000Z";
 function remote(url, imageSource, imageSourceType) {
@@ -3917,6 +3946,7 @@ function packagedCrop(path, imageSource, sourceType2, contentHash, provenance) {
   return { ...packaged(path, imageSource, sourceType2, "image/jpeg", contentHash), ...provenance };
 }
 var BATCH1_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH1_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, remote(url, source, "official_cdn")]));
+var IMAGE_EXPANSION_QA9_ASSETS = Object.fromEntries(IMAGE_EXPANSION_QA9_ROWS.map(([key, url, source, sku, officialProductName]) => [key, { ...remote(url, source, "official_cdn"), imageOwnerCanonicalKey: key, sku, officialProductName, updatedAt: "2026-09-22T00:00:00.000Z" }]));
 var BATCH2_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH2_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, remote(url, source, "official_cdn")]));
 var BATCH3_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH3_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, remote(url, source, "official_cdn")]));
 var BATCH4_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH4_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, remote(url, source, "official_cdn")]));
@@ -4080,6 +4110,7 @@ var CATALOG_IMAGE_ASSETS = Object.freeze({
   ...HAPE_PRIORITY_BATCH1_IMAGE_ASSETS,
   ...HAPE_PRIORITY_BATCH2_IMAGE_ASSETS,
   ...HAPE_FINAL_RESOLUTION_IMAGE_ASSETS,
+  ...IMAGE_EXPANSION_QA9_ASSETS,
   // The former official VTech image endpoint is protected by an anti-bot
   // redirect loop on mobile browsers.  Keep the exact 80-574100 identity but
   // ship the independently MIME-verified retailer image with the artifact.
