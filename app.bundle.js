@@ -4636,6 +4636,193 @@ function preserveDeletedReferences2(state, ids) {
   }
 }
 
+// src/domain/development-fit.js
+var GENERIC = /* @__PURE__ */ new Set(["construction_general", "pretend_play_general", "sensory_general"]);
+var DEVELOPMENT_ABILITY_GROUPS = Object.freeze([
+  { key: "thinking", mechanisms: ["puzzle", "matching_sorting", "shape_sorting", "counting_quantity", "color_pattern"] },
+  { key: "hands", mechanisms: ["blocks_build", "screw_bolt_tool", "threading_lacing", "lock_key", "magnetic_build", "fine_motor_general"] },
+  { key: "exploration", mechanisms: ["cause_effect", "pretend_role", "music_play", "balance"] }
+]);
+var PROFILE_ALIASES = Object.freeze({ jigsaw: "puzzle", maze_logic: "puzzle", matching: "matching_sorting", stacking: "blocks_build", stack_balance: "balance", magnetic_fishing: "magnetic_build", marble_track: "cause_effect", ball_drop: "cause_effect", posting: "cause_effect", "cause effect": "cause_effect", "key lock": "lock_key", fine_motor: "fine_motor_general", "interlocking blocks": "blocks_build", cooking_serving: "pretend_role", care_doll: "pretend_role", repair_build_role: "pretend_role", ride_balance: "balance", pull_push_walk: "balance", throw_catch_ball: "balance" });
+function abilityMechanismKey(mechanic) {
+  return PROFILE_ALIASES[mechanic] || mechanic;
+}
+function profileEntry(profile, mechanic) {
+  return profile[mechanic] || Object.entries(profile).find(([key]) => abilityMechanismKey(key) === mechanic)?.[1] || null;
+}
+var BASE_LEVEL = {
+  posting: 1,
+  shape_sorting: 2,
+  puzzle: 2,
+  matching_sorting: 2,
+  stacking: 1,
+  threading_lacing: 3,
+  lock_key: 3,
+  screw_bolt_tool: 3,
+  ball_drop: 1,
+  blocks_build: 2,
+  magnetic_build: 3,
+  pretend_role: 2,
+  vehicles_tracks: 2,
+  pull_push_walk: 1,
+  magnetic_fishing: 3,
+  maze_logic: 4,
+  jigsaw: 3,
+  balance: 3,
+  stack_balance: 3,
+  marble_track: 2,
+  cause_effect: 2,
+  music_play: 1,
+  sensory: 1,
+  fine_motor_general: 2,
+  counting_quantity: 3,
+  color_pattern: 2
+};
+function developmentMechanics(toy = {}) {
+  const explicit = unique(toy.playMechanics || []).filter((mechanic) => !GENERIC.has(mechanic));
+  const text2 = [toy.productName, toy.names?.en, toy.names?.zh, ...toy.aliases || []].filter(Boolean).join(" ").toLowerCase();
+  const cognitiveSignals = [];
+  if (/count|number|quantity|数字|数量|计数/.test(text2)) cognitiveSignals.push("counting_quantity");
+  if (/color|colour|pattern|颜色|图案|规律/.test(text2)) cognitiveSignals.push("color_pattern");
+  if (explicit.length) return unique([...explicit, ...cognitiveSignals]);
+  const inferred = [];
+  if (/shape|形状|sort|分类/.test(text2)) inferred.push("shape_sorting");
+  if (/post|drop|投放|球.*落/.test(text2)) inferred.push("posting");
+  if (/puzzle|拼图/.test(text2)) inferred.push("puzzle");
+  if (/match|配对/.test(text2)) inferred.push("matching_sorting");
+  if (/stack|叠|tower/.test(text2)) inferred.push("stacking");
+  if (/thread|lace|串|穿线/.test(text2)) inferred.push("threading_lacing");
+  if (/lock|key|锁|钥匙/.test(text2)) inferred.push("lock_key");
+  if (/screw|tool|螺丝|工具/.test(text2)) inferred.push("screw_bolt_tool");
+  if (/track|rail|vehicle|车|轨道/.test(text2)) inferred.push("track_vehicle");
+  if (/block|build|积木|建构/.test(text2)) inferred.push("blocks_build");
+  if (/pretend|kitchen|doctor|role|角色|厨房|医生/.test(text2)) inferred.push("pretend_role");
+  inferred.push(...cognitiveSignals);
+  if (/tweezer|grasp|pinch|夹子|镊子|抓握/.test(text2)) inferred.push("fine_motor_general");
+  if (/music|instrument|音乐|乐器/.test(text2)) inferred.push("music_play");
+  if (/balance|ride|walk|平衡|骑乘|学步/.test(text2)) inferred.push("balance");
+  if (inferred.length) return unique(inferred);
+  const category = String(toy.categoryCode || "").toLowerCase();
+  if (category.includes("puzzle") || category.includes("matching")) return ["puzzle"];
+  if (category.includes("blocks") || category.includes("construction")) return ["blocks_build"];
+  if (category.includes("fine_motor")) return ["fine_motor"];
+  if (category.includes("pretend")) return ["pretend_role"];
+  if (category.includes("vehicles")) return ["track_vehicle"];
+  if (category.includes("music")) return ["music_play"];
+  if (category.includes("sensory")) return ["sensory"];
+  return [];
+}
+function challengeLevel(toy = {}) {
+  const explicit = Number(toy.challengeLevel);
+  if (Number.isInteger(explicit) && explicit >= 1 && explicit <= 5) return explicit;
+  const mechanics = developmentMechanics(toy);
+  const baseline = mechanics.length ? Math.max(...mechanics.map((mechanic) => BASE_LEVEL[mechanic] || 2)) : 2;
+  const steps = Math.min(2, Math.max(0, (toy.goalCodes?.length || 0) + (toy.operationCode ? 1 : 0) - 1));
+  const combinations = toy.childCount >= 12 ? 2 : toy.childCount >= 6 ? 1 : 0;
+  return clamp(baseline + Math.max(steps, combinations), 1, 5);
+}
+function progressionLevel(toy = {}) {
+  const explicit = Number(toy.progressionLevel);
+  if (Number.isInteger(explicit) && explicit >= 1 && explicit <= 5) return explicit;
+  const mechanics = developmentMechanics(toy);
+  const baseline = mechanics.length ? Math.max(...mechanics.map((mechanic) => BASE_LEVEL[mechanic] || 2)) : 2;
+  const combinations = toy.childCount >= 12 ? 2 : toy.childCount >= 6 ? 1 : 0;
+  const multiMechanic = mechanics.length >= 3 ? 1 : 0;
+  return clamp(baseline + Math.max(combinations, multiMechanic), 1, 5);
+}
+function normalizeDevelopmentFields(toy = {}) {
+  return { challengeLevel: challengeLevel(toy), progressionLevel: progressionLevel(toy) };
+}
+function updateDevelopmentProfile(history = [], existing = {}) {
+  const profile = Object.fromEntries(Object.entries(existing || {}).map(([key, value]) => {
+    const baselineLevel = value.baselineLevel ?? value.autoLevel ?? value.currentLevel ?? 1;
+    return [key, { ...value, baselineLevel, autoLevel: baselineLevel, evidenceCount: 0, confidence: 0.35 }];
+  }));
+  for (const [key, value] of Object.entries(profile)) {
+    const canonical = abilityMechanismKey(key);
+    if (canonical !== key && !profile[canonical]) profile[canonical] = { ...value };
+  }
+  for (const record of history) {
+    if (!record || record.interestFeedback === "not_interested") continue;
+    for (const mechanic of unique((record.mechanisms || []).map(abilityMechanismKey))) {
+      const entry = profile[mechanic] ||= { currentLevel: 1, baselineLevel: 1, autoLevel: 1, confidence: 0.35, evidenceCount: 0, lastUpdated: null };
+      entry.evidenceCount++;
+      entry.lastUpdated = record.timestamp || entry.lastUpdated;
+      const level = clamp(Number(record.progressionLevel) || 1, 1, 5);
+      if (record.difficultyFeedback === "too_easy") {
+        entry.confidence = clamp(entry.confidence + 0.12, 0, 1);
+        if (count(history, mechanic, "too_easy", level) >= 2) entry.autoLevel = Math.max(entry.autoLevel, Math.min(5, level + 1));
+      } else if (record.difficultyFeedback === "good_challenge") {
+        entry.confidence = clamp(entry.confidence + 0.09, 0, 1);
+        if (count(history, mechanic, "good_challenge", level) >= 2) entry.autoLevel = Math.max(entry.autoLevel, level);
+      } else if (record.difficultyFeedback === "just_right") {
+        entry.confidence = clamp(entry.confidence + 0.04, 0, 1);
+        if (count(history, mechanic, "just_right", level) >= 3) entry.autoLevel = Math.max(entry.autoLevel, Math.min(level, entry.autoLevel + 1));
+      } else if (record.difficultyFeedback === "too_hard") {
+        entry.confidence = clamp(entry.confidence - 0.08, 0.1, 1);
+        if (count(history, mechanic, "too_hard", level) >= 2) entry.autoLevel = Math.min(entry.autoLevel, Math.max(1, level - 1));
+      }
+    }
+  }
+  for (const entry of Object.values(profile)) entry.currentLevel = entry.manualLevel ?? entry.autoLevel ?? entry.currentLevel ?? 1;
+  return profile;
+}
+function setManualAbility(profile = {}, mechanic, level = null) {
+  const key = abilityMechanismKey(mechanic);
+  const allowed = DEVELOPMENT_ABILITY_GROUPS.some((group) => group.mechanisms.includes(key));
+  if (!allowed) throw new Error("unknownDevelopmentMechanism");
+  const manualLevel = level == null || level === "" ? null : Number(level);
+  if (manualLevel != null && ![1, 2, 3, 5].includes(manualLevel)) throw new Error("invalidDevelopmentLevel");
+  const entry = profile[key] ||= { currentLevel: 1, baselineLevel: 1, autoLevel: 1, confidence: 0.35, evidenceCount: 0, lastUpdated: null };
+  entry.manualLevel = manualLevel;
+  entry.currentLevel = manualLevel ?? entry.autoLevel ?? 1;
+  return entry;
+}
+function recordDevelopmentFeedback(state, toy, { difficultyFeedback = null, interestFeedback = null, now: now3 = (/* @__PURE__ */ new Date()).toISOString(), rotationCycleId = null } = {}) {
+  const difficulty = ["too_easy", "just_right", "good_challenge", "too_hard"].includes(difficultyFeedback) ? difficultyFeedback : null;
+  const interest = interestFeedback === "not_interested" ? "not_interested" : null;
+  if (!difficulty && !interest) throw new Error("developmentFeedbackRequired");
+  const fields = normalizeDevelopmentFields(toy);
+  const record = { id: `${toy.id}:${rotationCycleId || "current"}`, toyId: toy.id, canonicalKey: toy.canonicalKey || null, mechanisms: developmentMechanics(toy), progressionLevel: fields.progressionLevel, challengeLevel: fields.challengeLevel, difficultyFeedback: difficulty, interestFeedback: interest, timestamp: now3, rotationCycleId: rotationCycleId || null };
+  const previous = Array.isArray(state.developmentFeedbackHistory) ? state.developmentFeedbackHistory : [];
+  state.developmentFeedbackHistory = [...previous.filter((item) => item.id !== record.id), record].slice(-240);
+  state.profile ||= {};
+  state.profile.developmentProfile = updateDevelopmentProfile(state.developmentFeedbackHistory, state.profile.developmentProfile);
+  return record;
+}
+function developmentFit(toy, profile = {}, history = []) {
+  const fields = normalizeDevelopmentFields(toy);
+  const mechanics = developmentMechanics(toy);
+  if (!mechanics.length) return { score: 12, kind: "cold_start", challengeLevel: fields.challengeLevel, progressionLevel: fields.progressionLevel };
+  const scores = unique(mechanics.map(abilityMechanismKey)).map((mechanic) => {
+    const entry = profileEntry(profile, mechanic);
+    const mastery = entry?.manualLevel ?? entry?.currentLevel ?? 2;
+    const delta = fields.progressionLevel - mastery;
+    let score2 = delta === 0 ? 42 : delta === 1 ? 32 : delta === -1 ? 12 : delta <= -2 ? -24 : -28;
+    const recent = history.filter((item) => item.mechanisms?.some((value) => abilityMechanismKey(value) === mechanic));
+    if (recent.some((item) => item.difficultyFeedback === "too_easy" && item.progressionLevel >= fields.progressionLevel)) score2 -= 22;
+    if (recent.some((item) => item.difficultyFeedback === "too_hard" && item.progressionLevel <= fields.progressionLevel)) score2 -= 25;
+    const goodChallenge = recent.filter((item) => item.difficultyFeedback === "good_challenge");
+    if (goodChallenge.some((item) => Number(item.progressionLevel) === fields.progressionLevel - 1)) score2 += 24;
+    else if (goodChallenge.some((item) => Number(item.progressionLevel) === fields.progressionLevel)) score2 += 6;
+    return score2;
+  });
+  const score = Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length);
+  const deltas = unique(mechanics.map(abilityMechanismKey)).map((mechanic) => {
+    const entry = profileEntry(profile, mechanic);
+    return fields.progressionLevel - (entry?.manualLevel ?? entry?.currentLevel ?? 2);
+  });
+  const averageDelta = deltas.reduce((sum, value) => sum + value, 0) / deltas.length;
+  const kind = score < -10 ? "too_easy_or_hard" : averageDelta >= 0.5 && averageDelta <= 1.5 && score >= 20 ? "good_challenge" : Math.abs(averageDelta) < 0.5 && score >= 25 ? "just_right" : "familiar";
+  return { score, kind, challengeLevel: fields.challengeLevel, progressionLevel: fields.progressionLevel };
+}
+function count(history, mechanic, feedback, level) {
+  return history.filter((item) => item?.mechanisms?.some((value) => abilityMechanismKey(value) === mechanic) && item.difficultyFeedback === feedback && Number(item.progressionLevel) === level).length;
+}
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 // src/domain/profile-service.js
 var MONTH_MS = 26298e5;
 var DAY_MS = 864e5;
@@ -4652,12 +4839,14 @@ function reassessmentState({ lastRotationAt, rotationHistory = [], rotationDays 
   const daysRemaining = Math.max(0, Math.ceil((nextAt.getTime() - now3) / DAY_MS));
   return { due: daysRemaining === 0, daysRemaining, days, nextAt: nextAt.toISOString() };
 }
-function saveProfileAndRotationSettings(store2, { childName, childBirthDate, rotationSize, rotationDays, onboardingDone = true }) {
+function saveProfileAndRotationSettings(store2, { childName, childBirthDate, rotationSize, rotationDays, manualAbilities = [], onboardingDone = true }) {
   store2.update((state) => {
     state.profile.childName = String(childName || "").trim();
     state.profile.childBirthDate = childBirthDate || "";
     state.settings.rotationSize = Math.max(1, Math.min(50, Number(rotationSize) || 6));
     state.settings.rotationDays = Math.max(1, Math.min(90, Number(rotationDays) || 7));
+    state.profile.developmentProfile ||= {};
+    for (const [mechanic, level] of manualAbilities) setManualAbility(state.profile.developmentProfile, mechanic, level);
     if (onboardingDone) state.settings.onboardingDone = true;
   }, "profile-and-rotation-settings");
 }
@@ -4684,8 +4873,8 @@ var SubstitutionEngine = class {
       canonicalKey: canonicalKey(candidate.canonicalKey),
       relationships,
       skillRelationships,
-      counts: count(allRelationships),
-      ageAppropriateCounts: count(purchaseAffecting.filter((item) => item.ageAppropriate)),
+      counts: count2(allRelationships),
+      ageAppropriateCounts: count2(purchaseAffecting.filter((item) => item.ageAppropriate)),
       purchaseImpact: priority(purchaseAffecting.filter((item) => item.ageAppropriate))
     };
     this.#cache.set(key, result2);
@@ -4729,7 +4918,7 @@ function reason(mechanics, operation, goal, scene, skills) {
   if (skills.length) return "skill";
   return "none";
 }
-function count(rows) {
+function count2(rows) {
   return rows.reduce((result2, row) => ({ ...result2, [row.level]: (result2[row.level] || 0) + 1 }), { exact_duplicate: 0, high_substitution: 0, medium_substitution: 0, skill_similarity_only: 0 });
 }
 function priority(rows) {
@@ -4744,156 +4933,51 @@ function compareRelationship(a, b) {
   return rank2[b.level] - rank2[a.level] || b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName));
 }
 
-// src/domain/development-fit.js
-var GENERIC = /* @__PURE__ */ new Set(["fine_motor_general", "construction_general", "pretend_play_general", "sensory_general"]);
-var BASE_LEVEL = {
-  posting: 1,
-  shape_sorting: 2,
-  puzzle: 2,
-  matching_sorting: 2,
-  stacking: 1,
-  threading_lacing: 3,
-  lock_key: 3,
-  screw_bolt_tool: 3,
-  ball_drop: 1,
-  blocks_build: 2,
-  magnetic_build: 3,
-  pretend_role: 2,
-  vehicles_tracks: 2,
-  pull_push_walk: 1,
-  magnetic_fishing: 3,
-  maze_logic: 4,
-  jigsaw: 3,
-  balance: 3,
-  cause_effect: 2,
-  music_play: 1,
-  sensory: 1
-};
-function developmentMechanics(toy = {}) {
-  const explicit = unique(toy.playMechanics || []).filter((mechanic) => !GENERIC.has(mechanic));
-  if (explicit.length) return explicit;
-  const text2 = [toy.productName, toy.names?.en, toy.names?.zh, ...toy.aliases || []].filter(Boolean).join(" ").toLowerCase();
-  const inferred = [];
-  if (/shape|形状|sort|分类/.test(text2)) inferred.push("shape_sorting");
-  if (/post|drop|投放|球.*落/.test(text2)) inferred.push("posting");
-  if (/puzzle|拼图/.test(text2)) inferred.push("puzzle");
-  if (/match|配对/.test(text2)) inferred.push("matching_sorting");
-  if (/stack|叠|tower/.test(text2)) inferred.push("stacking");
-  if (/thread|lace|串|穿线/.test(text2)) inferred.push("threading_lacing");
-  if (/lock|key|锁|钥匙/.test(text2)) inferred.push("lock_key");
-  if (/screw|tool|螺丝|工具/.test(text2)) inferred.push("screw_bolt_tool");
-  if (/track|rail|vehicle|车|轨道/.test(text2)) inferred.push("track_vehicle");
-  if (/block|build|积木|建构/.test(text2)) inferred.push("blocks_build");
-  if (/pretend|kitchen|doctor|role|角色|厨房|医生/.test(text2)) inferred.push("pretend_role");
-  if (inferred.length) return unique(inferred);
-  const category = String(toy.categoryCode || "").toLowerCase();
-  if (category.includes("puzzle") || category.includes("matching")) return ["puzzle"];
-  if (category.includes("blocks") || category.includes("construction")) return ["blocks_build"];
-  if (category.includes("fine_motor")) return ["fine_motor"];
-  if (category.includes("pretend")) return ["pretend_role"];
-  if (category.includes("vehicles")) return ["track_vehicle"];
-  if (category.includes("music")) return ["music_play"];
-  if (category.includes("sensory")) return ["sensory"];
-  return [];
+// src/domain/catalog-safety.js
+var AGE_SAFETY_STATUSES = Object.freeze([
+  "VERIFIED_NO_EXTRA_GATE",
+  "SMALL_PARTS_GATE",
+  "GROSS_MOTOR_GATE",
+  "OTHER_HARD_GATE",
+  "UNKNOWN"
+]);
+function catalogSafetyStatus(row) {
+  const safety = row?.userMetadata?.safety;
+  const status = safety?.ageSafetyStatus;
+  if (!AGE_SAFETY_STATUSES.includes(status) || status === "UNKNOWN" || !/^https:\/\//i.test(String(safety.safetySource || "")) || !/^\d{4}-\d{2}-\d{2}$/.test(String(safety.safetyVerifiedAt || "")) || !String(safety.evidenceNote || "").trim()) return "UNKNOWN";
+  if (status === "SMALL_PARTS_GATE" && safety.smallParts !== true) return "UNKNOWN";
+  if (status === "GROSS_MOTOR_GATE" && safety.requiresStandingStability !== true) return "UNKNOWN";
+  if (status === "OTHER_HARD_GATE" && !(Number(safety.hardMinAgeMonths) > 0)) return "UNKNOWN";
+  if (status === "VERIFIED_NO_EXTRA_GATE" && (safety.smallParts === true || safety.requiresStandingStability === true || Number(safety.hardMinAgeMonths) > 0)) return "UNKNOWN";
+  return status;
 }
-function challengeLevel(toy = {}) {
-  const explicit = Number(toy.challengeLevel);
-  if (Number.isInteger(explicit) && explicit >= 1 && explicit <= 5) return explicit;
-  const mechanics = developmentMechanics(toy);
-  const baseline = mechanics.length ? Math.max(...mechanics.map((mechanic) => BASE_LEVEL[mechanic] || 2)) : 2;
-  const steps = Math.min(2, Math.max(0, (toy.goalCodes?.length || 0) + (toy.operationCode ? 1 : 0) - 1));
-  const combinations = toy.childCount >= 12 ? 2 : toy.childCount >= 6 ? 1 : 0;
-  return clamp(baseline + Math.max(steps, combinations), 1, 5);
-}
-function progressionLevel(toy = {}) {
-  const explicit = Number(toy.progressionLevel);
-  if (Number.isInteger(explicit) && explicit >= 1 && explicit <= 5) return explicit;
-  const mechanics = developmentMechanics(toy);
-  const baseline = mechanics.length ? Math.max(...mechanics.map((mechanic) => BASE_LEVEL[mechanic] || 2)) : 2;
-  const combinations = toy.childCount >= 12 ? 2 : toy.childCount >= 6 ? 1 : 0;
-  const multiMechanic = mechanics.length >= 3 ? 1 : 0;
-  return clamp(baseline + Math.max(combinations, multiMechanic), 1, 5);
-}
-function normalizeDevelopmentFields(toy = {}) {
-  return { challengeLevel: challengeLevel(toy), progressionLevel: progressionLevel(toy) };
-}
-function updateDevelopmentProfile(history = []) {
-  const profile = {};
-  for (const record of history) {
-    if (!record || record.interestFeedback === "not_interested") continue;
-    for (const mechanic of unique(record.mechanisms || [])) {
-      const entry = profile[mechanic] ||= { currentLevel: 1, confidence: 0.35, evidenceCount: 0, lastUpdated: null };
-      entry.evidenceCount++;
-      entry.lastUpdated = record.timestamp || entry.lastUpdated;
-      const level = clamp(Number(record.progressionLevel) || 1, 1, 5);
-      if (record.difficultyFeedback === "too_easy") {
-        entry.confidence = clamp(entry.confidence + 0.12, 0, 1);
-        if (count2(history, mechanic, "too_easy", level) >= 2) entry.currentLevel = Math.max(entry.currentLevel, Math.min(5, level + 1));
-      } else if (record.difficultyFeedback === "good_challenge") {
-        entry.confidence = clamp(entry.confidence + 0.09, 0, 1);
-        if (count2(history, mechanic, "good_challenge", level) >= 2) entry.currentLevel = Math.max(entry.currentLevel, level);
-      } else if (record.difficultyFeedback === "just_right") {
-        entry.confidence = clamp(entry.confidence + 0.04, 0, 1);
-        entry.currentLevel = Math.max(entry.currentLevel, Math.min(level, entry.currentLevel + (count2(history, mechanic, "just_right", level) >= 3 ? 1 : 0)));
-      } else if (record.difficultyFeedback === "too_hard") {
-        entry.confidence = clamp(entry.confidence - 0.08, 0.1, 1);
-      }
-    }
-  }
-  return profile;
-}
-function recordDevelopmentFeedback(state, toy, { difficultyFeedback = null, interestFeedback = null, now: now3 = (/* @__PURE__ */ new Date()).toISOString(), rotationCycleId = null } = {}) {
-  const difficulty = ["too_easy", "just_right", "good_challenge", "too_hard"].includes(difficultyFeedback) ? difficultyFeedback : null;
-  const interest = interestFeedback === "not_interested" ? "not_interested" : null;
-  if (!difficulty && !interest) throw new Error("developmentFeedbackRequired");
-  const fields = normalizeDevelopmentFields(toy);
-  const record = { id: `${toy.id}:${rotationCycleId || "current"}`, toyId: toy.id, canonicalKey: toy.canonicalKey || null, mechanisms: developmentMechanics(toy), progressionLevel: fields.progressionLevel, challengeLevel: fields.challengeLevel, difficultyFeedback: difficulty, interestFeedback: interest, timestamp: now3, rotationCycleId: rotationCycleId || null };
-  const previous = Array.isArray(state.developmentFeedbackHistory) ? state.developmentFeedbackHistory : [];
-  state.developmentFeedbackHistory = [...previous.filter((item) => item.id !== record.id), record].slice(-240);
-  state.profile ||= {};
-  state.profile.developmentProfile = updateDevelopmentProfile(state.developmentFeedbackHistory);
-  return record;
-}
-function developmentFit(toy, profile = {}, history = []) {
-  const fields = normalizeDevelopmentFields(toy);
-  const mechanics = developmentMechanics(toy);
-  if (!mechanics.length) return { score: 12, kind: "cold_start", challengeLevel: fields.challengeLevel, progressionLevel: fields.progressionLevel };
-  const scores = mechanics.map((mechanic) => {
-    const mastery = profile[mechanic]?.currentLevel || 2;
-    const delta = fields.progressionLevel - mastery;
-    let score2 = delta === 0 ? 42 : delta === 1 ? 32 : delta === -1 ? 12 : delta <= -2 ? -24 : -28;
-    const recent = history.filter((item) => item.mechanisms?.includes(mechanic));
-    if (recent.some((item) => item.difficultyFeedback === "too_easy" && item.progressionLevel >= fields.progressionLevel)) score2 -= 22;
-    if (recent.some((item) => item.difficultyFeedback === "too_hard" && item.progressionLevel <= fields.progressionLevel)) score2 -= 18;
-    const goodChallenge = recent.filter((item) => item.difficultyFeedback === "good_challenge");
-    if (goodChallenge.some((item) => Number(item.progressionLevel) === fields.progressionLevel - 1)) score2 += 24;
-    else if (goodChallenge.some((item) => Number(item.progressionLevel) === fields.progressionLevel)) score2 += 6;
-    return score2;
-  });
-  const score = Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length);
-  return { score, kind: score >= 35 ? "just_right" : score >= 20 ? "good_challenge" : score < -10 ? "too_easy_or_hard" : "familiar", challengeLevel: fields.challengeLevel, progressionLevel: fields.progressionLevel };
-}
-function count2(history, mechanic, feedback, level) {
-  return history.filter((item) => item?.mechanisms?.includes(mechanic) && item.difficultyFeedback === feedback && Number(item.progressionLevel) === level).length;
-}
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
+function withCatalogSafety(toy, catalogRow) {
+  if (catalogSafetyStatus(catalogRow) === "UNKNOWN") return toy;
+  return { ...toy, userMetadata: { ...toy.userMetadata, safety: catalogRow.userMetadata.safety } };
 }
 
 // src/domain/rotation-engine.js
 var GENERIC_MECHANICS2 = /* @__PURE__ */ new Set(["fine_motor_general", "construction_general", "pretend_play_general", "sensory_general"]);
 function selectRotation({ toys = [], history = [], childAgeMonths: childAgeMonths3, size = 6, now: now3 = Date.now(), childDevelopmentProfile = {}, developmentFeedbackHistory = [] }) {
   const requestedRotationCount = Math.max(1, Number(size) || 6);
-  const classified = classifyCandidates(toys, childAgeMonths3);
+  const classified = classifyCandidates(toys, childAgeMonths3, childDevelopmentProfile);
   const candidates = classified.eligible.map((toy, index) => ({ toy, ...baseScore(toy, childAgeMonths3, now3, history, childDevelopmentProfile, developmentFeedbackHistory), index })).sort((a, b) => b.score - a.score || a.toy.productName.localeCompare(b.toy.productName));
   const selected = [];
   const selectedCandidateScores = [];
   const relations = /* @__PURE__ */ new Map();
   const diversity = { brandPenaltyApplied: 0, groupPenaltyApplied: 0, recencyPenaltyApplied: 0 };
+  const stretchTarget = requestedRotationCount >= 3 ? Math.max(1, Math.round(requestedRotationCount * 0.25)) : 0;
+  const stretchCap = Math.max(1, Math.ceil(requestedRotationCount * 0.3));
   while (selected.length < requestedRotationCount && candidates.length) {
-    const next = candidates.map((entry, candidateIndex) => {
+    const stretchCount = selectedCandidateScores.filter((item) => item.developmentKind === "good_challenge").length;
+    const remaining = requestedRotationCount - selected.length;
+    const availableStretch = candidates.filter((entry) => entry.development.kind === "good_challenge");
+    const availableOther = candidates.filter((entry) => entry.development.kind !== "good_challenge");
+    const forceStretch = stretchCount < stretchTarget && remaining <= stretchTarget - stretchCount && availableStretch.length;
+    const allowed = forceStretch ? availableStretch : stretchCount >= stretchCap && availableOther.length ? availableOther : candidates;
+    const next = allowed.map((entry) => {
       const adjustment = diversityAdjustment(entry.toy, selected, history, relations);
-      return { entry, candidateIndex, adjustment, adjusted: entry.score + adjustment.value };
+      return { entry, candidateIndex: candidates.indexOf(entry), adjustment, adjusted: entry.score + adjustment.value };
     }).sort((a, b) => b.adjusted - a.adjusted || a.entry.toy.productName.localeCompare(b.entry.toy.productName))[0];
     selected.push(next.entry.toy);
     selectedCandidateScores.push({
@@ -4905,6 +4989,7 @@ function selectRotation({ toys = [], history = [], childAgeMonths: childAgeMonth
       groupPenalty: next.adjustment.groupPenalty,
       recencyPenalty: next.entry.recencyPenalty,
       developmentFit: next.entry.development.score,
+      developmentKind: next.entry.development.kind,
       challengeLevel: next.entry.development.challengeLevel,
       progressionLevel: next.entry.development.progressionLevel,
       finalScore: next.adjusted
@@ -4934,6 +5019,8 @@ function selectRotation({ toys = [], history = [], childAgeMonths: childAgeMonth
       groupDiversityPenaltyApplied: diversity.groupPenaltyApplied,
       recencyPenaltyApplied: diversity.recencyPenaltyApplied,
       selectedCandidateScores,
+      stretchTarget,
+      selectedStretchCount: selectedCandidateScores.filter((item) => item.developmentKind === "good_challenge").length,
       // Backwards-compatible aliases for older Admin diagnostics and backups.
       requestedCount: requestedRotationCount,
       selectedCount: selectedRotationCount,
@@ -5128,7 +5215,7 @@ function refreshLatestDiagnostics(state, childAgeMonths3) {
 }
 function buildCurrentDiagnostics(state, selectedRotationCount, childAgeMonths3) {
   const requestedRotationCount = Math.max(1, Number(state.settings?.rotationSize) || 6);
-  const classified = classifyCandidates(state.toys || [], childAgeMonths3);
+  const classified = classifyCandidates(state.toys || [], childAgeMonths3, state.profile?.developmentProfile || {});
   const permanentCount = classified.customPermanent.length;
   const manualCount = currentShelfCollections(state).manual.length;
   const ordinaryRotationCount = selectedRotationCount + manualCount;
@@ -5157,7 +5244,7 @@ function withShelfCounts(diagnostics = {}, selectedRotationCount, permanentCount
 function rotationIdentityKeys(toy = {}) {
   return [toy.canonicalKey && `canonical:${toy.canonicalKey}`, toy.catalogId && `catalog:${toy.catalogId}`, toy.sku && `sku:${String(toy.sku).toLowerCase()}`].filter(Boolean);
 }
-function classifyCandidates(toys, age) {
+function classifyCandidates(toys, age, profile = {}) {
   const result2 = { eligible: [], customPermanent: [], hiddenOrArchived: 0, parentContainers: 0, ageRule: 0 };
   for (const toy of toys) {
     if (toy.hidden || toy.archived || isRotationPaused(toy)) {
@@ -5176,7 +5263,7 @@ function classifyCandidates(toys, age) {
       result2.manualOverride = (result2.manualOverride || 0) + 1;
       continue;
     }
-    if (toy.minAgeMonths != null && age < toy.minAgeMonths - 3) {
+    if (!hardSafetyEligible(toy, age, profile)) {
       result2.ageRule++;
       continue;
     }
@@ -5184,18 +5271,32 @@ function classifyCandidates(toys, age) {
   }
   return result2;
 }
+function hardSafetyEligible(toy, age, profile = {}) {
+  const safety = toy.userMetadata?.safety || toy.safety || {};
+  const status = catalogSafetyStatus(toy);
+  const verified = status !== "UNKNOWN" || safety.ageSafetyStatus == null && safety.reviewed === true;
+  if (age == null) return !safety.requiresAgeConfirmation && !safety.chokingSmallParts && !safety.smallParts && !safety.requiresStandingStability && safety.minAgeMonths == null && safety.safetyMinAgeMonths == null && safety.hardMinAgeMonths == null && safety.requiredGrossMotorLevel == null && status !== "GROSS_MOTOR_GATE";
+  if (toy.minAgeMonths != null && age < toy.minAgeMonths && !verified) return false;
+  const minimum = Number(safety.hardMinAgeMonths ?? safety.minAgeMonths ?? safety.safetyMinAgeMonths);
+  if (Number.isFinite(minimum) && minimum > 0 && age < minimum) return false;
+  if ((safety.chokingSmallParts === true || safety.smallParts === true || status === "SMALL_PARTS_GATE") && age < 36) return false;
+  const requiredBalance = Number(status === "GROSS_MOTOR_GATE" || safety.requiresStandingStability === true ? safety.requiredGrossMotorLevel ?? 2 : safety.requiredGrossMotorLevel);
+  if (Number.isFinite(requiredBalance) && requiredBalance > 0 && (profile.balance?.manualLevel ?? profile.balance?.currentLevel ?? 1) < requiredBalance) return false;
+  return true;
+}
 function isShelfVisible(toy) {
   return !toy.hidden && !toy.archived && toy.set?.kind !== "parent";
 }
 function baseScore(toy, age, now3, history, childDevelopmentProfile, developmentFeedbackHistory) {
-  const ageFit = toy.maxAgeMonths == null || age <= toy.maxAgeMonths + 12 ? 40 : 16;
+  const monthsAhead = age == null || toy.minAgeMonths == null ? 0 : Math.max(0, toy.minAgeMonths - age);
+  const ageGuidance = -Math.min(4, monthsAhead / 6);
   const lastActivated = new Date(toy.lastActivatedAt || 0).getTime();
   const freshness = Math.min(30, Math.max(0, (now3 - lastActivated) / 864e5 / 3));
   const interest = toy.interest === "like" ? 12 : toy.interest === "neutral" ? 4 : toy.interest === "dislike" ? -18 : 0;
   const rotationValue = toy.rotationValue === "high" ? 12 : toy.rotationValue === "low" ? -5 : 0;
   const recency = rotationRecencyAdjustment(toy, history);
   const development = developmentFit(toy, childDevelopmentProfile, developmentFeedbackHistory);
-  return { score: ageFit + freshness + interest + rotationValue + recency.value + development.score, recencyPenalty: recency.penalty, development };
+  return { score: ageGuidance + freshness + interest + rotationValue + recency.value + development.score * 2, recencyPenalty: recency.penalty, development };
 }
 function diversityAdjustment(candidate, selected, history, relations) {
   let value = recentMechanicAdjustment(candidate, history);
@@ -7329,6 +7430,60 @@ function resolveFromRows(reference, rows) {
   return rows.find((row) => keys.includes(String(row.canonicalKey)) || keys.includes(String(row.id))) || null;
 }
 
+// src/features/catalog-safety-audit.js
+var CATALOG_SAFETY_AUDIT_VERSION = "v0.11.6";
+var PRIORITY_BRANDS2 = /* @__PURE__ */ new Set(["mideer", "lovevery", "hape", "learning resources", "lego duplo", "lego / duplo", "vtech", "brio"]);
+function buildCatalogSafetyAudit({ state = {}, catalog: catalog2, build = {}, generatedAt = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
+  const rows = Array.isArray(catalog2) ? catalog2 : catalog2?.active || [];
+  const resolve = (reference) => catalog2?.resolve?.(reference) || rows.find((row) => [reference?.canonicalKey, reference?.catalogId].includes(row.canonicalKey) || reference?.catalogId === row.id) || null;
+  const owned = mappedRows(state.toys || [], resolve);
+  const wishlist = mappedRows(state.wishlist || [], resolve);
+  const rotation = mappedRows((state.toys || []).filter((toy) => !toy.hidden && !toy.archived && toy.set?.kind !== "parent" && toy.rotationParticipation !== "paused" && toy.permanentSource !== "user"), resolve);
+  const frequent = rows.filter((row) => row.minAgeMonths >= 18 && row.minAgeMonths <= 36 && PRIORITY_BRANDS2.has(String(row.brand || "").toLowerCase())).map(safetyRow);
+  return {
+    auditVersion: CATALOG_SAFETY_AUDIT_VERSION,
+    buildId: String(build.buildId || ""),
+    generatedAt,
+    catalog: { total: rows.length, statusDistribution: distribution(rows.map(safetyRow)), frequent18To36: frequent },
+    owned,
+    wishlist,
+    rotationCandidates: rotation
+  };
+}
+function mappedRows(items, resolve) {
+  const mapped = items.map(resolve).filter(Boolean).map(safetyRow);
+  return {
+    total: items.length,
+    mappedToCatalog: mapped.length,
+    unmapped: items.length - mapped.length,
+    statusDistribution: distribution(mapped),
+    items: mapped
+  };
+}
+function safetyRow(row) {
+  const safety = row.userMetadata?.safety || {};
+  const ageSafetyStatus = catalogSafetyStatus(row);
+  return {
+    canonicalKey: String(row.canonicalKey || ""),
+    productName: String(row.productName || ""),
+    brand: String(row.brand || ""),
+    sku: String(row.sku || row.setNumber || "") || null,
+    recommendedMinAgeMonths: row.minAgeMonths ?? null,
+    ageSafetyStatus,
+    hardMinAgeMonths: ageSafetyStatus === "UNKNOWN" ? null : safety.hardMinAgeMonths ?? null,
+    smallParts: ageSafetyStatus === "UNKNOWN" ? "unknown" : safety.smallParts ?? "unknown",
+    requiresStandingStability: ageSafetyStatus === "UNKNOWN" ? "unknown" : safety.requiresStandingStability ?? "unknown",
+    warningType: ageSafetyStatus === "UNKNOWN" ? null : safety.warningType || null,
+    safetySource: ageSafetyStatus === "UNKNOWN" ? null : safety.safetySource,
+    evidenceNote: ageSafetyStatus === "UNKNOWN" ? null : safety.evidenceNote,
+    safetyNotes: ageSafetyStatus === "UNKNOWN" ? null : safety.safetyNotes || null,
+    safetyVerifiedAt: ageSafetyStatus === "UNKNOWN" ? null : safety.safetyVerifiedAt
+  };
+}
+function distribution(items) {
+  return Object.fromEntries(AGE_SAFETY_STATUSES.map((status) => [status, items.filter((item) => item.ageSafetyStatus === status).length]));
+}
+
 // src/features/startup-trace.js
 var WATCHDOG_DELAY_MS = 750;
 function now2() {
@@ -7385,6 +7540,8 @@ function completeStartupWatchdog(handle) {
 
 // src/ui/i18n.js
 var PLAY_MECHANISM_LABELS = Object.freeze({
+  counting_quantity: { en: "Counting / quantities", zh: "\u8BA1\u6570 / \u6570\u91CF" },
+  color_pattern: { en: "Colors / patterns", zh: "\u989C\u8272 / \u89C4\u5F8B" },
   jigsaw: { en: "Jigsaw puzzle", zh: "\u62FC\u56FE" },
   matching_sorting: { en: "Matching / sorting", zh: "\u914D\u5BF9 / \u5206\u7C7B" },
   maze_logic: { en: "Maze / logic", zh: "\u8FF7\u5BAB / \u903B\u8F91" },
@@ -8139,6 +8296,8 @@ Object.assign(DICTIONARY.en, {
   dataAudit: "Data Audit",
   exportToyImageAudit: "Export Toy Image Audit",
   exportToyImageAuditHint: "Read-only image status for mapped Toy Library and Wishlist items. No images or private notes are exported.",
+  exportCatalogSafetyAudit: "Export Catalog Safety Audit",
+  exportCatalogSafetyAuditHint: "Read-only Catalog safety review list for your Toy Library, Wishlist, and rotation candidates. No private notes or photos are exported.",
   developmentFeedbackTitle: "How did this go?",
   developmentFeedbackPrompt: "How did this go?",
   developmentFeedback: { too_easy: "Too Easy", just_right: "Just Right", good_challenge: "Good Challenge", too_hard: "Too Hard", not_interested: "Not Interested" },
@@ -8157,6 +8316,8 @@ Object.assign(DICTIONARY.zh, {
   dataAudit: "\u6570\u636E\u5BA1\u8BA1",
   exportToyImageAudit: "\u5BFC\u51FA\u73A9\u5177\u56FE\u7247\u5BA1\u8BA1",
   exportToyImageAuditHint: "\u53EA\u8BFB\u5BFC\u51FA\u5DF2\u6620\u5C04\u73A9\u5177\u5E93\u548C\u5FC3\u613F\u5355\u7684\u56FE\u7247\u72B6\u6001\uFF0C\u4E0D\u5BFC\u51FA\u56FE\u7247\u6216\u79C1\u5BC6\u5907\u6CE8\u3002",
+  exportCatalogSafetyAudit: "\u5BFC\u51FA\u6807\u51C6\u5E93\u5B89\u5168\u5BA1\u8BA1",
+  exportCatalogSafetyAuditHint: "\u53EA\u8BFB\u5BFC\u51FA\u73A9\u5177\u5E93\u3001\u5FC3\u613F\u5355\u53CA\u8F6E\u6362\u5019\u9009\u7684\u6807\u51C6\u5E93\u5B89\u5168\u6838\u9A8C\u6E05\u5355\uFF0C\u4E0D\u5305\u542B\u79C1\u4EBA\u5907\u6CE8\u6216\u7167\u7247\u3002",
   developmentFeedbackTitle: "\u8FD9\u6B21\u73A9\u5F97\u600E\u4E48\u6837\uFF1F",
   developmentFeedbackPrompt: "\u8FD9\u6B21\u73A9\u5F97\u600E\u4E48\u6837\uFF1F",
   developmentFeedback: { too_easy: "\u592A\u7B80\u5355", just_right: "\u521A\u521A\u597D", good_challenge: "\u6709\u4E00\u70B9\u6311\u6218\uFF0C\u6B63\u5408\u9002", too_hard: "\u592A\u96BE", not_interested: "\u6CA1\u5174\u8DA3" },
@@ -8197,6 +8358,22 @@ Object.assign(DICTIONARY.zh, {
   exportCatalogCountDiagnostic: "\u5BFC\u51FA\u6807\u51C6\u5E93\u6570\u91CF\u8BCA\u65AD",
   exportCatalogCountDiagnosticHint: "\u53EA\u8BFB\u5BFC\u51FA\u6807\u51C6\u5E93\u6765\u6E90\u3001\u5408\u5E76\u3001\u53EF\u89C1\u6027\u4E0E\u6570\u91CF\u72B6\u6001\u3002"
 });
+Object.assign(DICTIONARY.en, { abilityProfile: {
+  title: "Ability profile",
+  hint: "Set each play skill separately, or leave it on automatic learning.",
+  auto: "Automatic",
+  group: { thinking: "Puzzles and thinking", hands: "Hands and building", exploration: "Play and movement" },
+  level: { intro: "Just starting", basic: "Getting it", fluent: "Confident", challenge: "Ready for a challenge" },
+  mechanism: { puzzle: "Puzzles", matching_sorting: "Matching", shape_sorting: "Shape sorting", counting_quantity: "Counting and quantities", color_pattern: "Colors and patterns", blocks_build: "Blocks and spatial building", screw_bolt_tool: "Screws and tools", threading_lacing: "Threading and lacing", lock_key: "Locks and mechanisms", magnetic_build: "Magnetic play", fine_motor_general: "Grasping and tweezers", cause_effect: "Pounding, tracks and cause-effect", pretend_role: "Pretend play", music_play: "Music interaction", balance: "Balance and movement" }
+} });
+Object.assign(DICTIONARY.zh, { abilityProfile: {
+  title: "\u80FD\u529B\u6863\u6848",
+  hint: "\u6BCF\u79CD\u73A9\u6CD5\u53EF\u5355\u72EC\u8BBE\u7F6E\uFF0C\u4E5F\u53EF\u4FDD\u6301\u81EA\u52A8\u5224\u65AD\u3002",
+  auto: "\u81EA\u52A8\u5224\u65AD",
+  group: { thinking: "\u62FC\u56FE\u4E0E\u601D\u8003", hands: "\u52A8\u624B\u4E0E\u5EFA\u6784", exploration: "\u60C5\u5883\u4E0E\u8FD0\u52A8" },
+  level: { intro: "\u521A\u63A5\u89E6", basic: "\u57FA\u672C\u4F1A", fluent: "\u719F\u7EC3", challenge: "\u9700\u8981\u6311\u6218" },
+  mechanism: { puzzle: "\u62FC\u56FE", matching_sorting: "\u914D\u5BF9", shape_sorting: "\u5F62\u72B6\u5206\u7C7B", counting_quantity: "\u8BA1\u6570\u4E0E\u6570\u91CF", color_pattern: "\u989C\u8272\u4E0E\u89C4\u5F8B", blocks_build: "\u79EF\u6728\u4E0E\u7A7A\u95F4\u5EFA\u6784", screw_bolt_tool: "\u87BA\u4E1D\u4E0E\u5DE5\u5177", threading_lacing: "\u7A7F\u7EBF\u4E0E\u4E32\u73E0", lock_key: "\u5F00\u9501\u4E0E\u673A\u5173", magnetic_build: "\u78C1\u529B\u64CD\u4F5C", fine_motor_general: "\u6293\u63E1\u4E0E\u954A\u5B50", cause_effect: "\u6572\u51FB\u3001\u8F68\u9053\u4E0E\u56E0\u679C", pretend_role: "\u60C5\u5883\u626E\u6F14", music_play: "\u97F3\u4E50\u4E92\u52A8", balance: "\u5E73\u8861\u4E0E\u5927\u8FD0\u52A8" }
+} });
 function createI18n(store2) {
   const language = () => store2.state.settings.language === "system" ? navigator.language.startsWith("zh") ? "zh" : "en" : store2.state.settings.language;
   const t2 = (key, params = {}) => {
@@ -9445,6 +9622,7 @@ function chooseParentDeleteMode(parent) {
 function generateNewRotation() {
   const planning = structuredClone(store.state);
   clearManualShelfOverrides(planning);
+  planning.toys = planning.toys.map((toy) => withCatalogSafety(toy, catalog.resolve(toy)));
   const result2 = selectRotation({ toys: planning.toys, history: planning.rotationHistory, childAgeMonths: childAgeMonths2(), size: planning.settings.rotationSize, childDevelopmentProfile: planning.profile?.developmentProfile || {}, developmentFeedbackHistory: planning.developmentFeedbackHistory || [] });
   store.update((state) => {
     persistRotationSelection(state, { selected: result2.selected, diagnostics: result2.diagnostics });
@@ -9722,7 +9900,7 @@ function catalogSourceKey(source) {
 function openSettings() {
   const recoveryNotice = !store.canPersist ? `<p class="danger">${t("persistenceRecoverySettingsNotice")}</p>` : "";
   const adminControls = admin.enabled ? `<button type="button" id="restore-diagnostic-export">${t("exportRestoreDiagnostic")}</button><section class="panel"><h3>Recognition Device Diagnostics</h3><p id="recognition-trace-status">Stopped \xB7 0 events</p><button type="button" id="recognition-trace-start">Start Recognition Trace</button><button type="button" id="recognition-trace-stop">Stop Trace</button><button type="button" id="recognition-trace-clear">Clear Trace</button><button type="button" id="recognition-trace-export">Export Recognition Trace JSON</button></section><section class="panel"><h3>Admin Catalog Save Diagnostic</h3><p id="admin-catalog-save-trace-status">Stopped \xB7 0 events</p><button type="button" id="admin-catalog-save-trace-start">Start Trace</button><button type="button" id="admin-catalog-save-trace-stop">Stop Trace</button><button type="button" id="admin-catalog-save-trace-clear">Clear Trace</button><button type="button" id="admin-catalog-save-trace-export">Export Trace JSON</button></section><section class="panel"><h3>Storage Usage</h3><p id="storage-usage-status">Loading\u2026</p><button type="button" id="storage-audit-export">Export Storage Audit JSON</button></section><button type="button" id="manager-open">${t("managerDashboard")} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t("signOut")}</button>` : `<button type="button" id="admin-open">${t("adminMode")}</button>`;
-  const dialog = openModal(`<form class="form"><header><h2>${t("settings")}</h2><button type="button" data-close>\xD7</button></header>${recoveryNotice}<label>${t("language")}<select name="language"><option value="system">${t("system")}</option><option value="en">${t("languageEnglish")}</option><option value="zh">${t("languageChinese")}</option></select></label><label>${t("theme")}<select name="theme"><option value="system">${t("system")}</option><option value="light">${t("light")}</option><option value="dark">${t("dark")}</option></select></label><hr>${profileSettingsFields()}<button class="primary" ${store.canPersist ? "" : "disabled"}>${t("save")}</button><button type="button" id="backup-export" ${store.canPersist ? "" : "disabled"}>${t("exportBackup")}</button><button type="button" id="persistence-diagnostic-export">${t("exportPersistenceDiagnostic")}</button><label>${t("restoreBackup")}<input id="backup-import" type="file" accept="application/json" ${store.canPersist ? "" : "disabled"}></label><p id="backup-restore-status" role="status" aria-live="polite"></p><section class="panel"><h3>${t("dataAudit")}</h3><p>${t("exportToyImageAuditHint")}</p><button type="button" id="toy-image-audit-export">${t("exportToyImageAudit")}</button></section><section id="admin-settings">${adminControls}</section></form>`);
+  const dialog = openModal(`<form class="form"><header><h2>${t("settings")}</h2><button type="button" data-close>\xD7</button></header>${recoveryNotice}<label>${t("language")}<select name="language"><option value="system">${t("system")}</option><option value="en">${t("languageEnglish")}</option><option value="zh">${t("languageChinese")}</option></select></label><label>${t("theme")}<select name="theme"><option value="system">${t("system")}</option><option value="light">${t("light")}</option><option value="dark">${t("dark")}</option></select></label><hr>${profileSettingsFields()}<button class="primary" ${store.canPersist ? "" : "disabled"}>${t("save")}</button><button type="button" id="backup-export" ${store.canPersist ? "" : "disabled"}>${t("exportBackup")}</button><button type="button" id="persistence-diagnostic-export">${t("exportPersistenceDiagnostic")}</button><label>${t("restoreBackup")}<input id="backup-import" type="file" accept="application/json" ${store.canPersist ? "" : "disabled"}></label><p id="backup-restore-status" role="status" aria-live="polite"></p><section class="panel"><h3>${t("dataAudit")}</h3><p>${t("exportToyImageAuditHint")}</p><button type="button" id="toy-image-audit-export">${t("exportToyImageAudit")}</button><p>${t("exportCatalogSafetyAuditHint")}</p><button type="button" id="catalog-safety-audit-export">${t("exportCatalogSafetyAudit")}</button></section><section id="admin-settings">${adminControls}</section></form>`);
   const form = dialog.querySelector("form");
   form.language.value = store.state.settings.language;
   form.theme.value = store.state.settings.theme;
@@ -9745,6 +9923,7 @@ function openSettings() {
   };
   dialog.querySelector("#backup-export").onclick = async () => downloadJson(await exportBackup(store, images), "toy-rotation-backup.json");
   dialog.querySelector("#toy-image-audit-export")?.addEventListener("click", () => downloadJson(buildToyImageAudit({ state: store.state, catalog, build: window.TOY_ROTATION_CONFIG }), `toy-image-audit-v0116-${auditFilenameStamp()}.json`));
+  dialog.querySelector("#catalog-safety-audit-export")?.addEventListener("click", () => downloadJson(buildCatalogSafetyAudit({ state: store.state, catalog, build: window.TOY_ROTATION_CONFIG }), `toy-safety-audit-v0116-${auditFilenameStamp()}.json`));
   dialog.querySelector("#backup-import").onchange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -9896,7 +10075,12 @@ function profileSettingsFields() {
   const profile = store.state.profile;
   const days = Number(store.state.settings.rotationDays) || 7;
   const preset = [7, 10, 14].includes(days) ? String(days) : "custom";
-  return `<h3>${t("childProfile")}</h3><label>${t("childName")}<input name="childName" value="${escape(profile.childName || "")}"></label><label>${t("birthDate")}<input name="childBirthDate" type="date" value="${escape(profile.childBirthDate || "")}" required></label><h3>${t("rotationSettings")}</h3><label>${t("targetShelfCount")}<input name="rotationSize" type="number" min="1" max="50" value="${store.state.settings.rotationSize}"></label><label>${t("rotationInterval")}<select name="rotationDays"><option value="7">7 ${t("dayUnit")}</option><option value="10">10 ${t("dayUnit")}</option><option value="14">14 ${t("dayUnit")}</option><option value="custom">${t("custom")}</option></select></label><label class="rotation-custom ${preset === "custom" ? "" : "hidden"}">${t("customRotationDays")}<input name="rotationDaysCustom" type="number" min="1" max="90" value="${preset === "custom" ? days : ""}"></label>`;
+  const abilities = DEVELOPMENT_ABILITY_GROUPS.map((group) => `<details class="panel"><summary>${t(`abilityProfile.group.${group.key}`)}</summary>${group.mechanisms.map((mechanic) => {
+    const manual = profile.developmentProfile?.[mechanic]?.manualLevel;
+    const options = [["", t("abilityProfile.auto")], ["1", t("abilityProfile.level.intro")], ["2", t("abilityProfile.level.basic")], ["3", t("abilityProfile.level.fluent")], ["5", t("abilityProfile.level.challenge")]];
+    return `<label>${t(`abilityProfile.mechanism.${mechanic}`)}<select data-ability-mechanic="${mechanic}">${options.map(([value, label]) => `<option value="${value}" ${String(manual ?? "") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>`;
+  }).join("")}</details>`).join("");
+  return `<h3>${t("childProfile")}</h3><label>${t("childName")}<input name="childName" value="${escape(profile.childName || "")}"></label><label>${t("birthDate")}<input name="childBirthDate" type="date" value="${escape(profile.childBirthDate || "")}" required></label><details class="panel"><summary>${t("abilityProfile.title")}</summary><p>${t("abilityProfile.hint")}</p>${abilities}</details><h3>${t("rotationSettings")}</h3><label>${t("targetShelfCount")}<input name="rotationSize" type="number" min="1" max="50" value="${store.state.settings.rotationSize}"></label><label>${t("rotationInterval")}<select name="rotationDays"><option value="7">7 ${t("dayUnit")}</option><option value="10">10 ${t("dayUnit")}</option><option value="14">14 ${t("dayUnit")}</option><option value="custom">${t("custom")}</option></select></label><label class="rotation-custom ${preset === "custom" ? "" : "hidden"}">${t("customRotationDays")}<input name="rotationDaysCustom" type="number" min="1" max="90" value="${preset === "custom" ? days : ""}"></label>`;
 }
 function wireProfileSettingsForm(dialog, { onboarding = false } = {}) {
   const form = dialog.querySelector("form");
@@ -9911,7 +10095,8 @@ function wireProfileSettingsForm(dialog, { onboarding = false } = {}) {
 }
 function saveProfileSettingsFromForm(form) {
   const selectedDays = form.rotationDays.value === "custom" ? form.rotationDaysCustom.value : form.rotationDays.value;
-  saveProfileAndRotationSettings(store, { childName: form.childName.value, childBirthDate: form.childBirthDate.value, rotationSize: form.rotationSize.value, rotationDays: selectedDays });
+  const edits = [...form.querySelectorAll("[data-ability-mechanic]")].map((select) => [select.dataset.abilityMechanic, select.value]).filter(([mechanic, value]) => String(store.state.profile.developmentProfile?.[mechanic]?.manualLevel ?? "") !== value);
+  saveProfileAndRotationSettings(store, { childName: form.childName.value, childBirthDate: form.childBirthDate.value, rotationSize: form.rotationSize.value, rotationDays: selectedDays, manualAbilities: edits });
 }
 async function openManagerDashboard({ repairMessage = "", returnToSettings = false } = {}) {
   if (!admin.enabled) return;
