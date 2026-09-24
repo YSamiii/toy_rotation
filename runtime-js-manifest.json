@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-24T13:25:30.256Z",
+  "generatedAt": "2026-09-24T19:29:32.921Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 Development and Safety Audit QA10",
-    "buildDate": "20260923",
-    "buildId": "v0.11.6-development-safety-audit-qa10-20260923"
+    "buildName": "Toy Rotation v0.11.6 Rotation Cross-Age Approval QA11",
+    "buildDate": "20260924",
+    "buildId": "v0.11.6-rotation-cross-age-qa11-20260924"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 825575,
-      "sha256": "cc4fe6bf35f72604ff3cf79491344e7b9cadbb2cf13d08265a3265f739374b77",
+      "bytes": 833722,
+      "sha256": "447ac0fbf5d11b8349f9ca15217835cc2d65116961b4e6c4a0fb8d1bccfdb42f",
       "importedBy": [
         "index.html"
       ],
@@ -557,8 +557,8 @@
     {
       "path": "catalog-base.json",
       "resolvedDeployPath": "./catalog-base.json",
-      "bytes": 340837,
-      "sha256": "19f2a21d8fbd119541510a0b537cb2d5d72d2b04d4cb8654924f6bd633bda1d5",
+      "bytes": 349346,
+      "sha256": "028217ef4150bef937f7a148d4359422139012d49b6b67df713dd6cf6b2130c2",
       "importedBy": [
         "deployment-static"
       ],
@@ -602,8 +602,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 579,
-      "sha256": "ed45320668df9ab066b88121616ed4d3572ce9095d6126f68863f968a4342f8a",
+      "bytes": 571,
+      "sha256": "2190866c65452845164f88f6b2cfb8ad9ee103f3b79e58fc7716c02d2490e9f4",
       "importedBy": [
         "deployment-static",
         "index.html"
@@ -724,8 +724,8 @@
     {
       "path": "startup-diagnostic.bundle.js",
       "resolvedDeployPath": "./startup-diagnostic.bundle.js",
-      "bytes": 5149,
-      "sha256": "b93d62700d3ef412c17d6b98d18c8aa0a485c93f11bd70e9a6ec52e8eb720ffa",
+      "bytes": 3583,
+      "sha256": "e762a65debb91ef1139c14819fd5a4836e60f7360730ace09948c331e315a8ec",
       "importedBy": [
         "startup-diagnostic.html"
       ],
@@ -754,8 +754,8 @@
     {
       "path": "storage-recovery-diagnostic.bundle.js",
       "resolvedDeployPath": "./storage-recovery-diagnostic.bundle.js",
-      "bytes": 10781,
-      "sha256": "10924d548c3445b05f63f7df4e694b9d05bd6bce45c0eb4e4533a308b01232a5",
+      "bytes": 6958,
+      "sha256": "ff2c21679e5bfe56c9198d296ef4195bf989f8fdf80f3d0279ff8bb0a4c5106f",
       "importedBy": [
         "storage-recovery-diagnostic.html"
       ],
@@ -799,8 +799,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2704,
-      "sha256": "c9d77c96fafd00f4121944929454b5359e73caf0de81ce161d76a1eb14d5cc32",
+      "bytes": 2698,
+      "sha256": "83b36c9602d994c91fdfac70720a971c8806cbe733dfd33aad0f5c0b571e9d87",
       "importedBy": [
         "deployment-static"
       ],

@@ -2474,6 +2474,7 @@
       "key": "hahaland-farm-busy-book-20in1",
       "brand": "hahaland",
       "name": "20-in-1 Farm Busy Book",
+      "userMetadata": { "safety": { "ageSafetyStatus": "VERIFIED_NO_EXTRA_GATE", "hardMinAgeMonths": null, "smallParts": false, "requiresStandingStability": false, "warningType": null, "safetySource": "https://hahaland.com/products/montessori-farm-busy-book-for-toddlers-1-3", "evidenceNote": "Official exact 20-in-1 Farm Busy Book page describes toddler developmental activities, ages 1-3 and all accessories integrated without disassembly for safety; no separate choking or motor restriction is stated.", "safetyVerifiedAt": "2026-09-24" } },
       "nameEn": "20-in-1 Farm Busy Book",
       "nameZh": "20合1农场忙碌布书",
       "aliases": [
@@ -2736,6 +2737,7 @@
       "key": "hape-clean-up-bucket-set",
       "brand": "Hape",
       "name": "Clean Up Bucket Set",
+      "userMetadata": { "safety": { "ageSafetyStatus": "SMALL_PARTS_GATE", "hardMinAgeMonths": 36, "smallParts": true, "requiresStandingStability": false, "warningType": "choking_small_parts", "safetySource": "https://global.hape.com/clean-up-bucket-set-e3054", "evidenceNote": "Official E3054 warnings state choking hazard from small parts and not for children under 3 years.", "safetyVerifiedAt": "2026-09-24" } },
       "nameZh": "清洁水桶工具套装",
       "ageMinMonths": 36,
       "ageMaxMonths": 84,
@@ -2828,6 +2830,7 @@
       "key": "hape-creatives-peg-puzzle",
       "brand": "Hape",
       "name": "Creative Peg Puzzle",
+      "userMetadata": { "safety": { "ageSafetyStatus": "VERIFIED_NO_EXTRA_GATE", "hardMinAgeMonths": null, "smallParts": false, "requiresStandingStability": false, "warningType": null, "safetySource": "https://global.hape.com/creative-peg-puzzle-e0411", "evidenceNote": "Official E0411 page lists age 18 months, child-safe materials and its warnings section contains packaging removal only, with no product-specific choking or motor gate.", "safetyVerifiedAt": "2026-09-24" } },
       "ageMinMonths": 18,
       "ageMaxMonths": 48,
       "category": "拼图/配对",
@@ -3106,6 +3109,7 @@
       "key": "hape-jungle-musical-railway",
       "brand": "Hape",
       "name": "Jungle Musical Railway Set",
+      "userMetadata": { "safety": { "ageSafetyStatus": "VERIFIED_NO_EXTRA_GATE", "hardMinAgeMonths": null, "smallParts": false, "requiresStandingStability": false, "warningType": null, "safetySource": "https://toys.hape.com/products/music-and-monkeys-railway", "evidenceNote": "Official E3825 page lists 18 months+, child-safe design and a warnings section limited to standards and packaging removal; adult assembly is required before child use.", "safetyNotes": "Adult assembly required; classification assumes fully assembled toy and packaging removed.", "safetyVerifiedAt": "2026-09-24" } },
       "sku": "E3825",
       "provenance": "https://global.hape.com/music-and-monkeys-railway-e3825",
       "ageMinMonths": 18,
@@ -3981,6 +3985,7 @@
       "key": "ltv-barista-cafe-shop",
       "brand": "Le Toy Van",
       "name": "Barista Café Shop",
+      "userMetadata": { "safety": { "ageSafetyStatus": "SMALL_PARTS_GATE", "hardMinAgeMonths": 36, "smallParts": true, "requiresStandingStability": false, "warningType": "choking_small_parts", "safetySource": "https://well.ca/products/le-toy-van-wooden-barista-cafe-shop_356619.html", "evidenceNote": "Exact Le Toy Van Barista Cafe Shop TV3004, cross-checked with official SKU and 17-accessory configuration; established Canadian retailer explicitly warns choking hazard from small parts and not for children under 3 years.", "safetyVerifiedAt": "2026-09-24" } },
       "ageMinMonths": 36,
       "ageMaxMonths": 96,
       "category": "角色扮演",
@@ -4834,6 +4839,16 @@
       "key": "lr-lock-key-clubhouse",
       "brand": "Learning Resources",
       "name": "Lock & Key Clubhouse",
+      "userMetadata": {
+        "safety": {
+          "ageSafetyStatus": "NO_DOCUMENTED_HARD_GATE",
+          "smallParts": "unknown",
+          "requiresStandingStability": "unknown",
+          "safetySource": "https://www.learningresources.com/item-lock-key-clubhouse",
+          "evidenceNote": "Exact LER9807 official product and details reviewed. No explicit choking, small-parts, gross-motor or other hard warning documented there. Official 18m+ differs from existing Catalog guidance of 36m; this does not establish safety below the manufacturer's age grade and requires individual parent approval for cross-age Rotation.",
+          "safetyVerifiedAt": "2026-09-24"
+        }
+      },
       "sku": "LER9807",
       "pieceCount": 6,
       "exactTitle": "Lock & Key Clubhouse",
@@ -5098,6 +5113,7 @@
       "key": "lr-noodle-knockout",
       "brand": "Learning Resources",
       "name": "Noodle Knockout Fine Motor Game",
+      "userMetadata": { "safety": { "ageSafetyStatus": "SMALL_PARTS_GATE", "hardMinAgeMonths": 36, "smallParts": true, "requiresStandingStability": false, "warningType": "choking_small_parts", "safetySource": "https://www.learningresources.com/item-noodle-knockout-fine-motor-game", "evidenceNote": "Official product page and LER5549 guide explicitly warn small parts and not for children under 3 years; 4+ remains developmental guidance above this hard gate.", "safetyVerifiedAt": "2026-09-24" } },
       "ageMinMonths": 48,
       "ageMaxMonths": 96,
       "category": "精细动作",
@@ -5416,6 +5432,7 @@
       "key": "lego-duplo-fire-truck-hose-firefighter-10473",
       "brand": "LEGO / DUPLO",
       "name": "Fire Truck with Hose and Firefighter",
+      "userMetadata": { "safety": { "ageSafetyStatus": "VERIFIED_NO_EXTRA_GATE", "hardMinAgeMonths": null, "smallParts": false, "requiresStandingStability": false, "warningType": null, "safetySource": "https://www.lego.com/en-de/product/fire-truck-with-hose-and-firefighter-10473", "evidenceNote": "Official exact set 10473 page identifies 2+ developmental play and states all DUPLO bricks in the set are tested for toddler safety; no separate product hard gate is given.", "safetyVerifiedAt": "2026-09-24" } },
       "exactTitle": "Fire Truck with Hose and Firefighter",
       "setNumber": "10473",
       "pieceCount": 28,
@@ -5480,6 +5497,7 @@
       "key": "lego-duplo-brick-box",
       "brand": "LEGO / DUPLO",
       "name": "DUPLO Brick Box",
+      "userMetadata": { "safety": { "ageSafetyStatus": "VERIFIED_NO_EXTRA_GATE", "hardMinAgeMonths": null, "smallParts": false, "requiresStandingStability": false, "warningType": null, "safetySource": "https://www.lego.com/en-ca/product/brick-box-10913", "evidenceNote": "Official exact set 10913 page describes age 1.5+ developmental building and toddler-friendly bricks meeting strict safety standards; no separate hard safety gate is given.", "safetyVerifiedAt": "2026-09-24" } },
       "ageMinMonths": 18,
       "ageMaxMonths": 60,
       "category": "积木/建构",
@@ -10162,6 +10180,16 @@
       "key": "mideer-reusable-jelly-sticker-busy-animal-town",
       "brand": "Mideer",
       "name": "Reusable Jelly Sticker: The Busy Animal Town",
+      "userMetadata": {
+        "safety": {
+          "ageSafetyStatus": "NO_DOCUMENTED_HARD_GATE",
+          "smallParts": "unknown",
+          "requiresStandingStability": "unknown",
+          "safetySource": "https://mideerart.com/collections/final-sale/products/jelly-sticker-set-the-busy-animal-town",
+          "evidenceNote": "Exact MD1244 official product and details reviewed: 38 removable stickers, age 3+. No explicit hard warning documented on the product page. Absence of a documented warning is not confirmation of safe use below age 3; individual parent approval is required for cross-age Rotation.",
+          "safetyVerifiedAt": "2026-09-24"
+        }
+      },
       "nameZh": "可重复果冻贴：忙碌动物小镇",
       "ageMinMonths": 36,
       "ageMaxMonths": 84,
@@ -10906,6 +10934,7 @@
       "key": "plantoys-balancing-cactus",
       "brand": "PlanToys",
       "name": "Balancing Cactus",
+      "userMetadata": { "safety": { "ageSafetyStatus": "SMALL_PARTS_GATE", "hardMinAgeMonths": 36, "smallParts": true, "requiresStandingStability": false, "warningType": "choking_small_parts", "safetySource": "https://www.target.com/p/-/A-84300506", "evidenceNote": "Exact original 19-piece Balancing Cactus SKU 4101 (not 13-piece Mini variant); retailer CPSC warning explicitly says small parts and not for children under 3 years.", "safetyVerifiedAt": "2026-09-24" } },
       "nameZh": "仙人掌平衡游戏",
       "ageMinMonths": 36,
       "ageMaxMonths": 120,
@@ -11084,6 +11113,16 @@
       "key": "plantoys-fruit-vegetable-play-set",
       "brand": "PlanToys",
       "name": "Fruit & Vegetable Play Set",
+      "userMetadata": {
+        "safety": {
+          "ageSafetyStatus": "NO_DOCUMENTED_HARD_GATE",
+          "smallParts": "unknown",
+          "requiresStandingStability": "unknown",
+          "safetySource": "https://www.plantoys.com/products/fruit-vegetable-play-set",
+          "evidenceNote": "Exact SKU 5337 official product and details reviewed, including its blunt wooden knife and 18m+ age grade. No explicit hard warning documented on this page; this does not establish safety below 18m and cross-age Rotation requires individual parent approval.",
+          "safetyVerifiedAt": "2026-09-24"
+        }
+      },
       "ageMinMonths": 18,
       "ageMaxMonths": 60,
       "category": "角色扮演",
@@ -11651,6 +11690,16 @@
       "key": "smartgames-bunny-boo",
       "brand": "SmartGames",
       "name": "Bunny Boo",
+      "userMetadata": {
+        "safety": {
+          "ageSafetyStatus": "NO_DOCUMENTED_HARD_GATE",
+          "smallParts": "unknown",
+          "requiresStandingStability": "unknown",
+          "safetySource": "https://www.smartgames.eu/uk/one-player-games/bunny-boo",
+          "evidenceNote": "Exact official Bunny Boo page reviewed: age 2-5, 60 graded challenges, wooden rabbit and blocks. No explicit hard warning documented on the product page; this does not establish safety below age 2 and cross-age Rotation requires individual parent approval.",
+          "safetyVerifiedAt": "2026-09-24"
+        }
+      },
       "ageMinMonths": 24,
       "ageMaxMonths": 60,
       "category": "益智类玩具",
@@ -11693,6 +11742,16 @@
       "key": "smartgames-day-night",
       "brand": "SmartGames",
       "name": "Day & Night",
+      "userMetadata": {
+        "safety": {
+          "ageSafetyStatus": "NO_DOCUMENTED_HARD_GATE",
+          "smallParts": "unknown",
+          "requiresStandingStability": "unknown",
+          "safetySource": "https://www.smartgames.eu/uk/one-player-games/day-night",
+          "evidenceNote": "Exact official Day & Night page reviewed: age 2-6, 48 graded challenges, base and wooden blocks. No explicit hard warning documented on the product page; graded play is not proof of safe use below age 2 and cross-age Rotation requires individual parent approval.",
+          "safetyVerifiedAt": "2026-09-24"
+        }
+      },
       "ageMinMonths": 24,
       "ageMaxMonths": 60,
       "category": "益智类玩具",
@@ -13110,6 +13169,7 @@
       "key": "vtech-busy-learners-music-activity-cube",
       "brand": "VTech",
       "name": "Busy Learners Music Activity Cube",
+      "userMetadata": { "safety": { "ageSafetyStatus": "VERIFIED_NO_EXTRA_GATE", "hardMinAgeMonths": null, "smallParts": false, "requiresStandingStability": false, "warningType": null, "safetySource": "https://www.vtechkids.com/assets/data/products/%7B177B35F1-9A25-8112-E063-0A7104678112%7D/manuals/574100_Busy_Learners_Music_Activity_Cube_IM.pdf", "evidenceNote": "Official exact 574100 manual warns to remove packing materials and keep battery installation under adult control; product page specifies 3-24 months, with no additional child age, small-parts or motor gate for assembled toy.", "safetyNotes": "Adult handles batteries; discard packaging before play.", "safetyVerifiedAt": "2026-09-24" } },
       "nameEn": "Busy Learners Music Activity Cube",
       "nameZh": "忙碌学习者音乐活动方块",
       "aliases": ["VTech Music Activity Cube", "VTech 音乐活动方块"],

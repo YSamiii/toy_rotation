@@ -257,7 +257,7 @@ function normalizeWishlistItem(source = {}) {
   return { id: source.id || crypto.randomUUID(), canonicalKey: canonicalKey(source.canonicalKey || source.catalogKey || normalized2.canonicalKey), catalogId: source.catalogId || source.catalogKey || null, catalogSnapshot, status: ["want", "purchased", "dismissed"].includes(source.status) ? source.status : "want", priority: ["low", "medium", "high"].includes(source.priority) ? source.priority : "medium", notes: String(source.notes || "").slice(0, 2e3), sourceLink: String(source.sourceLink || "").slice(0, 2e3), recognizedMetadata: plainObject(source.recognizedMetadata), recommendationState: source.recommendationState || null, dismissedAt: source.dismissedAt || null, addedAt: source.addedAt || (/* @__PURE__ */ new Date()).toISOString() };
 }
 function emptyState() {
-  return { schemaVersion: SCHEMA_VERSION, settings: { language: "system", theme: "system", rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: "", childBirthDate: "", developmentProfile: {} }, developmentFeedbackHistory: [], toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
+  return { schemaVersion: SCHEMA_VERSION, settings: { language: "system", theme: "system", rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: "", childBirthDate: "", developmentProfile: {} }, developmentFeedbackHistory: [], crossAgeApprovals: {}, toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
 }
 function numeric(value) {
   return value === "" || value == null || Number.isNaN(Number(value)) ? null : Number(value);
@@ -285,6 +285,76 @@ function uniqueObjects(values) {
 }
 function plainObject(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+// src/domain/catalog-safety.js
+var AGE_SAFETY_STATUSES = Object.freeze([
+  "VERIFIED_NO_EXTRA_GATE",
+  "NO_DOCUMENTED_HARD_GATE",
+  "SMALL_PARTS_GATE",
+  "GROSS_MOTOR_GATE",
+  "OTHER_HARD_GATE",
+  "UNKNOWN"
+]);
+function catalogSafetyStatus(row) {
+  const safety = row?.userMetadata?.safety;
+  const status = safety?.ageSafetyStatus;
+  if (!AGE_SAFETY_STATUSES.includes(status) || status === "UNKNOWN" || !/^https:\/\//i.test(String(safety.safetySource || "")) || !/^\d{4}-\d{2}-\d{2}$/.test(String(safety.safetyVerifiedAt || "")) || !String(safety.evidenceNote || "").trim()) return "UNKNOWN";
+  if (status === "SMALL_PARTS_GATE" && safety.smallParts !== true) return "UNKNOWN";
+  if (status === "GROSS_MOTOR_GATE" && safety.requiresStandingStability !== true) return "UNKNOWN";
+  if (status === "OTHER_HARD_GATE" && !(Number(safety.hardMinAgeMonths) > 0)) return "UNKNOWN";
+  if (status === "VERIFIED_NO_EXTRA_GATE" && (safety.smallParts === true || safety.chokingSmallParts === true || safety.requiresStandingStability === true || Number(safety.hardMinAgeMonths) > 0 || Number(safety.safetyMinAgeMonths) > 0)) return "UNKNOWN";
+  if (status === "NO_DOCUMENTED_HARD_GATE" && (safety.smallParts === true || safety.chokingSmallParts === true || safety.requiresStandingStability === true || Number(safety.hardMinAgeMonths) > 0 || Number(safety.safetyMinAgeMonths) > 0 || safety.warningType)) return "UNKNOWN";
+  return status;
+}
+function crossAgeApprovalFor(state, toy) {
+  const key = String(toy?.canonicalKey || "");
+  const record = state?.crossAgeApprovals?.[key];
+  return validCrossAgeApproval(toy, record) ? record : null;
+}
+function validCrossAgeApproval(toy, record) {
+  const key = String(toy?.canonicalKey || "");
+  return record?.approved === true && record.canonicalKey === key && record.sourceRecommendedMinAgeMonths === toy.minAgeMonths && /^\d{4}-\d{2}-\d{2}T/.test(String(record.approvedAt || ""));
+}
+function setCrossAgeApproval(state, toy, approved, { now: now3 = (/* @__PURE__ */ new Date()).toISOString(), note = "" } = {}) {
+  const key = String(toy?.canonicalKey || "");
+  if (!key || !Number.isFinite(toy?.minAgeMonths)) return false;
+  state.crossAgeApprovals ||= {};
+  if (!approved) {
+    delete state.crossAgeApprovals[key];
+    return true;
+  }
+  state.crossAgeApprovals[key] = {
+    approved: true,
+    approvedAt: now3,
+    canonicalKey: key,
+    sourceRecommendedMinAgeMonths: toy.minAgeMonths,
+    ...note ? { note: String(note).slice(0, 240) } : {}
+  };
+  return true;
+}
+function redirectCrossAgeApproval(state, from, to) {
+  const approvals = state?.crossAgeApprovals;
+  if (!approvals || !from || !to || from === to || !approvals[from]) return false;
+  const source = approvals[from];
+  const target = approvals[to];
+  approvals[to] = target?.approved ? target : { ...source, canonicalKey: to };
+  delete approvals[from];
+  return true;
+}
+function reconcileCrossAgeApprovals(state, resolve) {
+  let changed = 0;
+  for (const key of Object.keys(state?.crossAgeApprovals || {})) {
+    const current = resolve(key)?.canonicalKey;
+    if (current && redirectCrossAgeApproval(state, key, current)) changed++;
+  }
+  return changed;
+}
+function withCatalogSafety(toy, catalogRow) {
+  const userMetadata = { ...toy.userMetadata };
+  if (catalogSafetyStatus(catalogRow) === "UNKNOWN") delete userMetadata.safety;
+  else userMetadata.safety = catalogRow.userMetadata.safety;
+  return { ...toy, userMetadata };
 }
 
 // src/domain/identity-service.js
@@ -2544,6 +2614,7 @@ function applyCatalogRedirects(state, catalog2) {
   for (const toy of state.toys || []) {
     const target = catalog2.getByKey(toy.canonicalKey);
     if (!target || canonicalKey(target.canonicalKey) === canonicalKey(toy.canonicalKey)) continue;
+    redirectCrossAgeApproval(state, canonicalKey(toy.canonicalKey), canonicalKey(target.canonicalKey));
     toy.legacyCanonicalKeys = [.../* @__PURE__ */ new Set([...toy.legacyCanonicalKeys || [], canonicalKey(toy.canonicalKey)])];
     toy.canonicalKey = target.canonicalKey;
     remappedToys++;
@@ -2560,6 +2631,7 @@ function applyCatalogRedirects(state, catalog2) {
     }
     remappedWishlist++;
   }
+  reconcileCrossAgeApprovals(state, (key) => catalog2.getByKey(key));
   return { remappedToys, remappedWishlist };
 }
 function validateBackupEnvelope(payload) {
@@ -4339,6 +4411,7 @@ var CatalogRepository = class {
     if (!from || !to || from === to) return;
     const source = this.#byKey.get(from), target = this.#byKey.get(to);
     this.#store.update((state) => {
+      redirectCrossAgeApproval(state, from, to);
       for (const toy of state.toys || []) if (canonicalKey(toy.canonicalKey) === from) {
         toy.canonicalKey = to;
         toy.legacyCanonicalKeys = [.../* @__PURE__ */ new Set([...toy.legacyCanonicalKeys || [], from])];
@@ -4402,7 +4475,7 @@ var CatalogRepository = class {
       const key = qa6CatalogCanonical(originalKey);
       const previous = merged.get(key);
       const redirected = key !== originalKey;
-      const combined = previous ? normalizeCatalogToy({ ...previous, ...toy, canonicalKey: key, aliases: [...previous.aliases || [], ...toy.aliases || []], legacyCanonicalKeys: [...previous.legacyCanonicalKeys || [], ...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []], names: { ...previous.names, ...toy.names }, children: toy.children?.length ? toy.children : previous.children }) : normalizeCatalogToy({ ...toy, canonicalKey: key, legacyCanonicalKeys: [...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []] });
+      const combined = previous ? normalizeCatalogToy({ ...previous, ...toy, canonicalKey: key, aliases: [...previous.aliases || [], ...toy.aliases || []], legacyCanonicalKeys: [...previous.legacyCanonicalKeys || [], ...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []], names: { ...previous.names, ...toy.names }, children: toy.children?.length ? toy.children : previous.children, userMetadata: { ...previous.userMetadata, ...toy.userMetadata, safety: toy.userMetadata?.safety?.ageSafetyStatus ? toy.userMetadata.safety : previous.userMetadata?.safety } }) : normalizeCatalogToy({ ...toy, canonicalKey: key, legacyCanonicalKeys: [...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []] });
       const serverEdit = this.#serverEdits[key] || {};
       const resurrected = qa6ResurrectionWins(key, combined, serverEdit, tombstones[key]);
       if (!key || tombstones[key] && !tombstones[key].mergedInto && !resurrected || (serverEdit.hidden === true || serverEdit.deleted === true) && !resurrected) continue;
@@ -4933,29 +5006,6 @@ function compareRelationship(a, b) {
   return rank2[b.level] - rank2[a.level] || b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName));
 }
 
-// src/domain/catalog-safety.js
-var AGE_SAFETY_STATUSES = Object.freeze([
-  "VERIFIED_NO_EXTRA_GATE",
-  "SMALL_PARTS_GATE",
-  "GROSS_MOTOR_GATE",
-  "OTHER_HARD_GATE",
-  "UNKNOWN"
-]);
-function catalogSafetyStatus(row) {
-  const safety = row?.userMetadata?.safety;
-  const status = safety?.ageSafetyStatus;
-  if (!AGE_SAFETY_STATUSES.includes(status) || status === "UNKNOWN" || !/^https:\/\//i.test(String(safety.safetySource || "")) || !/^\d{4}-\d{2}-\d{2}$/.test(String(safety.safetyVerifiedAt || "")) || !String(safety.evidenceNote || "").trim()) return "UNKNOWN";
-  if (status === "SMALL_PARTS_GATE" && safety.smallParts !== true) return "UNKNOWN";
-  if (status === "GROSS_MOTOR_GATE" && safety.requiresStandingStability !== true) return "UNKNOWN";
-  if (status === "OTHER_HARD_GATE" && !(Number(safety.hardMinAgeMonths) > 0)) return "UNKNOWN";
-  if (status === "VERIFIED_NO_EXTRA_GATE" && (safety.smallParts === true || safety.requiresStandingStability === true || Number(safety.hardMinAgeMonths) > 0)) return "UNKNOWN";
-  return status;
-}
-function withCatalogSafety(toy, catalogRow) {
-  if (catalogSafetyStatus(catalogRow) === "UNKNOWN") return toy;
-  return { ...toy, userMetadata: { ...toy.userMetadata, safety: catalogRow.userMetadata.safety } };
-}
-
 // src/domain/rotation-engine.js
 var GENERIC_MECHANICS2 = /* @__PURE__ */ new Set(["fine_motor_general", "construction_general", "pretend_play_general", "sensory_general"]);
 function selectRotation({ toys = [], history = [], childAgeMonths: childAgeMonths3, size = 6, now: now3 = Date.now(), childDevelopmentProfile = {}, developmentFeedbackHistory = [] }) {
@@ -5271,18 +5321,30 @@ function classifyCandidates(toys, age, profile = {}) {
   }
   return result2;
 }
-function hardSafetyEligible(toy, age, profile = {}) {
+function rotationAgeEligibility(toy, age, profile = {}) {
   const safety = toy.userMetadata?.safety || toy.safety || {};
   const status = catalogSafetyStatus(toy);
-  const verified = status !== "UNKNOWN" || safety.ageSafetyStatus == null && safety.reviewed === true;
-  if (age == null) return !safety.requiresAgeConfirmation && !safety.chokingSmallParts && !safety.smallParts && !safety.requiresStandingStability && safety.minAgeMonths == null && safety.safetyMinAgeMonths == null && safety.hardMinAgeMonths == null && safety.requiredGrossMotorLevel == null && status !== "GROSS_MOTOR_GATE";
-  if (toy.minAgeMonths != null && age < toy.minAgeMonths && !verified) return false;
+  const result2 = (eligible, reason2) => ({ eligible, reason: reason2 });
+  if (age == null) {
+    const eligible = !safety.requiresAgeConfirmation && !safety.chokingSmallParts && !safety.smallParts && !safety.requiresStandingStability && safety.minAgeMonths == null && safety.safetyMinAgeMonths == null && safety.hardMinAgeMonths == null && safety.requiredGrossMotorLevel == null && status !== "GROSS_MOTOR_GATE";
+    return result2(eligible, eligible ? "NORMAL_AGE_ELIGIBLE" : "UNKNOWN_AGE_BLOCK");
+  }
   const minimum = Number(safety.hardMinAgeMonths ?? safety.minAgeMonths ?? safety.safetyMinAgeMonths);
-  if (Number.isFinite(minimum) && minimum > 0 && age < minimum) return false;
-  if ((safety.chokingSmallParts === true || safety.smallParts === true || status === "SMALL_PARTS_GATE") && age < 36) return false;
+  if (Number.isFinite(minimum) && minimum > 0 && age < minimum) return result2(false, "HARD_SAFETY_BLOCK");
+  if ((safety.chokingSmallParts === true || safety.smallParts === true || status === "SMALL_PARTS_GATE") && age < 36) return result2(false, "HARD_SAFETY_BLOCK");
   const requiredBalance = Number(status === "GROSS_MOTOR_GATE" || safety.requiresStandingStability === true ? safety.requiredGrossMotorLevel ?? 2 : safety.requiredGrossMotorLevel);
-  if (Number.isFinite(requiredBalance) && requiredBalance > 0 && (profile.balance?.manualLevel ?? profile.balance?.currentLevel ?? 1) < requiredBalance) return false;
-  return true;
+  if (Number.isFinite(requiredBalance) && requiredBalance > 0 && (profile.balance?.manualLevel ?? profile.balance?.currentLevel ?? 1) < requiredBalance) return result2(false, "HARD_SAFETY_BLOCK");
+  if (safety.requiresAgeConfirmation === true) return result2(false, "HARD_SAFETY_BLOCK");
+  if (toy.minAgeMonths != null && age < toy.minAgeMonths) {
+    if (status === "VERIFIED_NO_EXTRA_GATE") return result2(true, "VERIFIED_CROSS_AGE_ALLOWED");
+    if (["SMALL_PARTS_GATE", "GROSS_MOTOR_GATE", "OTHER_HARD_GATE"].includes(status)) return result2(true, "VERIFIED_CROSS_AGE_ALLOWED");
+    if (status === "NO_DOCUMENTED_HARD_GATE") return validCrossAgeApproval(toy, toy.crossAgeApproval) ? result2(true, "PARENT_APPROVED_CROSS_AGE") : result2(false, "PARENT_APPROVAL_REQUIRED");
+    return result2(false, "UNKNOWN_AGE_BLOCK");
+  }
+  return result2(true, "NORMAL_AGE_ELIGIBLE");
+}
+function hardSafetyEligible(toy, age, profile = {}) {
+  return rotationAgeEligibility(toy, age, profile).eligible;
 }
 function isShelfVisible(toy) {
   return !toy.hidden && !toy.archived && toy.set?.kind !== "parent";
@@ -7435,11 +7497,13 @@ var CATALOG_SAFETY_AUDIT_VERSION = "v0.11.6";
 var PRIORITY_BRANDS2 = /* @__PURE__ */ new Set(["mideer", "lovevery", "hape", "learning resources", "lego duplo", "lego / duplo", "vtech", "brio"]);
 function buildCatalogSafetyAudit({ state = {}, catalog: catalog2, build = {}, generatedAt = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
   const rows = Array.isArray(catalog2) ? catalog2 : catalog2?.active || [];
+  const age = childAgeMonths(state.profile?.childBirthDate, new Date(generatedAt).getTime());
+  const profile = state.profile?.developmentProfile || {};
   const resolve = (reference) => catalog2?.resolve?.(reference) || rows.find((row) => [reference?.canonicalKey, reference?.catalogId].includes(row.canonicalKey) || reference?.catalogId === row.id) || null;
-  const owned = mappedRows(state.toys || [], resolve);
-  const wishlist = mappedRows(state.wishlist || [], resolve);
-  const rotation = mappedRows((state.toys || []).filter((toy) => !toy.hidden && !toy.archived && toy.set?.kind !== "parent" && toy.rotationParticipation !== "paused" && toy.permanentSource !== "user"), resolve);
-  const frequent = rows.filter((row) => row.minAgeMonths >= 18 && row.minAgeMonths <= 36 && PRIORITY_BRANDS2.has(String(row.brand || "").toLowerCase())).map(safetyRow);
+  const owned = mappedRows(state.toys || [], resolve, state, age, profile);
+  const wishlist = mappedRows(state.wishlist || [], resolve, state, age, profile);
+  const rotation = mappedRows((state.toys || []).filter((toy) => !toy.hidden && !toy.archived && toy.set?.kind !== "parent" && toy.rotationParticipation !== "paused" && toy.permanentSource !== "user"), resolve, state, age, profile);
+  const frequent = rows.filter((row) => row.minAgeMonths >= 18 && row.minAgeMonths <= 36 && PRIORITY_BRANDS2.has(String(row.brand || "").toLowerCase())).map((row) => safetyRow(row, null, state, age, profile));
   return {
     auditVersion: CATALOG_SAFETY_AUDIT_VERSION,
     buildId: String(build.buildId || ""),
@@ -7450,8 +7514,8 @@ function buildCatalogSafetyAudit({ state = {}, catalog: catalog2, build = {}, ge
     rotationCandidates: rotation
   };
 }
-function mappedRows(items, resolve) {
-  const mapped = items.map(resolve).filter(Boolean).map(safetyRow);
+function mappedRows(items, resolve, state, age, profile) {
+  const mapped = items.map((item) => ({ item, row: resolve(item) })).filter((pair) => pair.row).map(({ item, row }) => safetyRow(row, item, state, age, profile));
   return {
     total: items.length,
     mappedToCatalog: mapped.length,
@@ -7460,9 +7524,12 @@ function mappedRows(items, resolve) {
     items: mapped
   };
 }
-function safetyRow(row) {
+function safetyRow(row, reference, state, age, profile) {
   const safety = row.userMetadata?.safety || {};
   const ageSafetyStatus = catalogSafetyStatus(row);
+  const projected = { ...withCatalogSafety(reference || row, row), canonicalKey: row.canonicalKey, minAgeMonths: row.minAgeMonths };
+  const approval = crossAgeApprovalFor(state, projected);
+  const decision = rotationAgeEligibility({ ...projected, crossAgeApproval: approval }, age, profile);
   return {
     canonicalKey: String(row.canonicalKey || ""),
     productName: String(row.productName || ""),
@@ -7470,6 +7537,15 @@ function safetyRow(row) {
     sku: String(row.sku || row.setNumber || "") || null,
     recommendedMinAgeMonths: row.minAgeMonths ?? null,
     ageSafetyStatus,
+    childAgeMonths: age,
+    crossAgeApproval: approval ? {
+      approved: true,
+      approvedAt: approval.approvedAt,
+      canonicalKey: approval.canonicalKey,
+      sourceRecommendedMinAgeMonths: approval.sourceRecommendedMinAgeMonths
+    } : { approved: false },
+    eligibilityResult: decision.eligible ? "ELIGIBLE" : "BLOCKED",
+    eligibilityReason: decision.reason,
     hardMinAgeMonths: ageSafetyStatus === "UNKNOWN" ? null : safety.hardMinAgeMonths ?? null,
     smallParts: ageSafetyStatus === "UNKNOWN" ? "unknown" : safety.smallParts ?? "unknown",
     requiresStandingStability: ageSafetyStatus === "UNKNOWN" ? "unknown" : safety.requiresStandingStability ?? "unknown",
@@ -8374,6 +8450,20 @@ Object.assign(DICTIONARY.zh, { abilityProfile: {
   level: { intro: "\u521A\u63A5\u89E6", basic: "\u57FA\u672C\u4F1A", fluent: "\u719F\u7EC3", challenge: "\u9700\u8981\u6311\u6218" },
   mechanism: { puzzle: "\u62FC\u56FE", matching_sorting: "\u914D\u5BF9", shape_sorting: "\u5F62\u72B6\u5206\u7C7B", counting_quantity: "\u8BA1\u6570\u4E0E\u6570\u91CF", color_pattern: "\u989C\u8272\u4E0E\u89C4\u5F8B", blocks_build: "\u79EF\u6728\u4E0E\u7A7A\u95F4\u5EFA\u6784", screw_bolt_tool: "\u87BA\u4E1D\u4E0E\u5DE5\u5177", threading_lacing: "\u7A7F\u7EBF\u4E0E\u4E32\u73E0", lock_key: "\u5F00\u9501\u4E0E\u673A\u5173", magnetic_build: "\u78C1\u529B\u64CD\u4F5C", fine_motor_general: "\u6293\u63E1\u4E0E\u954A\u5B50", cause_effect: "\u6572\u51FB\u3001\u8F68\u9053\u4E0E\u56E0\u679C", pretend_role: "\u60C5\u5883\u626E\u6F14", music_play: "\u97F3\u4E50\u4E92\u52A8", balance: "\u5E73\u8861\u4E0E\u5927\u8FD0\u52A8" }
 } });
+Object.assign(DICTIONARY.en, {
+  crossAgeApprovalExplanation: "Manufacturer guidance starts at {months} months. No specific hard warning was documented in the product information reviewed; this does not mean the manufacturer confirms use at a younger age. If you judge your child ready, you may allow this one toy to be considered as a challenge in rotation.",
+  crossAgeAllow: "Allow as a challenge toy",
+  crossAgeDecline: "Not now",
+  crossAgeApproved: "You allowed this toy to participate across the suggested age range.",
+  crossAgeRevoke: "Revoke allowance"
+});
+Object.assign(DICTIONARY.zh, {
+  crossAgeApprovalExplanation: "\u5382\u5BB6\u5EFA\u8BAE\u4ECE {months} \u4E2A\u6708\u8D77\u4F7F\u7528\u3002\u5DF2\u67E5\u9605\u7684\u4EA7\u54C1\u8D44\u6599\u4E2D\u672A\u8BB0\u5F55\u660E\u786E\u7684\u786C\u6027\u8B66\u544A\uFF1B\u8FD9\u4E0D\u4EE3\u8868\u5382\u5BB6\u786E\u8BA4\u66F4\u4F4E\u6708\u9F84\u53EF\u4EE5\u4F7F\u7528\u3002\u5982\u679C\u4F60\u8BA4\u4E3A\u5B69\u5B50\u5DF2\u6709\u76F8\u5E94\u80FD\u529B\uFF0C\u53EF\u4EE5\u5141\u8BB8\u8FD9\u4EF6\u73A9\u5177\u4F5C\u4E3A\u6311\u6218\u73A9\u5177\u53C2\u4E0E\u8F6E\u6362\u3002",
+  crossAgeAllow: "\u5141\u8BB8\u4F5C\u4E3A\u6311\u6218\u73A9\u5177",
+  crossAgeDecline: "\u6682\u4E0D\u5141\u8BB8",
+  crossAgeApproved: "\u5DF2\u5141\u8BB8\u8FD9\u4EF6\u73A9\u5177\u8DE8\u5EFA\u8BAE\u6708\u9F84\u53C2\u4E0E\u8F6E\u6362\u3002",
+  crossAgeRevoke: "\u64A4\u9500\u5141\u8BB8"
+});
 function createI18n(store2) {
   const language = () => store2.state.settings.language === "system" ? navigator.language.startsWith("zh") ? "zh" : "en" : store2.state.settings.language;
   const t2 = (key, params = {}) => {
@@ -8915,6 +9005,11 @@ async function bootstrapBackground() {
       markStartupStage(startupTrace, stage, details);
       runtimeImageDiagnostics.mark(stage, details);
     } });
+    if (store.canPersist && Object.keys(store.state.crossAgeApprovals || {}).some((key) => {
+      const row = catalog.getByKey(key);
+      return row && row.canonicalKey !== key;
+    }))
+      store.update((state) => reconcileCrossAgeApprovals(state, (key) => catalog.getByKey(key)), "cross-age-approval-canonical-reconcile");
     diagnosticLifecycle.push(diagnosticLifecycleSnapshot(store.state, "hydration_complete", "catalog.hydrate"));
     markStartupStage(startupTrace, "catalog_local_load_end");
     recordStartupPhase("hydrate-complete");
@@ -9507,10 +9602,39 @@ function installScrollTopButton(scroller, modal = false) {
   scroller.addEventListener("scroll", update, { passive: true });
   update();
 }
+function attachCrossAgeApprovalControl(form, toy) {
+  const host = document.createElement("section");
+  host.className = "panel cross-age-approval";
+  form.querySelector(".form-error").before(host);
+  const redraw = () => {
+    const row = catalog.resolve(toy);
+    const age = childAgeMonths2();
+    if (!row || catalogSafetyStatus(row) !== "NO_DOCUMENTED_HARD_GATE" || age == null || row.minAgeMonths == null || age >= row.minAgeMonths) {
+      host.remove();
+      return;
+    }
+    const projected = { ...withCatalogSafety(toy, row), minAgeMonths: row.minAgeMonths };
+    const approved = Boolean(crossAgeApprovalFor(store.state, projected));
+    host.innerHTML = `<p>${t("crossAgeApprovalExplanation", { months: row.minAgeMonths })}</p>${approved ? `<p>${t("crossAgeApproved")}</p><button type="button" data-cross-age-revoke>${t("crossAgeRevoke")}</button>` : `<div class="actions"><button type="button" data-cross-age-allow>${t("crossAgeAllow")}</button><button type="button" data-cross-age-decline>${t("crossAgeDecline")}</button></div>`}`;
+    host.querySelector("[data-cross-age-allow]")?.addEventListener("click", () => {
+      store.update((state) => setCrossAgeApproval(state, projected, true), "cross-age-approval");
+      redraw();
+    });
+    host.querySelector("[data-cross-age-revoke]")?.addEventListener("click", () => {
+      store.update((state) => setCrossAgeApproval(state, projected, false), "cross-age-revocation");
+      redraw();
+    });
+    host.querySelector("[data-cross-age-decline]")?.addEventListener("click", () => {
+      host.hidden = true;
+    });
+  };
+  redraw();
+}
 function editToy(id) {
   const toy = store.state.toys.find((item) => item.id === id) || normalizeToy({});
   const dialog = openModal(`<form class="form"><header><h2>${t(id ? "edit" : "addToy")}</h2><button type="button" data-close>\xD7</button></header><label>${t("brand")}<input name="brand" value="${escape(toy.brand === "other_unspecified" ? "" : toy.brand)}"></label><label>${t("name")}<input name="productName" required value="${escape(toy.productName)}"></label><label>${t("allCategories")}<select name="categoryCode">${CATEGORY_CODES.map((code) => `<option value="${code}" ${toy.categoryCode === code ? "selected" : ""}>${t(`category.${code}`)}</option>`).join("")}</select></label><label>${t("skills")}<select name="skillCodes" multiple size="7">${SKILL_CODES.map((code) => `<option value="${code}" ${toy.skillCodes.includes(code) ? "selected" : ""}>${t(`skill.${code}`)}</option>`).join("")}</select></label><label>${t("minimumAge")}<input name="minAgeMonths" type="number" value="${toy.minAgeMonths ?? ""}"></label><label>${t("maximumAge")}<input name="maxAgeMonths" type="number" value="${toy.maxAgeMonths ?? ""}"></label><label>${t("image")}<input name="image" type="file" accept="image/*"></label><div data-personal-image-editor-host></div><p class="form-error" aria-live="polite"></p><button class="primary">${t("save")}</button></form>`);
   const toyForm = dialog.querySelector("form");
+  if (id) attachCrossAgeApprovalControl(toyForm, toy);
   const personalInput = toyForm.elements.image;
   let editedImageData = null;
   personalInput.addEventListener("change", () => {
@@ -9622,7 +9746,11 @@ function chooseParentDeleteMode(parent) {
 function generateNewRotation() {
   const planning = structuredClone(store.state);
   clearManualShelfOverrides(planning);
-  planning.toys = planning.toys.map((toy) => withCatalogSafety(toy, catalog.resolve(toy)));
+  planning.toys = planning.toys.map((toy) => {
+    const row = catalog.resolve(toy);
+    const projected = { ...withCatalogSafety(toy, row), minAgeMonths: row?.minAgeMonths ?? toy.minAgeMonths };
+    return { ...projected, crossAgeApproval: crossAgeApprovalFor(planning, projected) };
+  });
   const result2 = selectRotation({ toys: planning.toys, history: planning.rotationHistory, childAgeMonths: childAgeMonths2(), size: planning.settings.rotationSize, childDevelopmentProfile: planning.profile?.developmentProfile || {}, developmentFeedbackHistory: planning.developmentFeedbackHistory || [] });
   store.update((state) => {
     persistRotationSelection(state, { selected: result2.selected, diagnostics: result2.diagnostics });
