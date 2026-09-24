@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-24T19:29:32.921Z",
+  "generatedAt": "2026-09-24T19:56:13.388Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 Rotation Cross-Age Approval QA11",
+    "buildName": "Toy Rotation v0.11.6 Challenge Toy UI QA12",
     "buildDate": "20260924",
-    "buildId": "v0.11.6-rotation-cross-age-qa11-20260924"
+    "buildId": "v0.11.6-challenge-toy-ui-qa12-20260924"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 833722,
-      "sha256": "447ac0fbf5d11b8349f9ca15217835cc2d65116961b4e6c4a0fb8d1bccfdb42f",
+      "bytes": 842887,
+      "sha256": "5923a213f4a997ddfb8034041412e11ed6c77a3148cdb7fb3a4391fd6fc58b68",
       "importedBy": [
         "index.html"
       ],
@@ -602,8 +602,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 571,
-      "sha256": "2190866c65452845164f88f6b2cfb8ad9ee103f3b79e58fc7716c02d2490e9f4",
+      "bytes": 547,
+      "sha256": "ddbc10bc2cfc2e84dc0b2775394cdf92bce1405cb2ea3b812d18ce7f40c314e7",
       "importedBy": [
         "deployment-static",
         "index.html"
@@ -694,8 +694,8 @@
     {
       "path": "src/ui/app.css",
       "resolvedDeployPath": "./src/ui/app.css",
-      "bytes": 19369,
-      "sha256": "612b36982ebae61201a07bec5dde4f13f4efed8aa1b28824b4f655aef779f4cd",
+      "bytes": 20568,
+      "sha256": "846d7ba498c138fcf00df1df527a89d089cf7a84159c3f32c07be756e1561ca4",
       "importedBy": [
         "deployment-static"
       ],
@@ -724,8 +724,8 @@
     {
       "path": "startup-diagnostic.bundle.js",
       "resolvedDeployPath": "./startup-diagnostic.bundle.js",
-      "bytes": 3583,
-      "sha256": "e762a65debb91ef1139c14819fd5a4836e60f7360730ace09948c331e315a8ec",
+      "bytes": 5149,
+      "sha256": "b93d62700d3ef412c17d6b98d18c8aa0a485c93f11bd70e9a6ec52e8eb720ffa",
       "importedBy": [
         "startup-diagnostic.html"
       ],
@@ -754,8 +754,8 @@
     {
       "path": "storage-recovery-diagnostic.bundle.js",
       "resolvedDeployPath": "./storage-recovery-diagnostic.bundle.js",
-      "bytes": 6958,
-      "sha256": "ff2c21679e5bfe56c9198d296ef4195bf989f8fdf80f3d0279ff8bb0a4c5106f",
+      "bytes": 10781,
+      "sha256": "10924d548c3445b05f63f7df4e694b9d05bd6bce45c0eb4e4533a308b01232a5",
       "importedBy": [
         "storage-recovery-diagnostic.html"
       ],
@@ -799,8 +799,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2698,
-      "sha256": "83b36c9602d994c91fdfac70720a971c8806cbe733dfd33aad0f5c0b571e9d87",
+      "bytes": 2696,
+      "sha256": "abb797f5af671befb01c332591e034ab156339510855ed56ba1cc8b1d35ab92e",
       "importedBy": [
         "deployment-static"
       ],

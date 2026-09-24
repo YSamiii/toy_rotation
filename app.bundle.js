@@ -333,6 +333,25 @@ function setCrossAgeApproval(state, toy, approved, { now: now3 = (/* @__PURE__ *
   };
   return true;
 }
+function declineCrossAgeApproval(state, toy, { now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
+  const key = String(toy?.canonicalKey || "");
+  if (!key || !Number.isFinite(toy?.minAgeMonths)) return false;
+  state.crossAgeApprovals ||= {};
+  state.crossAgeApprovals[key] = {
+    approved: false,
+    decidedAt: now3,
+    canonicalKey: key,
+    sourceRecommendedMinAgeMonths: toy.minAgeMonths
+  };
+  return true;
+}
+function crossAgeChoiceFor(state, toy) {
+  const key = String(toy?.canonicalKey || "");
+  const record = state?.crossAgeApprovals?.[key];
+  if (validCrossAgeApproval(toy, record)) return "allowed";
+  if (record?.approved === false && record.canonicalKey === key && record.sourceRecommendedMinAgeMonths === toy?.minAgeMonths) return "declined";
+  return "pending";
+}
 function redirectCrossAgeApproval(state, from, to) {
   const approvals = state?.crossAgeApprovals;
   if (!approvals || !from || !to || from === to || !approvals[from]) return false;
@@ -7560,6 +7579,30 @@ function distribution(items) {
   return Object.fromEntries(AGE_SAFETY_STATUSES.map((status) => [status, items.filter((item) => item.ageSafetyStatus === status).length]));
 }
 
+// src/features/cross-age-challenges.js
+function challengeDecision(state, catalog2, toy, age, profile = {}) {
+  const row = catalog2.resolve(toy);
+  if (!row || age == null) return null;
+  const projected = { ...withCatalogSafety(toy, row), minAgeMonths: row.minAgeMonths };
+  const approval = crossAgeApprovalFor(state, projected);
+  return {
+    row,
+    projected,
+    approval,
+    choice: crossAgeChoiceFor(state, projected),
+    decision: rotationAgeEligibility({ ...projected, crossAgeApproval: approval }, age, profile)
+  };
+}
+function parentApprovableChallenge(state, catalog2, toy, age, profile = {}) {
+  if (!toy || toy.hidden || toy.archived || toy.set?.kind === "parent" || isRotationPaused(toy) || isUserCustomPermanent(toy)) return null;
+  const review = challengeDecision(state, catalog2, toy, age, profile);
+  if (!review || catalogSafetyStatus(review.row) !== "NO_DOCUMENTED_HARD_GATE" || review.row.minAgeMonths == null || age >= review.row.minAgeMonths) return null;
+  return ["PARENT_APPROVAL_REQUIRED", "PARENT_APPROVED_CROSS_AGE"].includes(review.decision.reason) ? { toy, ...review } : null;
+}
+function parentApprovableChallenges(state, catalog2, age, profile = {}) {
+  return (state.toys || []).map((toy) => parentApprovableChallenge(state, catalog2, toy, age, profile)).filter(Boolean);
+}
+
 // src/features/startup-trace.js
 var WATCHDOG_DELAY_MS = 750;
 function now2() {
@@ -8451,18 +8494,46 @@ Object.assign(DICTIONARY.zh, { abilityProfile: {
   mechanism: { puzzle: "\u62FC\u56FE", matching_sorting: "\u914D\u5BF9", shape_sorting: "\u5F62\u72B6\u5206\u7C7B", counting_quantity: "\u8BA1\u6570\u4E0E\u6570\u91CF", color_pattern: "\u989C\u8272\u4E0E\u89C4\u5F8B", blocks_build: "\u79EF\u6728\u4E0E\u7A7A\u95F4\u5EFA\u6784", screw_bolt_tool: "\u87BA\u4E1D\u4E0E\u5DE5\u5177", threading_lacing: "\u7A7F\u7EBF\u4E0E\u4E32\u73E0", lock_key: "\u5F00\u9501\u4E0E\u673A\u5173", magnetic_build: "\u78C1\u529B\u64CD\u4F5C", fine_motor_general: "\u6293\u63E1\u4E0E\u954A\u5B50", cause_effect: "\u6572\u51FB\u3001\u8F68\u9053\u4E0E\u56E0\u679C", pretend_role: "\u60C5\u5883\u626E\u6F14", music_play: "\u97F3\u4E50\u4E92\u52A8", balance: "\u5E73\u8861\u4E0E\u5927\u8FD0\u52A8" }
 } });
 Object.assign(DICTIONARY.en, {
-  crossAgeApprovalExplanation: "Manufacturer guidance starts at {months} months. No specific hard warning was documented in the product information reviewed; this does not mean the manufacturer confirms use at a younger age. If you judge your child ready, you may allow this one toy to be considered as a challenge in rotation.",
-  crossAgeAllow: "Allow as a challenge toy",
+  crossAgeApprovalExplanation: "Allowing this toy only makes it eligible for a challenge rotation. Ability fit and all other recommendation rules still apply.",
+  crossAgeAllow: "Allow early in rotation",
   crossAgeDecline: "Not now",
   crossAgeApproved: "You allowed this toy to participate across the suggested age range.",
-  crossAgeRevoke: "Revoke allowance"
+  crossAgeRevoke: "Revoke allowance",
+  challengeEntryTitle: "Challenge toys",
+  challengeSettingsTitle: "Challenge toy settings",
+  challengeEntrySummary: "{count} toys can be considered early \xB7 {pending} to decide \xB7 {approved} allowed",
+  challengeOpenSettings: "Manage challenge toys",
+  challengeSettingsIntro: "Decide separately for each toy. Allowing one does not guarantee it will be recommended.",
+  challengeAges: "Manufacturer guidance: {recommended} months+ \xB7 Child: {current} months",
+  challengeSafetyNote: "No specific hard safety warning was documented in the product information reviewed. This does not mean the manufacturer confirms use at a younger age.",
+  challengeStatusPending: "Can decide",
+  challengeStatusAllowed: "Allowed early in rotation",
+  challengeStatusDeclined: "Not allowed early",
+  challengeBadgeAvailable: "Early challenge available",
+  challengeBadgeAllowed: "Challenge allowed",
+  challengeHardBlocked: "This toy has a documented hard safety restriction and cannot be added early to a challenge rotation.",
+  challengeUnknownBlocked: "There is not enough safety information to support early participation in rotation."
 });
 Object.assign(DICTIONARY.zh, {
-  crossAgeApprovalExplanation: "\u5382\u5BB6\u5EFA\u8BAE\u4ECE {months} \u4E2A\u6708\u8D77\u4F7F\u7528\u3002\u5DF2\u67E5\u9605\u7684\u4EA7\u54C1\u8D44\u6599\u4E2D\u672A\u8BB0\u5F55\u660E\u786E\u7684\u786C\u6027\u8B66\u544A\uFF1B\u8FD9\u4E0D\u4EE3\u8868\u5382\u5BB6\u786E\u8BA4\u66F4\u4F4E\u6708\u9F84\u53EF\u4EE5\u4F7F\u7528\u3002\u5982\u679C\u4F60\u8BA4\u4E3A\u5B69\u5B50\u5DF2\u6709\u76F8\u5E94\u80FD\u529B\uFF0C\u53EF\u4EE5\u5141\u8BB8\u8FD9\u4EF6\u73A9\u5177\u4F5C\u4E3A\u6311\u6218\u73A9\u5177\u53C2\u4E0E\u8F6E\u6362\u3002",
-  crossAgeAllow: "\u5141\u8BB8\u4F5C\u4E3A\u6311\u6218\u73A9\u5177",
+  crossAgeApprovalExplanation: "\u5F00\u542F\u540E\uFF0C\u8FD9\u4EF6\u73A9\u5177\u53EA\u4F1A\u83B7\u5F97\u53C2\u4E0E\u6311\u6218\u578B\u8F6E\u6362\u7684\u8D44\u683C\uFF0C\u4ECD\u4F1A\u7EE7\u7EED\u7ECF\u8FC7\u80FD\u529B\u5339\u914D\u548C\u5176\u4ED6\u63A8\u8350\u89C4\u5219\u3002",
+  crossAgeAllow: "\u5141\u8BB8\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362",
   crossAgeDecline: "\u6682\u4E0D\u5141\u8BB8",
   crossAgeApproved: "\u5DF2\u5141\u8BB8\u8FD9\u4EF6\u73A9\u5177\u8DE8\u5EFA\u8BAE\u6708\u9F84\u53C2\u4E0E\u8F6E\u6362\u3002",
-  crossAgeRevoke: "\u64A4\u9500\u5141\u8BB8"
+  crossAgeRevoke: "\u64A4\u9500\u5141\u8BB8",
+  challengeEntryTitle: "\u6311\u6218\u73A9\u5177",
+  challengeSettingsTitle: "\u6311\u6218\u73A9\u5177\u8BBE\u7F6E",
+  challengeEntrySummary: "{count} \u4E2A\u73A9\u5177\u53EF\u7531\u5BB6\u957F\u51B3\u5B9A\u662F\u5426\u63D0\u524D\u53C2\u4E0E \xB7 \u5F85\u51B3\u5B9A {pending} \xB7 \u5DF2\u5141\u8BB8 {approved}",
+  challengeOpenSettings: "\u7BA1\u7406\u6311\u6218\u73A9\u5177",
+  challengeSettingsIntro: "\u8BF7\u9010\u4EF6\u51B3\u5B9A\u3002\u5141\u8BB8\u63D0\u524D\u53C2\u4E0E\u5E76\u4E0D\u4FDD\u8BC1\u8BE5\u73A9\u5177\u4E00\u5B9A\u88AB\u63A8\u8350\u3002",
+  challengeAges: "\u5382\u5BB6\u5EFA\u8BAE\uFF1A{recommended} \u4E2A\u6708+ \xB7 \u5F53\u524D\u6708\u9F84\uFF1A{current} \u4E2A\u6708",
+  challengeSafetyNote: "\u5DF2\u67E5\u9605\u7684\u4EA7\u54C1\u8D44\u6599\u4E2D\u672A\u8BB0\u5F55\u660E\u786E\u7684\u786C\u6027\u5B89\u5168\u8B66\u544A\uFF0C\u4F46\u8FD9\u4E0D\u4EE3\u8868\u5382\u5BB6\u786E\u8BA4\u66F4\u4F4E\u6708\u9F84\u4F7F\u7528\u5B89\u5168\u3002",
+  challengeStatusPending: "\u53EF\u51B3\u5B9A",
+  challengeStatusAllowed: "\u5DF2\u5141\u8BB8\u63D0\u524D\u53C2\u4E0E",
+  challengeStatusDeclined: "\u6682\u4E0D\u5141\u8BB8",
+  challengeBadgeAvailable: "\u53EF\u63D0\u524D\u6311\u6218",
+  challengeBadgeAllowed: "\u5DF2\u5141\u8BB8\u6311\u6218",
+  challengeHardBlocked: "\u6B64\u73A9\u5177\u6709\u660E\u786E\u7684\u786C\u6027\u5B89\u5168\u9650\u5236\uFF0C\u4E0D\u80FD\u63D0\u524D\u52A0\u5165\u6311\u6218\u8F6E\u6362\u3002",
+  challengeUnknownBlocked: "\u76EE\u524D\u6CA1\u6709\u8DB3\u591F\u5B89\u5168\u4FE1\u606F\u652F\u6301\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362\u3002"
 });
 function createI18n(store2) {
   const language = () => store2.state.settings.language === "system" ? navigator.language.startsWith("zh") ? "zh" : "en" : store2.state.settings.language;
@@ -9058,6 +9129,7 @@ function render() {
     <header><img src="./icons/header-logo.png" alt=""><div><h1>${t("appName")}</h1><p>${t(view)}</p><small class="build-marker">${escape(buildIdentityLabel())}</small></div><button data-action="settings" aria-label="${t("settings")}">\u2699</button></header>
     <nav>${navButton("home", "home")}${navButton("library", "library")}${navButton("rotation", "rotation")}${navButton("wishlist", "wishlist")}</nav>
     <main>${renderPersistenceWarning()}${renderView()}</main>`;
+  renderChallengeEntry();
   root.querySelectorAll("[data-view]").forEach((button) => {
     button.onclick = () => {
       view = button.dataset.view;
@@ -9067,6 +9139,7 @@ function render() {
   root.querySelectorAll("[data-action]").forEach((button) => {
     button.onclick = () => action(button.dataset.action, button.dataset);
   });
+  renderChallengeBadges();
   root.querySelectorAll("[data-draft-edit]").forEach((button) => {
     button.onclick = () => openRecognitionReview(button.dataset.draftEdit);
   });
@@ -9174,6 +9247,22 @@ function renderToyCard(toy, { showDevelopment = false } = {}) {
   const development = showDevelopment ? renderDevelopmentFeedback(toy) : "";
   return `<article class="card" data-toy-id="${escape(toy.id)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes || []).join("|"))}" data-mechanics="${escape((toy.playMechanics || []).join("|"))}" data-status="${toy.archived ? "archived" : toy.hidden ? "hidden" : paused ? "paused" : customPermanent ? "permanent" : onShelf ? "active" : "stored"}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t("permanentBadge")}</span>` : ""}</h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map((code) => `<span>${t(`skill.${code}`)}</span>`).join("")}</div><p>${toy.minAgeMonths ?? "?"}\u2013${toy.maxAgeMonths ?? "?"} ${ageUnit} \xB7 ${t(paused ? "paused" : customPermanent ? "customPermanent" : onShelf ? "onShelf" : "stored")}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === "like" ? "selected" : ""}">${t("liked")}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === "neutral" ? "selected" : ""}">${t("neutral")}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === "dislike" ? "selected" : ""}">${t("disliked")}</button>${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t("edit")}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t("remove")}</button></div></div></article>`;
 }
+function currentChallengeRows() {
+  return parentApprovableChallenges(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
+}
+function renderChallengeBadges() {
+  if (view !== "library") return;
+  const byId = new Map(currentChallengeRows().map((row) => [row.toy.id, row]));
+  root.querySelectorAll("#library-list [data-toy-id]").forEach((card) => {
+    const row = byId.get(card.dataset.toyId);
+    if (!row) return;
+    const badge = document.createElement("span");
+    badge.className = "challenge-chip";
+    badge.dataset.challengeChoice = row.choice;
+    badge.textContent = t(row.choice === "allowed" ? "challengeBadgeAllowed" : "challengeBadgeAvailable");
+    card.querySelector("h3")?.append(" ", badge);
+  });
+}
 function renderDevelopmentFeedback(toy) {
   const cycle = store.state.rotationHistory?.[0]?.id || null;
   const feedback = (store.state.developmentFeedbackHistory || []).find((item) => item.id === `${toy.id}:${cycle || "current"}`);
@@ -9272,6 +9361,16 @@ function renderRotation() {
   const manual = shelf.manual.length ? `<section class="rotation-section"><h3>${t("manuallyOnShelf")} \xB7 ${shelf.manual.length}</h3><div class="list">${shelf.manual.map(renderToyCard).join("")}</div></section>` : "";
   return `<section class="head"><h2>${t("rotation")}</h2><button class="primary" data-action="generate">${t("generate")}</button></section><section class="panel shelf-total"><b>${t("currentShelfTotal", { count: shelf.totalShelfCount })}</b><p>${t("thisRotation")} ${shelf.rotation.length} \xB7 ${t("customPermanent")} ${shelf.permanent.length} \xB7 ${t("paused")} ${pausedCount}</p><p>${t("permanentTargetHint")}</p></section>${shortage}<section class="rotation-section"><h3>${t("customPermanent")} \xB7 ${shelf.permanent.length} <button data-action="toggle-permanent-collapse" aria-expanded="${!collapsed}">${collapsed ? "\u25B8" : "\u25BE"}</button></h3>${collapsed ? "" : `<div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div>`}</section>${manual}<section class="rotation-section"><h3>${t("thisRotation")} \xB7 ${shelf.rotation.length}</h3><div class="list">${shelf.rotation.length ? shelf.rotation.map((toy) => renderToyCard(toy, { showDevelopment: true })).join("") : renderEmpty()}</div></section>`;
 }
+function renderChallengeEntry() {
+  if (view !== "rotation") return;
+  const rows = currentChallengeRows();
+  if (!rows.length) return;
+  const approved = rows.filter((row) => row.choice === "allowed").length;
+  const entry = document.createElement("section");
+  entry.className = "panel challenge-entry";
+  entry.innerHTML = `<div><h3>${t("challengeEntryTitle")}</h3><p>${t("challengeEntrySummary", { count: rows.length, pending: rows.filter((row) => row.choice === "pending").length, approved })}</p></div><button type="button" data-action="challenge-settings">${t("challengeOpenSettings")}</button>`;
+  root.querySelector(".shelf-total")?.before(entry);
+}
 function renderWishlist() {
   const age = childAgeMonths2();
   const unresolved = [];
@@ -9347,6 +9446,7 @@ async function action(name, data) {
   }
   if (name === "library-duplicates") return openLibraryDuplicateScan();
   if (name === "settings") return openSettings();
+  if (name === "challenge-settings") return openChallengeSettings();
   if (name === "persistence-diagnostic") return exportPersistenceDiagnostic();
   if (name === "persistence-recovery") return applyPersistenceRecovery();
   if (name === "persistence-quota-retry") return retryQuotaStorageRecovery();
@@ -9602,30 +9702,67 @@ function installScrollTopButton(scroller, modal = false) {
   scroller.addEventListener("scroll", update, { passive: true });
   update();
 }
+function updateChallengeChoice(projected, choice) {
+  store.update((state) => {
+    if (choice === "declined") declineCrossAgeApproval(state, projected);
+    else setCrossAgeApproval(state, projected, choice === "allowed");
+  }, "cross-age-choice");
+}
+function openChallengeSettings() {
+  const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${t("challengeSettingsTitle")}</h2><button type="button" data-close>\xD7</button></header><p>${t("challengeSettingsIntro")}</p><p data-challenge-summary></p><div class="challenge-list" data-challenge-list></div></section>`);
+  const redraw = () => {
+    const rows = currentChallengeRows();
+    dialog.querySelector("[data-challenge-summary]").textContent = t("challengeEntrySummary", {
+      count: rows.length,
+      pending: rows.filter((row) => row.choice === "pending").length,
+      approved: rows.filter((row) => row.choice === "allowed").length
+    });
+    const list = dialog.querySelector("[data-challenge-list]");
+    list.innerHTML = rows.map(({ toy, row, projected, choice }) => `<article class="challenge-item" data-challenge-key="${escape(row.canonicalKey)}" data-challenge-choice="${choice}"><img data-image='${escapedJson(libraryImageRef(toy, "challenge_settings"))}' alt=""><div><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${t("challengeAges", { recommended: row.minAgeMonths, current: childAgeMonths2() })}</p><p class="challenge-status">${t(choice === "allowed" ? "challengeStatusAllowed" : choice === "declined" ? "challengeStatusDeclined" : "challengeStatusPending")}</p><div class="actions">${choice === "allowed" ? `<button type="button" data-challenge-action="revoke">${t("crossAgeRevoke")}</button>` : `<button type="button" class="primary" data-challenge-action="allow">${t("crossAgeAllow")}</button>${choice === "pending" ? `<button type="button" data-challenge-action="decline">${t("crossAgeDecline")}</button>` : ""}`}</div></div></article>`).join("");
+    list.querySelectorAll("[data-challenge-action]").forEach((button) => {
+      button.onclick = () => {
+        const parent = button.closest("[data-challenge-key]");
+        const selected = rows.find((item) => item.row.canonicalKey === parent?.dataset.challengeKey);
+        if (!selected) return;
+        updateChallengeChoice(selected.projected, button.dataset.challengeAction === "allow" ? "allowed" : button.dataset.challengeAction === "decline" ? "declined" : "revoked");
+        redraw();
+      };
+    });
+    bindImages(list);
+  };
+  redraw();
+}
 function attachCrossAgeApprovalControl(form, toy) {
   const host = document.createElement("section");
   host.className = "panel cross-age-approval";
   form.querySelector(".form-error").before(host);
   const redraw = () => {
-    const row = catalog.resolve(toy);
     const age = childAgeMonths2();
-    if (!row || catalogSafetyStatus(row) !== "NO_DOCUMENTED_HARD_GATE" || age == null || row.minAgeMonths == null || age >= row.minAgeMonths) {
+    const review = challengeDecision(store.state, catalog, toy, age, store.state.profile?.developmentProfile || {});
+    if (!review || review.row.minAgeMonths == null || age >= review.row.minAgeMonths) {
       host.remove();
       return;
     }
-    const projected = { ...withCatalogSafety(toy, row), minAgeMonths: row.minAgeMonths };
-    const approved = Boolean(crossAgeApprovalFor(store.state, projected));
-    host.innerHTML = `<p>${t("crossAgeApprovalExplanation", { months: row.minAgeMonths })}</p>${approved ? `<p>${t("crossAgeApproved")}</p><button type="button" data-cross-age-revoke>${t("crossAgeRevoke")}</button>` : `<div class="actions"><button type="button" data-cross-age-allow>${t("crossAgeAllow")}</button><button type="button" data-cross-age-decline>${t("crossAgeDecline")}</button></div>`}`;
+    const approvable = parentApprovableChallenge(store.state, catalog, toy, age, store.state.profile?.developmentProfile || {});
+    const blocked = review.decision.reason === "HARD_SAFETY_BLOCK" ? "challengeHardBlocked" : review.decision.reason === "UNKNOWN_AGE_BLOCK" ? "challengeUnknownBlocked" : null;
+    if (!approvable && !blocked) {
+      host.remove();
+      return;
+    }
+    const choice = approvable?.choice || "pending";
+    host.hidden = false;
+    host.innerHTML = `<h3>${t("challengeSettingsTitle")}</h3><p>${t("challengeAges", { recommended: review.row.minAgeMonths, current: age })}</p>${blocked ? `<p>${t(blocked)}</p>` : `<p>${t("challengeSafetyNote")}</p><p>${t("crossAgeApprovalExplanation", { months: review.row.minAgeMonths })}</p><p class="challenge-status">${t(choice === "allowed" ? "challengeStatusAllowed" : choice === "declined" ? "challengeStatusDeclined" : "challengeStatusPending")}</p><div class="actions">${choice === "allowed" ? `<button type="button" data-cross-age-revoke>${t("crossAgeRevoke")}</button>` : `<button type="button" class="primary" data-cross-age-allow>${t("crossAgeAllow")}</button>${choice === "pending" ? `<button type="button" data-cross-age-decline>${t("crossAgeDecline")}</button>` : ""}`}</div>`}`;
     host.querySelector("[data-cross-age-allow]")?.addEventListener("click", () => {
-      store.update((state) => setCrossAgeApproval(state, projected, true), "cross-age-approval");
+      updateChallengeChoice(review.projected, "allowed");
       redraw();
     });
     host.querySelector("[data-cross-age-revoke]")?.addEventListener("click", () => {
-      store.update((state) => setCrossAgeApproval(state, projected, false), "cross-age-revocation");
+      updateChallengeChoice(review.projected, "revoked");
       redraw();
     });
     host.querySelector("[data-cross-age-decline]")?.addEventListener("click", () => {
-      host.hidden = true;
+      updateChallengeChoice(review.projected, "declined");
+      redraw();
     });
   };
   redraw();
