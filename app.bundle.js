@@ -7579,6 +7579,233 @@ function distribution(items) {
   return Object.fromEntries(AGE_SAFETY_STATUSES.map((status) => [status, items.filter((item) => item.ageSafetyStatus === status).length]));
 }
 
+// src/features/raw-identity-reference-audit.js
+var PAIRS = [
+  ["lego-duplo-brick-box", "lego-duplo-classic-brick-box", "10913"],
+  ["hape-pound-tap-bench", "hape-pound-tap-bench-xylophone", "E0305"],
+  ["mideer-my-first-puzzle-dinosaurs-6in1", "mideer-my-first-puzzle-dinosaurs-6in1-md1460", "MD1460"],
+  ["lr-helping-hands", "learningresources-helping-hands-fine-motor-tool-set", "LER5558"],
+  ["mideer-dressup-princess-fashion", "mideer-ct2283-princess-fashion-show", "CT2283"],
+  ["mideer-colorful-magnetic-tiles-jurassic-48p", "mideer-magnetic-tiles-jurassic-adventure-48p", null],
+  ["mideer-colorful-magnetic-tiles-wonderful-forest-40p", "mideer-magnetic-tiles-wonderful-forest-40p", null],
+  ["mideer-level1-animals-2-6", "mideer-level-up-l1-animals-2p-6p", null],
+  ["mideer-level1-animals-vehicles-2-6", "mideer-level-up-l1-animals-vehicles-2p-6p", null],
+  ["mideer-level3-community-helpers", "mideer-level-up-l3-community-helpers-24-35p", null],
+  ["mideer-level3-natural-scenery", "mideer-level-up-l3-natural-scenery-24-35p", null],
+  ["mideer-level4-construction", "mideer-level-up-l4-clanging-construction-48-72p", null],
+  ["mideer-level5-wonderful-adventure", "mideer-level-up-l5-wonderful-adventure", null],
+  ["mideer-magnetic-maze-parking", "mideer-magnetic-maze-parking-lot", null],
+  ["mideer-magnetic-tangram", "mideer-magnetic-tangram-md4281", "MD4281"],
+  ["mideer-paper-craft-windmill", "mideer-paper-craft-windmill-kingdom-md2307", "MD2307"],
+  ["mideer-portable-puzzle-our-world-100", "mideer-portable-puzzle-our-world-100p-md3027", "MD3027"],
+  ["mideer-portable-wonderful-ocean-104p", "mideer-portable-puzzle-wonderful-ocean-104p", null],
+  ["mideer-racing-track-magnetic-115", "mideer-racing-track-grooved-magnetic-tiles-115p-md6395", "MD6395"]
+];
+var RAW_IDENTITY_P0_GROUPS = Object.freeze(PAIRS.map(([a, b, sku], index) => Object.freeze({ groupId: `P0-${String(index + 1).padStart(2, "0")}`, canonicalKeys: [a, b], skuModel: sku, duplicateEvidence: index < 4 ? "same SKU/model or established redirect" : "confirmed exact official product-page identity" })));
+var BASE_KEYS = [
+  STORE_KEY,
+  STORE_SHADOW_KEY,
+  STORE_RECOVERY_STAGING_KEY,
+  STORE_COMMIT_STAGING_KEY,
+  ...STORE_SNAPSHOT_KEYS,
+  STORE_HEALTH_KEY,
+  "toyRotationV04",
+  "toyRotationV032",
+  "toyRotationV03",
+  "toyRotationV02",
+  "toyRotationCatalogDeletedV0934",
+  "toyRotationHiddenCatalogKeysV0927",
+  "toyRotationHiddenCatalogTombstonesV0929",
+  "toyRotationHiddenCatalogAuthoritativeV0930",
+  "toyRotationCatalogHiddenV0933",
+  "toyRotationCatalogPendingHideV0933",
+  "toyRotationCatalogOverridesV095",
+  "toyCatalogConfirmedPhotosV1",
+  "toyRotationCatalogMediaV0946"
+];
+var SAFE_ID = /^[a-z0-9:._-]{1,150}$/i;
+var KEY_FIELDS = /* @__PURE__ */ new Set(["canonicalKey", "catalogKey", "catalogId", "parentCanonicalKey", "legacyCanonicalKey", "childCanonicalKey", "sourceCanonicalKey", "targetCanonicalKey", "from", "to"]);
+var KEY_ARRAY_FIELDS = /* @__PURE__ */ new Set(["childCanonicalKeys", "legacyCanonicalKeys", "canonicalKeys", "catalogKeys", "aliases"]);
+function matchingGroup(value) {
+  if (typeof value !== "string") return null;
+  for (const group of RAW_IDENTITY_P0_GROUPS) for (const key of group.canonicalKeys) {
+    if (value === key) return { group, key, childIndex: null };
+    if (group.groupId === "P0-03") {
+      const match = value.match(new RegExp(`^${key}[:\\-]puzzle-([1-6])$`));
+      if (match) return { group, key, childIndex: Number(match[1]) };
+    }
+  }
+  return null;
+}
+function safeId(value) {
+  return typeof value === "string" && SAFE_ID.test(value) ? value : null;
+}
+function statusFor(path, object) {
+  if (/snapshot|shadow|staging|preFresh|toyRotationV0/i.test(path)) return "historical";
+  if (/deleted|tombstone/i.test(path) || object?.deleted || object?.status === "deleted") return "deleted";
+  if (/archive/i.test(path) || object?.archived || object?.status === "archived") return "archived";
+  return "active";
+}
+function areaFor(path, source) {
+  if (/preFresh|snapshot|shadow|staging|toyRotationV0/i.test(source)) return "backup/recovery";
+  if (/crossAgeApprovals/.test(path)) return "crossAgeApprovals";
+  if (/rotationHistory|recent|cooldown|lastSelected/i.test(path)) return "rotation history/recent-use";
+  if (/developmentFeedbackHistory|developmentProfile|feedback/i.test(path)) return "Development Fit/feedback";
+  if (/wishlist/i.test(path)) return "Wishlist";
+  if (/image|photo|media/i.test(path)) return "image references";
+  if (/catalogState|toyRotationCatalog/i.test(path + source)) return "Catalog/user override";
+  if (/toys|drafts/i.test(path)) return "Toy Library";
+  return "persistence/migration residue";
+}
+function relationFor(path, match) {
+  if (match.childIndex || /childCanonical/i.test(path)) return "child";
+  if (/parentCanonical/i.test(path)) return "parent";
+  return null;
+}
+function sourceRecord(value) {
+  if (typeof value !== "string") return { status: "unsupported" };
+  try {
+    return { status: "available", value: JSON.parse(value) };
+  } catch {
+    return { status: "malformed" };
+  }
+}
+function buildRawIdentityReferenceAudit({ storage, catalog: catalog2 = null, build = {}, generatedAt = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
+  const groups = RAW_IDENTITY_P0_GROUPS.map((group) => ({ ...group, existingRedirects: [], rawRefSummary: { total: 0, active: 0, historical: 0, backup: 0, image: 0, child: 0, approval: 0 }, rawRefs: [] }));
+  const groupById = new Map(groups.map((group) => [group.groupId, group]));
+  const availableSources = [];
+  const unavailableSources = [];
+  const storageSourcesScanned = [];
+  if (storage === void 0) {
+    try {
+      storage = globalThis.localStorage;
+    } catch {
+      storage = null;
+      unavailableSources.push({ source: "localStorage", reason: "CURRENT DATA UNAVAILABLE: browser denied storage access" });
+    }
+  }
+  const keys = [...BASE_KEYS];
+  try {
+    for (let i = 0; i < (storage?.length || 0); i++) {
+      const key = storage.key(i);
+      if (/^toyRotation\.cleanBaseline\.preFresh\./.test(key) && !keys.includes(key)) keys.push(key);
+    }
+  } catch {
+    unavailableSources.push({ source: "localStorage key inventory", reason: "CURRENT DATA UNAVAILABLE: storage enumeration denied" });
+  }
+  for (const key of keys) {
+    let emit = function(value, path, parent, recordType, viaToyId = false) {
+      const hit = matchingGroup(value);
+      if (!hit) return;
+      const group = groupById.get(hit.group.groupId);
+      const resolved = catalog2?.resolve?.({ canonicalKey: hit.key });
+      const current = safeId(resolved?.canonicalKey) || hit.key;
+      const status = statusFor(`${key}:${path}`, parent);
+      const sourceArea = areaFor(path, key);
+      const image = /image|photo|media/i.test(path);
+      const ref = {
+        canonicalKeyFound: value,
+        normalizedCurrentCanonicalKey: hit.childIndex ? `${current}:puzzle-${hit.childIndex}` : current,
+        sourceArea,
+        storageKey: key,
+        recordType,
+        recordId: safeId(parent?.id),
+        status,
+        relation: relationFor(path, hit),
+        rawFieldPath: path,
+        runtimeRedirectWouldResolve: current !== hit.key,
+        migrationMayBeRequired: current !== hit.key,
+        referenceViaToyId: viaToyId,
+        imageRefExists: image || !!parent?.imageRef || !!parent?.personalImageRef,
+        noteRefExists: !!(parent?.notes || parent?.note),
+        customFieldsExist: !!parent?.customFields,
+        shelfState: parent?.currentShelf === true ? "current" : parent?.currentShelf === false ? "not-current" : null,
+        permanentState: !!(parent?.customPermanent || parent?.permanentSource === "user"),
+        feedbackType: ["too_easy", "just_right", "good_challenge", "too_hard", "not_interested"].includes(parent?.feedback) ? parent.feedback : null
+      };
+      if (sourceArea === "crossAgeApprovals") {
+        ref.approvalState = parent?.approved === true ? "approved" : parent?.approved === false ? "declined" : "record-present";
+        ref.approvedAt = /^\d{4}-\d{2}-\d{2}/.test(parent?.approvedAt || "") ? parent.approvedAt : null;
+        ref.sourceRecommendedMinAgeMonths = Number.isFinite(parent?.sourceRecommendedMinAgeMonths) ? parent.sourceRecommendedMinAgeMonths : null;
+      }
+      if (hit.childIndex) ref.childIndex = hit.childIndex;
+      group.rawRefs.push(ref);
+      group.rawRefSummary.total++;
+      if (status === "active") group.rawRefSummary.active++;
+      else group.rawRefSummary.historical++;
+      if (sourceArea === "backup/recovery") group.rawRefSummary.backup++;
+      if (image) group.rawRefSummary.image++;
+      if (ref.relation === "child") group.rawRefSummary.child++;
+      if (sourceArea === "crossAgeApprovals") group.rawRefSummary.approval++;
+    }, scan = function(value, path = "$", parent = null, field = "", depth = 0) {
+      if (depth > 35 || value == null) return;
+      if (typeof value === "string") {
+        if (KEY_FIELDS.has(field) || KEY_ARRAY_FIELDS.has(field) || /^(?:legacy|source|target)?canonical(?:key)?$/i.test(field)) emit(value, path, parent, field || "canonical reference");
+        else if (/^(?:toyIds|selectedIds|recentIds)$/.test(field) && toyById.has(value)) emit(toyById.get(value).canonicalKey, `${path} -> toys[id=${safeId(value)}].canonicalKey`, toyById.get(value), "toy-id link", true);
+        else if (field === "raw" && /preFresh/.test(key)) {
+          const nested = sourceRecord(value);
+          if (nested.status === "available") scan(nested.value, `${path}<parsed>`, parent, field, depth + 1);
+        }
+        return;
+      }
+      if (typeof value !== "object" || seen.has(value)) return;
+      seen.add(value);
+      if (Array.isArray(value)) {
+        value.forEach((item, index) => scan(item, `${path}[${index}]`, parent, field, depth + 1));
+        return;
+      }
+      const owner = typeof value.id === "string" ? value : parent;
+      for (const [property, item] of Object.entries(value)) {
+        if (/^(?:notes?|dataUrl|data|blob|token|secret|password|apiKey)$/i.test(property)) continue;
+        const propertyHit = matchingGroup(property);
+        const safeProperty = propertyHit || /^[A-Za-z][A-Za-z0-9_]*$/.test(property);
+        const nextPath = safeProperty ? `${path}.${property}` : `${path}[${JSON.stringify(safeId(property) || "<opaque-key>")}]`;
+        if (propertyHit) emit(property, nextPath, owner, "canonical-keyed map entry");
+        scan(item, nextPath, owner, Array.isArray(value) ? field : property, depth + 1);
+      }
+    };
+    let raw;
+    try {
+      raw = storage?.getItem?.(key);
+    } catch {
+      unavailableSources.push({ source: key, reason: "CURRENT DATA UNAVAILABLE: storage read denied" });
+      storageSourcesScanned.push({ source: key, status: "unavailable" });
+      continue;
+    }
+    if (raw == null) {
+      storageSourcesScanned.push({ source: key, status: "missing" });
+      unavailableSources.push({ source: key, reason: "CURRENT DATA UNAVAILABLE: no retained record on this device" });
+      continue;
+    }
+    const parsed = sourceRecord(raw);
+    storageSourcesScanned.push({ source: key, status: parsed.status });
+    if (parsed.status !== "available") {
+      unavailableSources.push({ source: key, reason: `CURRENT DATA UNAVAILABLE: ${parsed.status} record` });
+      continue;
+    }
+    availableSources.push(key);
+    const root2 = parsed.value?.state || parsed.value;
+    const toys = [...Array.isArray(root2?.toys) ? root2.toys : [], ...Array.isArray(root2?.drafts) ? root2.drafts : []];
+    const toyById = new Map(toys.filter((toy) => safeId(toy?.id)).map((toy) => [toy.id, toy]));
+    const seen = /* @__PURE__ */ new WeakSet();
+    scan(parsed.value);
+  }
+  for (const group of groups) {
+    const sides = new Set(group.rawRefs.map((ref) => matchingGroup(ref.canonicalKeyFound)?.key));
+    group.duplicateRawStateUnderBothCanonicals = group.canonicalKeys.every((key) => sides.has(key));
+    for (const key of group.canonicalKeys) {
+      const current = catalog2?.resolve?.({ canonicalKey: key })?.canonicalKey;
+      if (current && current !== key) group.existingRedirects.push({ from: key, to: current, kind: "runtime resolution projection only" });
+    }
+  }
+  unavailableSources.push(
+    { source: "external/downloaded backup files", reason: "CURRENT DATA UNAVAILABLE: browser cannot read files without owner selection" },
+    { source: "Safari-cleared history or other devices", reason: "CURRENT DATA UNAVAILABLE: not retained on this device" },
+    { source: "IndexedDB image payload registry", reason: "CURRENT DATA UNAVAILABLE: intentionally not opened to avoid creating or reading image bytes; persisted image refs are scanned" }
+  );
+  return { auditVersion: "v0.11.6-raw-p0-1", buildId: String(build.buildId || ""), generatedAt, scope: { p0Groups: groups.length }, storageSourcesScanned, groups, scanCoverage: { availableSources, unavailableSources } };
+}
+
 // src/features/cross-age-challenges.js
 function challengeDecision(state, catalog2, toy, age, profile = {}) {
   const row = catalog2.resolve(toy);
@@ -8417,6 +8644,8 @@ Object.assign(DICTIONARY.en, {
   exportToyImageAuditHint: "Read-only image status for mapped Toy Library and Wishlist items. No images or private notes are exported.",
   exportCatalogSafetyAudit: "Export Catalog Safety Audit",
   exportCatalogSafetyAuditHint: "Read-only Catalog safety review list for your Toy Library, Wishlist, and rotation candidates. No private notes or photos are exported.",
+  exportRawIdentityReferenceAudit: "Export Raw Identity Reference Audit",
+  exportRawIdentityReferenceAuditHint: "Read-only identity reference inventory. No photos, notes, or passwords are exported.",
   developmentFeedbackTitle: "How did this go?",
   developmentFeedbackPrompt: "How did this go?",
   developmentFeedback: { too_easy: "Too Easy", just_right: "Just Right", good_challenge: "Good Challenge", too_hard: "Too Hard", not_interested: "Not Interested" },
@@ -8437,6 +8666,8 @@ Object.assign(DICTIONARY.zh, {
   exportToyImageAuditHint: "\u53EA\u8BFB\u5BFC\u51FA\u5DF2\u6620\u5C04\u73A9\u5177\u5E93\u548C\u5FC3\u613F\u5355\u7684\u56FE\u7247\u72B6\u6001\uFF0C\u4E0D\u5BFC\u51FA\u56FE\u7247\u6216\u79C1\u5BC6\u5907\u6CE8\u3002",
   exportCatalogSafetyAudit: "\u5BFC\u51FA\u6807\u51C6\u5E93\u5B89\u5168\u5BA1\u8BA1",
   exportCatalogSafetyAuditHint: "\u53EA\u8BFB\u5BFC\u51FA\u73A9\u5177\u5E93\u3001\u5FC3\u613F\u5355\u53CA\u8F6E\u6362\u5019\u9009\u7684\u6807\u51C6\u5E93\u5B89\u5168\u6838\u9A8C\u6E05\u5355\uFF0C\u4E0D\u5305\u542B\u79C1\u4EBA\u5907\u6CE8\u6216\u7167\u7247\u3002",
+  exportRawIdentityReferenceAudit: "\u5BFC\u51FA\u539F\u59CB\u8EAB\u4EFD\u5F15\u7528\u5BA1\u8BA1",
+  exportRawIdentityReferenceAuditHint: "\u53EA\u8BFB\u5BFC\u51FA\u8EAB\u4EFD\u5F15\u7528\u7ED3\u6784\uFF0C\u4E0D\u5305\u542B\u7167\u7247\u3001\u5907\u6CE8\u6B63\u6587\u6216\u5BC6\u7801\u3002",
   developmentFeedbackTitle: "\u8FD9\u6B21\u73A9\u5F97\u600E\u4E48\u6837\uFF1F",
   developmentFeedbackPrompt: "\u8FD9\u6B21\u73A9\u5F97\u600E\u4E48\u6837\uFF1F",
   developmentFeedback: { too_easy: "\u592A\u7B80\u5355", just_right: "\u521A\u521A\u597D", good_challenge: "\u6709\u4E00\u70B9\u6311\u6218\uFF0C\u6B63\u5408\u9002", too_hard: "\u592A\u96BE", not_interested: "\u6CA1\u5174\u8DA3" },
@@ -10165,7 +10396,7 @@ function catalogSourceKey(source) {
 function openSettings() {
   const recoveryNotice = !store.canPersist ? `<p class="danger">${t("persistenceRecoverySettingsNotice")}</p>` : "";
   const adminControls = admin.enabled ? `<button type="button" id="restore-diagnostic-export">${t("exportRestoreDiagnostic")}</button><section class="panel"><h3>Recognition Device Diagnostics</h3><p id="recognition-trace-status">Stopped \xB7 0 events</p><button type="button" id="recognition-trace-start">Start Recognition Trace</button><button type="button" id="recognition-trace-stop">Stop Trace</button><button type="button" id="recognition-trace-clear">Clear Trace</button><button type="button" id="recognition-trace-export">Export Recognition Trace JSON</button></section><section class="panel"><h3>Admin Catalog Save Diagnostic</h3><p id="admin-catalog-save-trace-status">Stopped \xB7 0 events</p><button type="button" id="admin-catalog-save-trace-start">Start Trace</button><button type="button" id="admin-catalog-save-trace-stop">Stop Trace</button><button type="button" id="admin-catalog-save-trace-clear">Clear Trace</button><button type="button" id="admin-catalog-save-trace-export">Export Trace JSON</button></section><section class="panel"><h3>Storage Usage</h3><p id="storage-usage-status">Loading\u2026</p><button type="button" id="storage-audit-export">Export Storage Audit JSON</button></section><button type="button" id="manager-open">${t("managerDashboard")} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t("signOut")}</button>` : `<button type="button" id="admin-open">${t("adminMode")}</button>`;
-  const dialog = openModal(`<form class="form"><header><h2>${t("settings")}</h2><button type="button" data-close>\xD7</button></header>${recoveryNotice}<label>${t("language")}<select name="language"><option value="system">${t("system")}</option><option value="en">${t("languageEnglish")}</option><option value="zh">${t("languageChinese")}</option></select></label><label>${t("theme")}<select name="theme"><option value="system">${t("system")}</option><option value="light">${t("light")}</option><option value="dark">${t("dark")}</option></select></label><hr>${profileSettingsFields()}<button class="primary" ${store.canPersist ? "" : "disabled"}>${t("save")}</button><button type="button" id="backup-export" ${store.canPersist ? "" : "disabled"}>${t("exportBackup")}</button><button type="button" id="persistence-diagnostic-export">${t("exportPersistenceDiagnostic")}</button><label>${t("restoreBackup")}<input id="backup-import" type="file" accept="application/json" ${store.canPersist ? "" : "disabled"}></label><p id="backup-restore-status" role="status" aria-live="polite"></p><section class="panel"><h3>${t("dataAudit")}</h3><p>${t("exportToyImageAuditHint")}</p><button type="button" id="toy-image-audit-export">${t("exportToyImageAudit")}</button><p>${t("exportCatalogSafetyAuditHint")}</p><button type="button" id="catalog-safety-audit-export">${t("exportCatalogSafetyAudit")}</button></section><section id="admin-settings">${adminControls}</section></form>`);
+  const dialog = openModal(`<form class="form"><header><h2>${t("settings")}</h2><button type="button" data-close>\xD7</button></header>${recoveryNotice}<label>${t("language")}<select name="language"><option value="system">${t("system")}</option><option value="en">${t("languageEnglish")}</option><option value="zh">${t("languageChinese")}</option></select></label><label>${t("theme")}<select name="theme"><option value="system">${t("system")}</option><option value="light">${t("light")}</option><option value="dark">${t("dark")}</option></select></label><hr>${profileSettingsFields()}<button class="primary" ${store.canPersist ? "" : "disabled"}>${t("save")}</button><button type="button" id="backup-export" ${store.canPersist ? "" : "disabled"}>${t("exportBackup")}</button><button type="button" id="persistence-diagnostic-export">${t("exportPersistenceDiagnostic")}</button><label>${t("restoreBackup")}<input id="backup-import" type="file" accept="application/json" ${store.canPersist ? "" : "disabled"}></label><p id="backup-restore-status" role="status" aria-live="polite"></p><section class="panel"><h3>${t("dataAudit")}</h3><p>${t("exportToyImageAuditHint")}</p><button type="button" id="toy-image-audit-export">${t("exportToyImageAudit")}</button><p>${t("exportCatalogSafetyAuditHint")}</p><button type="button" id="catalog-safety-audit-export">${t("exportCatalogSafetyAudit")}</button><p>${t("exportRawIdentityReferenceAuditHint")}</p><button type="button" id="raw-identity-reference-audit-export">${t("exportRawIdentityReferenceAudit")}</button></section><section id="admin-settings">${adminControls}</section></form>`);
   const form = dialog.querySelector("form");
   form.language.value = store.state.settings.language;
   form.theme.value = store.state.settings.theme;
@@ -10189,6 +10420,7 @@ function openSettings() {
   dialog.querySelector("#backup-export").onclick = async () => downloadJson(await exportBackup(store, images), "toy-rotation-backup.json");
   dialog.querySelector("#toy-image-audit-export")?.addEventListener("click", () => downloadJson(buildToyImageAudit({ state: store.state, catalog, build: window.TOY_ROTATION_CONFIG }), `toy-image-audit-v0116-${auditFilenameStamp()}.json`));
   dialog.querySelector("#catalog-safety-audit-export")?.addEventListener("click", () => downloadJson(buildCatalogSafetyAudit({ state: store.state, catalog, build: window.TOY_ROTATION_CONFIG }), `toy-safety-audit-v0116-${auditFilenameStamp()}.json`));
+  dialog.querySelector("#raw-identity-reference-audit-export")?.addEventListener("click", () => downloadJson(buildRawIdentityReferenceAudit({ catalog, build: window.TOY_ROTATION_CONFIG }), `toy-raw-identity-audit-v0116-${auditFilenameStamp()}.json`));
   dialog.querySelector("#backup-import").onchange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
