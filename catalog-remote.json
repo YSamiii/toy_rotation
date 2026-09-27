@@ -410,21 +410,6 @@
       ]
     },
     {
-      "key": "mideer-level-up-l5-wonderful-adventure",
-      "brand": "Mideer",
-      "name": "Level Up! Puzzles with Storage Bag - Level 5: Wonderful Adventure 88P-126P",
-      "nameZh": "进阶拼图收纳袋 Level 5：奇妙冒险 88-126片",
-      "ageMinMonths": 60,
-      "ageMaxMonths": 120,
-      "category": "拼图/配对",
-      "skills": [
-        "视觉空间",
-        "专注力",
-        "问题解决",
-        "精细动作"
-      ]
-    },
-    {
       "key": "toi-magnetic-sudoku-jungle-band",
       "brand": "TOI",
       "name": "Magnetic Sudoku - Jungle Band",
@@ -512,14 +497,20 @@
         "视觉空间",
         "精细动作",
         "问题解决",
-        "手眼协调"
+        "手眼协调",
+        "专注力",
+        "观察力"
       ],
       "aliases": [
         "Our World 100P",
         "MD3027"
       ],
       "catalogStatus": "remote",
-      "sourceUrl": "https://mideerart.com/products/portable-puzzle-box-our-world-100p"
+      "sourceUrl": "https://mideerart.com/products/portable-puzzle-box-our-world-100p",
+      "legacyCanonicalKeys": [
+        "mideer-portable-puzzle-our-world-100"
+      ],
+      "sku": "MD3027"
     },
     {
       "key": "mideer-level-up-l1-animals-2p-6p",
@@ -527,7 +518,7 @@
       "brand": "Mideer",
       "name": "Level Up! Puzzles with Storage Bag - Level 1: Animals 2P-6P",
       "nameZh": "进阶拼图收纳袋 Level 1：动物 2-6片",
-      "ageMinMonths": 18,
+      "ageMinMonths": 24,
       "ageMaxMonths": 36,
       "category": "拼图/配对",
       "skills": [
@@ -537,9 +528,15 @@
         "认知配对"
       ],
       "aliases": [
-        "Level 1 Animals 2P-6P"
+        "Level 1 Animals 2P-6P",
+        "进阶拼图袋装1级：动物2-6片"
       ],
-      "catalogStatus": "remote"
+      "catalogStatus": "remote",
+      "legacyCanonicalKeys": [
+        "mideer-level1-animals-2-6"
+      ],
+      "sku": "MD1473",
+      "sourceUrl": "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-1-animals-2p-6p"
     },
     {
       "key": "mideer-level-up-l1-animals-vehicles-2p-6p",
@@ -547,7 +544,7 @@
       "brand": "Mideer",
       "name": "Level Up! Puzzles with Storage Bag - Level 1: Animals and Vehicles 2P-6P",
       "nameZh": "进阶拼图收纳袋 Level 1：动物与车辆 2-6片",
-      "ageMinMonths": 18,
+      "ageMinMonths": 24,
       "ageMaxMonths": 36,
       "category": "拼图/配对",
       "skills": [
@@ -557,9 +554,15 @@
         "认知配对"
       ],
       "aliases": [
-        "Level 1 Animals and Vehicles 2P-6P"
+        "Level 1 Animals and Vehicles 2P-6P",
+        "进阶拼图袋装1级：动物与车辆2-6片"
       ],
-      "catalogStatus": "remote"
+      "catalogStatus": "remote",
+      "legacyCanonicalKeys": [
+        "mideer-level1-animals-vehicles-2-6"
+      ],
+      "sku": "MD1474",
+      "sourceUrl": "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-1-animals-and-vehicles-2p-6p"
     },
     {
       "key": "melissa-doug-ms-rachel-wooden-song-puzzle-50355",
@@ -624,39 +627,6 @@
       "catalogSource": "remote"
     },
     {
-      "key": "mideer-level-up-l3-natural-scenery-24-35p",
-      "brand": "Mideer",
-      "name": "Level Up! Puzzles with Storage Bag - Level 3: Natural Scenery 24P-35P",
-      "nameZh": "进阶拼图收纳袋 Level 3：自然风景 24–35片",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 60,
-      "category": "拼图/配对",
-      "skills": [
-        "精细动作",
-        "手眼协调",
-        "视觉空间",
-        "专注力"
-      ],
-      "catalogSource": "remote"
-    },
-    {
-      "key": "mideer-level-up-l3-community-helpers-24-35p",
-      "brand": "Mideer",
-      "name": "Level Up! Puzzles with Storage Bag - Level 3: Busy Community Helpers 24P-35P",
-      "nameZh": "进阶拼图收纳袋 Level 3：忙碌的社区工作者 24–35片",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 60,
-      "category": "拼图/配对",
-      "skills": [
-        "精细动作",
-        "手眼协调",
-        "视觉空间",
-        "语言",
-        "社会认知"
-      ],
-      "catalogSource": "remote"
-    },
-    {
       "key": "mideer-portable-puzzle-wonderful-ocean-104p",
       "canonicalKey": "mideer-portable-puzzle-wonderful-ocean-104p",
       "brand": "Mideer",
@@ -674,10 +644,14 @@
       ],
       "aliases": [
         "Wonderful Ocean 104P",
-        "Mideer Ocean Puzzle 104"
+        "Mideer Ocean Puzzle 104",
+        "便携拼图盒：奇妙海洋104片"
       ],
       "catalogSource": "remote",
-      "sourceUrl": "https://mideerart.com/collections/portable-box-puzzles"
+      "sourceUrl": "https://mideerart.com/collections/portable-box-puzzles",
+      "legacyCanonicalKeys": [
+        "mideer-portable-wonderful-ocean-104p"
+      ]
     },
     {
       "key": "mideer-lets-learn-african-animals-126p",
@@ -1061,7 +1035,8 @@
         "音乐启蒙",
         "因果关系",
         "手眼协调"
-      ]
+      ],
+      "aliases": []
     },
     {
       "key": "melissa-take-along-shape-sorter",
@@ -1136,21 +1111,6 @@
         "平衡能力",
         "身体协调",
         "空间认知"
-      ]
-    },
-    {
-      "key": "learningresources-helping-hands-fine-motor-tool-set",
-      "brand": "Learning Resources",
-      "name": "Helping Hands Fine Motor Tool Set",
-      "nameZh": "Helping Hands 精细动作工具套装",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 72,
-      "category": "精细动作",
-      "skills": [
-        "精细动作",
-        "手眼协调",
-        "抓握能力",
-        "分类能力"
       ]
     },
     {
@@ -1287,42 +1247,6 @@
       ]
     },
     {
-      "key": "mideer-magnetic-tiles-wonderful-forest-40p",
-      "brand": "Mideer",
-      "name": "Colorful Magnetic Tiles: Wonderful Forest 40P",
-      "nameZh": "彩色磁力片：奇妙森林 40片",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 96,
-      "category": "积木/建构",
-      "skills": [
-        "创造力",
-        "空间认知",
-        "精细动作",
-        "专注力"
-      ],
-      "aliases": [
-        "Wonderful Forest Magnetic Tiles 40P"
-      ]
-    },
-    {
-      "key": "mideer-magnetic-tiles-jurassic-adventure-48p",
-      "brand": "Mideer",
-      "name": "Colorful Magnetic Tiles: Jurassic Adventure 48P",
-      "nameZh": "彩色磁力片：侏罗纪冒险 48片",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 96,
-      "category": "积木/建构",
-      "skills": [
-        "创造力",
-        "空间认知",
-        "精细动作",
-        "问题解决"
-      ],
-      "aliases": [
-        "Jurassic Adventure Magnetic Tiles 48P"
-      ]
-    },
-    {
       "key": "mideer-creative-magnetic-building-blocks-20p",
       "brand": "Mideer",
       "name": "Creative Magnetic Building Blocks 20P",
@@ -1419,9 +1343,15 @@
         "精细动作",
         "手眼协调",
         "字母启蒙",
-        "专注力"
+        "专注力",
+        "逻辑推理",
+        "问题解决"
       ],
-      "sourceUrl": "https://mideerart.com/products/magnetic-maze-parking-lot"
+      "sourceUrl": "https://mideerart.com/products/magnetic-maze-parking-lot",
+      "legacyCanonicalKeys": [
+        "mideer-magnetic-maze-parking"
+      ],
+      "aliases": []
     },
     {
       "key": "toi-beginner-puzzle-land-transportation-animals",
@@ -1544,10 +1474,14 @@
         "精细动作"
       ],
       "aliases": [
-        "MD1620"
+        "MD1620",
+        "进阶拼图袋装4级：建筑工地48-72片"
       ],
       "sku": "MD1620",
-      "sourceUrl": "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-4-clanging-construction-site-48p-72p"
+      "sourceUrl": "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-4-clanging-construction-site-48p-72p",
+      "legacyCanonicalKeys": [
+        "mideer-level4-construction"
+      ]
     },
     {
       "key": "mideer-double-sided-magic-maze-ocean-md1134",
@@ -1725,7 +1659,8 @@
         "创造力",
         "精细动作",
         "科学启蒙",
-        "想象力"
+        "想象力",
+        "空间认知"
       ],
       "aliases": [
         "Windmill Kingdom",
@@ -1733,7 +1668,10 @@
       ],
       "sourceUrl": "https://mideerart.com/products/paper-craft-workshop-windmill-kingdom",
       "sku": "MD2307",
-      "imageVerified": false
+      "imageVerified": false,
+      "legacyCanonicalKeys": [
+        "mideer-paper-craft-windmill"
+      ]
     },
     {
       "key": "mideer-panoramic-puzzle-day-forest-150",
@@ -1867,11 +1805,15 @@
       ],
       "aliases": [
         "CT2283",
-        "Princess Fashion Show"
+        "Princess Fashion Show",
+        "3合1公主时装秀换装游戏"
       ],
       "sku": "CT2283",
       "imageVerification": "pending",
-      "sourceUrl": "https://mideerart.com/products/3-in-1-dress-up-game-set-princess-fashion-show"
+      "sourceUrl": "https://mideerart.com/products/3-in-1-dress-up-game-set-princess-fashion-show",
+      "legacyCanonicalKeys": [
+        "mideer-dressup-princess-fashion"
+      ]
     },
     {
       "key": "mideer-paper-craft-racing-car",
@@ -1915,11 +1857,15 @@
       ],
       "aliases": [
         "MD6395",
-        "Racing Track Magnetic Tiles 115P"
+        "Racing Track Magnetic Tiles 115P",
+        "磁力赛车轨道115片"
       ],
       "sourceUrl": "https://mideerart.com/products/racing-track-grooved-magnetic-tiles-115p",
       "imageVerification": "pending-official",
-      "imageUrl": ""
+      "imageUrl": "",
+      "legacyCanonicalKeys": [
+        "mideer-racing-track-magnetic-115"
+      ]
     },
     {
       "key": "mideer-creative-magnetic-building-blocks-46p",
@@ -1957,15 +1903,19 @@
         "空间认知",
         "逻辑推理",
         "创造力",
-        "问题解决"
+        "问题解决",
+        "精细动作",
+        "观察力"
       ],
       "aliases": [
-        "MD4281",
-        "磁性七巧板"
+        "MD4281"
       ],
       "sourceUrl": "https://mideerart.com/collections/sale-under-20/products/magnetic-tangram",
       "imageVerification": "pending-official",
-      "catalogStatus": "official-verified-name"
+      "catalogStatus": "official-verified-name",
+      "legacyCanonicalKeys": [
+        "mideer-magnetic-tangram"
+      ]
     },
     {
       "key": "mideer-educational-balance-blocks",

@@ -1,4 +1,4 @@
-// src/data/schema.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/schema.js
 var SCHEMA_VERSION = 12;
 var CATEGORY_CODES = Object.freeze([
   "uncategorized",
@@ -287,7 +287,7 @@ function plainObject(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
-// src/domain/catalog-safety.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/catalog-safety.js
 var AGE_SAFETY_STATUSES = Object.freeze([
   "VERIFIED_NO_EXTRA_GATE",
   "NO_DOCUMENTED_HARD_GATE",
@@ -376,7 +376,7 @@ function withCatalogSafety(toy, catalogRow) {
   return { ...toy, userMetadata };
 }
 
-// src/domain/identity-service.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/identity-service.js
 function identityTokens(toy = {}) {
   const keys = unique([toy.canonicalKey, toy.catalogKey, toy.catalogId, toy.key].map(canonicalKey));
   const brand = normalizeBrand2(toy.brand);
@@ -613,7 +613,7 @@ function earliest(a, b) {
   return !a ? b : !b ? a : new Date(a) < new Date(b) ? a : b;
 }
 
-// src/data/store.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/store.js
 var LEGACY_KEYS = ["toyRotationV04", "toyRotationV032", "toyRotationV03", "toyRotationV02"];
 var STORE_KEY = "toyRotation.cleanBaseline";
 var STORE_SHADOW_KEY = "toyRotation.cleanBaseline.lastKnownGood";
@@ -678,14 +678,14 @@ function safeQuotaCompaction(storage) {
   const snapshot1 = readStoredJson(STORE_SNAPSHOT_KEYS[0], storage);
   const hasRollback = shadow.status === "valid" && usableState(shadow.value) || snapshot1.status === "valid" && usableState(snapshot1.value);
   if (current.status !== "valid" || !usableState(current.value) || !hasRollback) return { ok: false, removed: [], retainedRollback: hasRollback };
-  const removed = [];
+  const removed2 = [];
   for (const key of [STORE_COMMIT_STAGING_KEY, STORE_HEALTH_KEY, STORE_SNAPSHOT_KEYS[2], STORE_SNAPSHOT_KEYS[1]]) {
     if (storage.getItem(key) != null) {
       storage.removeItem(key);
-      removed.push(key);
+      removed2.push(key);
     }
   }
-  return { ok: true, removed, retainedRollback: true };
+  return { ok: true, removed: removed2, retainedRollback: true };
 }
 function persistState(next, storage = globalThis.localStorage, { compact = false } = {}) {
   const { serialized, parsed } = validatePersistableState(next);
@@ -1400,7 +1400,7 @@ async function auditStandardCatalogImages({ store: store2, catalog: catalog2, ve
 function verifyRemoteImage(url) {
   if (!url || typeof Image === "undefined") return Promise.resolve(null);
   return new Promise((resolve) => {
-    const image = new Image();
+    const image2 = new Image();
     let settled = false;
     const complete = (value) => {
       if (settled) return;
@@ -1409,9 +1409,9 @@ function verifyRemoteImage(url) {
       resolve(value);
     };
     const timer = setTimeout(() => complete(false), 5e3);
-    image.onload = () => complete(true);
-    image.onerror = () => complete(false);
-    image.src = url;
+    image2.onload = () => complete(true);
+    image2.onerror = () => complete(false);
+    image2.src = url;
   });
 }
 function legacyImageIds(toy = {}) {
@@ -1494,7 +1494,7 @@ function parse(value) {
   }
 }
 
-// src/domain/duplicate-engine.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/duplicate-engine.js
 function findDuplicates(toys = []) {
   const results = [];
   for (let a = 0; a < toys.length; a++) for (let b = a + 1; b < toys.length; b++) {
@@ -1567,7 +1567,7 @@ function rank(kind) {
   return { exact_duplicate: 6, same_child_legacy_duplicate: 5, strong_probable_duplicate: 4, parent_child_relation: 3, sibling_child: 2, related_variant: 1, none: 0 }[kind] || 0;
 }
 
-// src/domain/set-service.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/set-service.js
 function validateSetGraph(toys) {
   const byId = new Map(toys.map((toy) => [toy.id, toy]));
   return toys.filter((toy) => toy.set?.kind === "child").every((child) => byId.has(child.set.parentId) && byId.get(child.set.parentId).set.kind === "parent");
@@ -1582,8 +1582,8 @@ function deriveExplicitChildren(parent, definition = {}) {
   if (parent.set?.kind !== "parent" || parent.set.rotationMode !== "split") return [];
   const supplied = Array.isArray(definition.children) ? definition.children : [];
   if (supplied.length) return supplied.map((child, index) => ({ ...child, imageRef: child.imageRef?.kind && child.imageRef.kind !== "placeholder" ? child.imageRef : childImageRef(parent, child, index) }));
-  const known = knownMultiPuzzleChildren(parent, definition);
-  if (known.length) return known;
+  const known2 = knownMultiPuzzleChildren(parent, definition);
+  if (known2.length) return known2;
   const count4 = parseExplicitChildCount(definition, parent);
   if (!count4) return [];
   const baseName = parent.productName || definition.name || "Puzzle set";
@@ -1705,10 +1705,10 @@ function repairQa6MideerCanonicalState(state, definitionsByKey) {
       }
     }
   }
-  const parents = (state.toys || []).filter((toy) => canonicalKey(toy.canonicalKey) === target && toy.set?.kind === "parent");
-  if (parents.length > 1) {
-    const primary = parents.sort((a, b) => (b.set?.childIds?.length || 0) - (a.set?.childIds?.length || 0))[0];
-    for (const duplicate of parents.filter((parent) => parent !== primary)) {
+  const parents2 = (state.toys || []).filter((toy) => canonicalKey(toy.canonicalKey) === target && toy.set?.kind === "parent");
+  if (parents2.length > 1) {
+    const primary = parents2.sort((a, b) => (b.set?.childIds?.length || 0) - (a.set?.childIds?.length || 0))[0];
+    for (const duplicate of parents2.filter((parent) => parent !== primary)) {
       const childIds = [...primary.set?.childIds || [], ...duplicate.set?.childIds || []];
       const result2 = mergePersonalToyPair(state, primary.id, duplicate.id);
       if (result2.merged) {
@@ -2034,7 +2034,7 @@ function reconcileOrphanedSplitOwnership(state, definitionsByKey) {
   const plans = splitChildPlanIndex(definitionsByKey);
   const activeParentIds = new Set(state.toys.filter((toy) => toy.set?.kind === "parent").map((toy) => toy.id));
   const activeParentKeys = new Set(state.toys.filter((toy) => toy.set?.kind === "parent").map((toy) => canonicalKey(toy.canonicalKey)));
-  const removed = [];
+  const removed2 = [];
   const classifications = [];
   let backfilled = 0;
   let independent = 0;
@@ -2062,15 +2062,15 @@ function reconcileOrphanedSplitOwnership(state, definitionsByKey) {
     }
     toy.set = { ...set, ownershipSource: "generated_from_set", generatedFromParentId: set.generatedFromParentId || set.parentId || (set.legacyParentIds || [])[0] || null, ownershipGroupId: set.ownershipGroupId || set.parentId || (set.legacyParentIds || [])[0] || null, parentCanonicalKey: plan.parentCanonicalKey, detachedFromSet: false };
     backfilled++;
-    removed.push(toy);
+    removed2.push(toy);
   }
-  if (removed.length) {
-    archiveRemovedOwnerships(state, removed, "orphaned_generated_child_repair");
-    const removedIds = new Set(removed.map((toy) => toy.id));
+  if (removed2.length) {
+    archiveRemovedOwnerships(state, removed2, "orphaned_generated_child_repair");
+    const removedIds = new Set(removed2.map((toy) => toy.id));
     state.toys = state.toys.filter((toy) => !removedIds.has(toy.id));
     preserveDeletedReferences(state, removedIds);
   }
-  return { scanned: classifications.length, removed: removed.length, backfilled, independent, detached, unknown, classifications };
+  return { scanned: classifications.length, removed: removed2.length, backfilled, independent, detached, unknown, classifications };
 }
 function splitChildPlanIndex(definitionsByKey) {
   const index = /* @__PURE__ */ new Map();
@@ -2200,7 +2200,7 @@ function differentKnownSiblingParts(left, right) {
   return Boolean(sameParent && leftPart && rightPart && leftPart !== rightPart);
 }
 function auditSetIntegrity(toys = []) {
-  const parents = toys.filter((toy) => toy.set?.kind === "parent");
+  const parents2 = toys.filter((toy) => toy.set?.kind === "parent");
   const children = toys.filter((toy) => toy.set?.kind === "child");
   const byId = new Map(toys.map((toy) => [toy.id, toy]));
   const issues = [];
@@ -2209,7 +2209,7 @@ function auditSetIntegrity(toys = []) {
     if (!parent || parent.set?.kind !== "parent") issues.push({ type: "orphan_child", child });
     else if (sameImageRef(child.imageRef, parent.imageRef)) issues.push({ type: "parent_image_on_child", child, parent });
   }
-  return { parents: parents.length, children: children.length, unresolved: issues.length, issues };
+  return { parents: parents2.length, children: children.length, unresolved: issues.length, issues };
 }
 function findHistoricalChildMatches(toys, parent, child) {
   return toys.filter((toy) => toy.id !== parent.id && toy.set?.kind !== "parent" && isHistoricalChildMatch(toy, parent, child));
@@ -2359,10 +2359,10 @@ function childSetLink(previous = {}, parent, plan = {}) {
 }
 function establishParentChildOwnership(state) {
   const toys = state.toys || [];
-  const parents = toys.filter((toy) => toy.set?.kind === "parent");
+  const parents2 = toys.filter((toy) => toy.set?.kind === "parent");
   let markedGenerated = 0, preservedIndependent = 0;
   for (const child of toys.filter((toy) => toy.set?.kind === "child")) {
-    const parent = parents.find((candidate) => isChildOfParent(child, candidate));
+    const parent = parents2.find((candidate) => isChildOfParent(child, candidate));
     if (!parent) continue;
     const classification = classifyChildOwnershipForParent(toys, parent, child);
     if (classification.kind !== "generated_from_this_parent") {
@@ -2428,10 +2428,10 @@ function validateChildImageProvenance(child, parent, siblings = []) {
 }
 function repairChildImageProvenance(state) {
   const toys = state.toys || [];
-  const parents = toys.filter((toy) => toy.set?.kind === "parent");
+  const parents2 = toys.filter((toy) => toy.set?.kind === "parent");
   const report = { cleared: 0, parentOrSibling: 0, unknown: 0, retainedPersonal: 0, retainedSameChild: 0 };
   for (const child of toys.filter((toy) => toy.set?.kind === "child")) {
-    const parent = parents.find((candidate) => isChildOfParent(child, candidate));
+    const parent = parents2.find((candidate) => isChildOfParent(child, candidate));
     const siblings = toys.filter((other) => other.id !== child.id && parent && isChildOfParent(other, parent));
     const verdict = validateChildImageProvenance(child, parent, siblings);
     if (verdict.accepted) {
@@ -2452,7 +2452,7 @@ function repairChildImageProvenance(state) {
 }
 function repairLegacyChildImageBindings(state, catalog2 = null) {
   const toys = state.toys || [];
-  const parents = toys.filter((toy) => toy.set?.kind === "parent");
+  const parents2 = toys.filter((toy) => toy.set?.kind === "parent");
   const report = {
     examined: 0,
     changed: 0,
@@ -2467,7 +2467,7 @@ function repairLegacyChildImageBindings(state, catalog2 = null) {
   };
   for (const child of toys.filter((toy) => toy.set?.kind === "child")) {
     report.examined++;
-    const parent = parents.find((candidate) => isChildOfParent(child, candidate));
+    const parent = parents2.find((candidate) => isChildOfParent(child, candidate));
     const siblings = toys.filter((other) => other.id !== child.id && parent && isChildOfParent(other, parent));
     const currentCatalog = catalog2?.resolve?.(child) || null;
     if (sameCatalogChildForImageRepair(child, currentCatalog) && isVerifiedOrStableChildImage(currentCatalog.imageRef)) report.catalogInheritanceReady++;
@@ -2514,7 +2514,7 @@ function isSearchOrTransientChildImage(ref) {
   return /(?:bing\.net\/th|bing\.com\/images|google(?:usercontent)?\.com\/search|[?&](?:token|expires|signature)=|^(?:blob|data):)/i.test(value) || ["search-fallback", "missing-catalog-metadata"].includes(ref?.source);
 }
 
-// src/data/backup-service.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/backup-service.js
 async function exportBackup(store2, imageRepository) {
   const state = structuredClone(store2.state);
   const imageRefs = state.toys.map((toy) => toy.imageRef).filter((ref) => ref?.kind === "personal" || ref?.kind === "catalog");
@@ -2827,7 +2827,7 @@ function createRestoreTrace() {
   return trace;
 }
 
-// src/data/image-repository.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/image-repository.js
 var LEGACY_DB = "toyRotationPhotosV04";
 var LEGACY_STORE = "photos";
 var CATALOG_PREFIX = "catalog:";
@@ -3019,7 +3019,7 @@ function imageIdVariants(value) {
   return [id, bare, `personal:${bare}`, `photo:${bare}`, `image:${bare}`];
 }
 
-// src/domain/catalog-presentation.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/catalog-presentation.js
 var MECHANIC_RULES = Object.freeze({
   jigsaw: ["\u62FC\u56FE", "puzzle"],
   matching_sorting: ["\u914D\u5BF9", "matching", "\u5206\u7C7B", "sorting", "sorter"],
@@ -3113,7 +3113,7 @@ function canonicalIdentity(value) {
   return String(value?.canonicalKey || value || "").normalize("NFKC").toLowerCase();
 }
 
-// src/data/catalog-image-assets-batch1.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch1.js
 var BATCH1_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["btoys-critter-clinic", "https://mybtoys.com/wp-content/uploads/BX2015_PR.png", "https://mybtoys.com/shop/critter-clinic/"],
   ["btoys-happy-cruisers", "https://mybtoys.com/wp-content/uploads/BX1944_PR-1024x1024.png", "https://mybtoys.com/shop/happy-cruisers/"],
@@ -3350,7 +3350,7 @@ var BATCH1_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["toi-travel-around-the-world-board-game", "https://qiniu.digood-assets-fallback.work/210/image_1577937441_%E5%8C%85%E8%A3%85.jpg", "https://www.toiworld.com/product/toi-travel-around-the-world-board-game.html"]
 ]);
 
-// src/data/catalog-image-assets-batch2.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch2.js
 var BATCH2_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["connetix-ball-run-bright-pack-114", "https://cdn11.bigcommerce.com/s-uy8s41qw5g/images/stencil/original/products/288/3953/image_1786081635__32582.1786081638.webp?compression=lossy", "https://connetixtiles.com/product/ball-run-bright-pack-114-pc/"],
   ["connetix-clear-creative", "https://cdn11.bigcommerce.com/s-uy8s41qw5g/images/stencil/original/products/178/3418/image_1785733218__01048.1785733220.png?compression=lossy", "https://connetixtiles.com/product/clear-shape-expansion-pack-24-pc/"],
@@ -3475,7 +3475,7 @@ var BATCH2_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["haba-lighthouse-rainbow-stacker", "https://www.habausa.com/cdn/shop/files/stacking-toy-lighthouse-300170-1.jpg?v=1739485277", "https://www.habausa.com/products/lighthouse-stacking-game"]
 ]);
 
-// src/data/catalog-image-assets-batch3.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch3.js
 var BATCH3_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["mfb-animals-activity", "https://cdn.shopify.com/s/files/1/0701/3371/1090/files/1_7b33c7b7-c9d6-4efc-9f5c-82d275ff0fad-364598.jpg?v=1732083463", "https://myfirstbook.us/products/mini-book-panda"],
   ["mfb-baby-shark", "https://cdn.shopify.com/s/files/1/0701/3371/1090/files/Everything_Included_in_My_First_Book_Baby_Shark_Busy_Book-197276.jpg?v=1732083467", "https://myfirstbook.us/products/my-first-book-baby-shark"],
@@ -3563,7 +3563,7 @@ var BATCH3_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["infantino-textured-multi-ball", "https://cdn.shopify.com/s/files/1/0617/9701/products/206-688J_P1.jpg?v=1532985897", "https://infantino.com/products/textured-multi-ball-set"]
 ]);
 
-// src/data/catalog-image-assets-batch4.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch4.js
 var BATCH4_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["ikea-duktig-vegetable-set", "https://www.ikea.com/us/en/images/products/duktig-14-piece-vegetables-set__0712393_pe728809_s5.jpg", "https://www.ikea.com/us/en/p/duktig-14-piece-vegetables-set-70185750/"],
   ["ikea-duktig-cookware-set", "https://www.ikea.com/us/en/images/products/duktig-5-piece-toy-cookware-set-stainless-steel__0712391_pe728808_s5.jpg", "https://www.ikea.com/us/en/p/duktig-5-piece-toy-cookware-set-stainless-steel-00130167/"],
@@ -3577,7 +3577,7 @@ var BATCH4_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["toi-leveled-puzzles-series", "https://qiniu.digood-assets-fallback.work/210/image_1565344248_1\u9636.png", "https://www.toiworld.com/product/toi-leveled-puzzles-educational-toy-paper-jigsaw-puzzles-for-kids.html"]
 ]);
 
-// src/data/catalog-image-assets-batch5.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch5.js
 var BATCH5_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-inspector-part-1", "https://images.ctfassets.net/0sea1vycfyqy/3MEZJlHfdZlFpzCCXcL455/1107b82bccfb0eb7eb0e657d40dda478/K4.Ball.Drop.Box_BH_V1_web.png", "https://lovevery.com/products/the-play-kits-the-inspector"],
   ["lovevery-inspector-part-2", "https://images.ctfassets.net/0sea1vycfyqy/54h9EACgGgpBzQO4p0o3ye/a4b7f996c153ca8f1d5f04f904898081/K4_Wood-Balls_BH_V1_web.png", "https://lovevery.com/products/the-play-kits-the-inspector"],
@@ -3617,7 +3617,7 @@ var BATCH5_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-music-set-part-6", "https://images.ctfassets.net/0sea1vycfyqy/68KZ1Qd3m0dtVXXd6YG9Ra/8944a9732bb4ee77a8daa40163cb523f/2022_02_01_Metronome_Studio_ISO_0001_BH_EDIT_CG_v1.20230731203746724.png", "https://lovevery.com/products/the-music-set"]
 ]);
 
-// src/data/catalog-image-assets-batch6.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch6.js
 var BATCH6_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-adventurer", "https://images.ctfassets.net/0sea1vycfyqy/5xClG7UVG7RzizKNfSEGwL/814958b45c4e3f171e683e63800aa4ff/Lovevery-VKS-Playkit-Adventurer-ISO-130_v8_web.20250714212602632.png", "https://lovevery.com/products/the-play-kits-the-adventurer"],
   ["lovevery-adventurer-part-1", "https://images.ctfassets.net/0sea1vycfyqy/4PDeMXYxABm4yq4QmGkYey/5e92c8681e944c0a4a1dc51736ea4505/Products_Overhead_23348_VS_CarRun_R2_CL_transparent_BG.png", "https://lovevery.com/products/the-play-kits-the-adventurer"],
@@ -3630,7 +3630,7 @@ var BATCH6_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-thinker-part-2", "https://i0.wp.com/blog.lovevery.com/wp-content/uploads/2020/05/The_Thinker_Doll_Accessories_Overhead.png?resize=1024%2C1024&ssl=1", "https://blog.lovevery.com/product-recommendations/welcome-to-the-thinker-play-kit-for-months-11-12/"]
 ]);
 
-// src/data/catalog-image-assets-batch7.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch7.js
 var BATCH7_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-free-spirit", "https://images.ctfassets.net/0sea1vycfyqy/5YVz9DXS5hSl2flksdE6tf/75346670e7b0ad983b0a3361054e836b/Lovevery-VKS-Playkit-TheFreeSpirit-ISO-163-US_April2021_web_v2.png", "https://lovevery.com/products/the-play-kits-the-free-spirit"],
   ["lovevery-free-spirit-part-1", "https://images.ctfassets.net/0sea1vycfyqy/1R2TGfUlbuM77CyeBMkdzv/e4c6111ae3cb9209f8e1f4a3261fb419/Year_2_Playkit_10633_VS_R2_CL_web.png", "https://lovevery.com/products/the-play-kits-the-free-spirit"],
@@ -3676,7 +3676,7 @@ var BATCH7_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-storyteller-part-5", "https://images.ctfassets.net/0sea1vycfyqy/5tcqqgXk3qjkHTDzdfHehO/4f023b2b54eccff9cc41d847cbd455fc/2022_05_25_Studio_ECO_5019.png", "https://lovevery.com/products/the-play-kits-the-storyteller"]
 ]);
 
-// src/data/catalog-image-assets-batch8.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch8.js
 var BATCH8_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-charmer-part-1", "https://images.ctfassets.net/0sea1vycfyqy/1Oy8pa7M2lfkx64BxXMVHk/4c91b91b514eeb96e054590d090512b8/Lovevery_Playkit_The_Charmer_Wrap_Rattles_0098_v3.png", "https://lovevery.com/products/the-play-kits-the-charmer"],
   ["lovevery-charmer-part-2", "https://images.ctfassets.net/0sea1vycfyqy/1h7x06YxrGmG5lRTS21Fae/eaa1a31fa37e96982627c018b3228ca0/SubscriptionBox2_Lovevery-VKS-WoodenRattle-ISO-0111-June2020-1.png", "https://lovevery.com/products/the-play-kits-the-charmer"],
@@ -3746,7 +3746,7 @@ var BATCH8_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-planner-part-5", "https://images.ctfassets.net/0sea1vycfyqy/skBDUuQVwXikfokJSmYWv/c575dcc25031969fecfacf92ec7d5d8f/2023_04_13_4YO_Group_ISO_11275_v3_web.webp", "https://lovevery.com/products/the-play-kits-the-planner"]
 ]);
 
-// src/data/catalog-image-assets-batch9.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch9.js
 var BATCH9_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-play-gym", "https://images.ctfassets.net/0sea1vycfyqy/14CK3m4HoTJHQVxvkJOSjJ/035cc8dc5c2dbb02c345323f92d9ea1f/Play_Gym_Slide_1.png", "https://lovevery.com/products/the-play-gym"],
   ["lovevery-montessori-animal-match", "https://images.ctfassets.net/0sea1vycfyqy/94m8f5ukdpItLqxu0EnTK/f47c3a965d80abf610b527a46f7c3e3f/MontessoriAnimalMatch.WEB_PENTA_CG_v2_1.webp", "https://lovevery.com/products/the-play-kits-the-companion"],
@@ -3755,7 +3755,7 @@ var BATCH9_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-wooden-counting-box", "https://images.ctfassets.net/0sea1vycfyqy/5f2zAlfUXQHOVeodZQRdsf/8ea5a3163b1230610c8eadf8207f0f70/Lovevery_8-06-25_ISO_Wooden-Counting-Box_0070_v2.png", "https://lovevery.com/products/the-play-kits-the-free-spirit"]
 ]);
 
-// src/data/catalog-image-assets-batch10.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch10.js
 var BATCH10_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["vtech-chomp-count-dino", "https://www.vtechtoys.com/assets/data/products/%7BE73D31C6-1326-48F7-9C07-ABF4E8E4192B%7D/images/157700prod_large.jpg", "https://www.vtechtoys.com/product/detail/15465"],
   ["vtech-drop-go-dump-truck", "https://www.vtechtoys.com/assets/data/products/%7B460B206D-A9C5-4AE6-83E2-F7FF9F9F8F5E%7D/images/166500-Img1-prod_thumb_detail_sm.jpg", "https://www.vtechtoys.com/product/detail/16600/Drop_and_Go_Dump_Truck"],
@@ -3765,15 +3765,15 @@ var BATCH10_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["vtech-busy-learners-music-activity-cube", "https://www.vtechtoys.com/assets/data/products/%7B177B35F1-9A25-8112-E063-0A7104678112%7D/images/80-574100-Main_thumb_detail_sm.jpg", "https://www.vtechtoys.com/product/detail/21124"]
 ]);
 
-// src/data/catalog-image-assets-batch11.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch11.js
 var BATCH11_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["md-lock-latch-board", "https://www.melissaanddoug.com/cdn/shop/files/2024-07-09_d65753e7-d07a-4833-9f86-8c4590c888d4_grande.jpg?v=1720546199", "https://www.melissaanddoug.com/products/lock-latch-board"]
 ]);
 
-// src/data/catalog-image-assets-batch12.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch12.js
 var BATCH12_OFFICIAL_IMAGE_ROWS = Object.freeze([]);
 
-// src/data/catalog-image-assets-batch13.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch13.js
 var BATCH13_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["smartgames-logic-lane", "https://d32bxxnq6qs937.cloudfront.net/sites/default/files/SG044_Logic-Lane_Product-Thumbnail-2.jpg", "https://www.smartgames.eu/uk/one-player-games/logic-lane"],
   ["smartgames-brain-train", "https://d32bxxnq6qs937.cloudfront.net/sites/default/files/smartgames_braintrain_thumbnail_0.jpg", "https://www.smartgames.eu/uk/one-player-games/brain-train"],
@@ -3782,7 +3782,7 @@ var BATCH13_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["smartgames-wolf-seven-goats", "https://d32bxxnq6qs937.cloudfront.net/sites/default/files/SG-027-MULTI-Wolf%26the7Goats-%28pack%29.jpg", "https://www.smartgames.eu/uk/one-player-games/wolf-seven-goats"]
 ]);
 
-// src/data/catalog-image-assets-hape-batch1.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-hape-batch1.js
 var HAPE_PRIORITY_BATCH1_IMAGE_ROWS = Object.freeze([
   Object.freeze({
     canonicalKey: "hape-bath-basketball-elephant-pal",
@@ -3874,7 +3874,7 @@ var HAPE_PRIORITY_BATCH1_IMAGE_ROWS = Object.freeze([
   })
 ]);
 
-// src/data/catalog-image-assets-hape-batch2.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-hape-batch2.js
 var HAPE_PRIORITY_BATCH2_IMAGE_ROWS = Object.freeze([
   Object.freeze({
     canonicalKey: "hape-color-shape-sorter",
@@ -3974,7 +3974,7 @@ var HAPE_PRIORITY_BATCH2_IMAGE_ROWS = Object.freeze([
   })
 ]);
 
-// src/data/catalog-image-assets-hape-final-resolution.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-hape-final-resolution.js
 var HAPE_FINAL_RESOLUTION_IMAGE_ROWS = Object.freeze([
   Object.freeze({
     canonicalKey: "hape-mighty-mini-band",
@@ -3996,7 +3996,7 @@ var HAPE_FINAL_RESOLUTION_IMAGE_ROWS = Object.freeze([
   })
 ]);
 
-// src/data/catalog-image-assets-expansion-qa9.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-expansion-qa9.js
 var IMAGE_EXPANSION_QA9_ROWS = Object.freeze([
   ["lego-duplo-cargo-train", "https://www.lego.com/cdn/cs/set/assets/blt6da2b0a6f8fe7eb9/10875_Prod.png?fit=bounds&format=jpg&quality=80&width=1500&height=1500&dpr=1", "https://www.lego.com/en-us/product/cargo-train-10875", "10875", "Cargo Train"],
   ["lego-duplo-steam-train", "https://www.lego.com/cdn/cs/set/assets/blt892b06b079302476/10874.jpg?fit=bounds&format=jpg&quality=80&width=1500&height=1500&dpr=1", "https://www.lego.com/en-ca/product/steam-train-10874", "10874", "Steam Train"],
@@ -4025,7 +4025,7 @@ var IMAGE_EXPANSION_QA9_ROWS = Object.freeze([
   ["lr-snap-n-learn-counting-cows", "https://www.learningresources.com/media/catalog/product/f/2/f288a2e87fede1858781c3426cf8a8b1682121be.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-snap-n-learntm-counting-cows", "LER6707", "Snap-n-Learn Counting Cows"]
 ]);
 
-// src/data/catalog-image-assets.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets.js
 var UPDATED_AT = "2026-08-24T00:00:00.000Z";
 function remote(url, imageSource, imageSourceType) {
   return { kind: "remote", url, catalogImageRef: url, imageSource, imageSourceType, verificationStatus: imageSourceType === "official_cdn" ? "verified_real" : "manually_confirmed", updatedAt: UPDATED_AT, fallbackState: "none", assetState: imageSourceType === "official_cdn" ? "verified_real" : "stable_remote" };
@@ -4212,7 +4212,33 @@ function catalogImageAsset(key) {
   return CATALOG_IMAGE_ASSETS[canonical] || CATALOG_IMAGE_ASSETS[canonical.replace(/-puzzle-(\d+)$/i, ":puzzle-$1")] || null;
 }
 
-// src/data/hape-final-resolution-review.js
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-p0-zero-ref-redirects.js
+var P0_ZERO_REF_REDIRECTS = /* @__PURE__ */ new Map([
+  ["hape-pound-tap-bench", "hape-pound-tap-bench-xylophone"],
+  ["mideer-dressup-princess-fashion", "mideer-ct2283-princess-fashion-show"],
+  ["mideer-magnetic-tiles-jurassic-adventure-48p", "mideer-colorful-magnetic-tiles-jurassic-48p"],
+  ["mideer-magnetic-tiles-wonderful-forest-40p", "mideer-colorful-magnetic-tiles-wonderful-forest-40p"],
+  ["mideer-level1-animals-2-6", "mideer-level-up-l1-animals-2p-6p"],
+  ["mideer-level1-animals-vehicles-2-6", "mideer-level-up-l1-animals-vehicles-2p-6p"],
+  ["mideer-level-up-l3-community-helpers-24-35p", "mideer-level3-community-helpers"],
+  ["mideer-level-up-l3-natural-scenery-24-35p", "mideer-level3-natural-scenery"],
+  ["mideer-level4-construction", "mideer-level-up-l4-clanging-construction-48-72p"],
+  ["mideer-level-up-l5-wonderful-adventure", "mideer-level5-wonderful-adventure"],
+  ["mideer-magnetic-maze-parking", "mideer-magnetic-maze-parking-lot"],
+  ["mideer-magnetic-tangram", "mideer-magnetic-tangram-md4281"],
+  ["mideer-paper-craft-windmill", "mideer-paper-craft-windmill-kingdom-md2307"],
+  ["mideer-portable-puzzle-our-world-100", "mideer-portable-puzzle-our-world-100p-md3027"],
+  ["mideer-portable-wonderful-ocean-104p", "mideer-portable-puzzle-wonderful-ocean-104p"],
+  ["mideer-racing-track-magnetic-115", "mideer-racing-track-grooved-magnetic-tiles-115p-md6395"]
+]);
+
+// ../../_work/Toy-Rotation-v0.11.6/src/data/catalog-p0-owner-ref-redirects.js
+var P0_OWNER_REF_REDIRECTS = /* @__PURE__ */ new Map([
+  ["lego-duplo-classic-brick-box", "lego-duplo-brick-box"],
+  ["learningresources-helping-hands-fine-motor-tool-set", "lr-helping-hands"]
+]);
+
+// ../../_work/Toy-Rotation-v0.11.6/src/data/hape-final-resolution-review.js
 var HAPE_FINAL_RESOLUTION_REVIEW = Object.freeze([
   Object.freeze({ canonicalKey: "hape-shape-sorter", status: "identity_hold", reason: "Multiple official products (E0516, E0407, E0364, E0515) fit the generic stored name; no row-level SKU or structural evidence." }),
   Object.freeze({ canonicalKey: "hape-wooden-shape-sorter", status: "identity_hold", reason: "Multiple official products (E0516, E0407, E0364, E0515) fit the generic stored name; no row-level SKU or structural evidence." }),
@@ -4231,7 +4257,7 @@ function isPublicCatalogVisible(toy) {
   return !HIDDEN_FROM_PUBLIC_CATALOG.has(catalogReviewMetadata(toy?.canonicalKey)?.status);
 }
 
-// src/domain/catalog-repository.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/catalog-repository.js
 var CatalogRepository = class {
   #base = [];
   #remote = [];
@@ -4305,8 +4331,8 @@ var CatalogRepository = class {
     const exact = this.resolve(reference);
     if (exact) return { kind: "catalog_match", catalog: exact };
     const requestedKey = canonicalKey(reference.canonicalKey || reference.catalogKey || `${reference.brand || ""}-${reference.productName || reference.name || ""}`);
-    const tombstone = this.#store.state.catalogState?.tombstones?.[requestedKey];
-    if (tombstone && !tombstone.mergedInto) return { kind: "tombstoned", canonicalKey: requestedKey, tombstone };
+    const tombstone2 = this.#store.state.catalogState?.tombstones?.[requestedKey];
+    if (tombstone2 && !tombstone2.mergedInto) return { kind: "tombstoned", canonicalKey: requestedKey, tombstone: tombstone2 };
     const conflicts = this.#active.map((candidate) => compare(reference, candidate)).filter((match) => match.kind === "strong_probable_duplicate");
     if (conflicts.length) return { kind: "duplicate_review_required", conflicts };
     return { kind: "genuinely_new", canonicalKey: requestedKey };
@@ -4465,14 +4491,14 @@ var CatalogRepository = class {
       const orphanLifecycle = reconcileOrphanedSplitOwnership(state, definitions);
       const repair = restoreMissingSplitSetChildren(state, definitions, legacyToyRows());
       const result2 = reconcileSplitSetChildren(state, definitions);
-      const ownership = establishParentChildOwnership(state);
+      const ownership2 = establishParentChildOwnership(state);
       const imageProvenance = repairChildImageProvenance(state);
       const legacyChildImageBindings = repairLegacyChildImageBindings(state, this);
       state.catalogState.syncMetadata ||= {};
       const pending = (result2.residualDuplicateChildren || 0) > 0;
       state.catalogState.syncMetadata.parentChildReconciliationV12 = { reconciledAt: (/* @__PURE__ */ new Date()).toISOString(), pending, executionRequired: pending, ...result2, remainingCandidates: result2.residualDuplicateChildren || 0 };
       state.catalogState.syncMetadata.parentChildDataRepair = { repairedAt: (/* @__PURE__ */ new Date()).toISOString(), ...repair };
-      state.catalogState.syncMetadata.parentChildIntegrityV12 = { repairedAt: (/* @__PURE__ */ new Date()).toISOString(), ...ownership, ...imageProvenance, orphanLifecycle, legacyChildImageBindings, knownMideerLegacyBackfill, qa6CanonicalRepair };
+      state.catalogState.syncMetadata.parentChildIntegrityV12 = { repairedAt: (/* @__PURE__ */ new Date()).toISOString(), ...ownership2, ...imageProvenance, orphanLifecycle, legacyChildImageBindings, knownMideerLegacyBackfill, qa6CanonicalRepair };
     }, "set-child-migration");
   }
   repairSetStructure() {
@@ -4492,6 +4518,7 @@ var CatalogRepository = class {
       const toy = normalizeCatalogToy(raw);
       const originalKey = canonicalKey(toy.canonicalKey);
       const key = qa6CatalogCanonical(originalKey);
+      if ((P0_ZERO_REF_REDIRECTS.has(originalKey) || P0_OWNER_REF_REDIRECTS.has(originalKey)) && merged.has(key)) continue;
       const previous = merged.get(key);
       const redirected = key !== originalKey;
       const combined = previous ? normalizeCatalogToy({ ...previous, ...toy, canonicalKey: key, aliases: [...previous.aliases || [], ...toy.aliases || []], legacyCanonicalKeys: [...previous.legacyCanonicalKeys || [], ...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []], names: { ...previous.names, ...toy.names }, children: toy.children?.length ? toy.children : previous.children, userMetadata: { ...previous.userMetadata, ...toy.userMetadata, safety: toy.userMetadata?.safety?.ageSafetyStatus ? toy.userMetadata.safety : previous.userMetadata?.safety } }) : normalizeCatalogToy({ ...toy, canonicalKey: key, legacyCanonicalKeys: [...toy.legacyCanonicalKeys || [], ...redirected ? [originalKey] : []] });
@@ -4591,15 +4618,15 @@ var QA6_RESURRECTED_CATALOG_KEYS = /* @__PURE__ */ new Set([
   "mideer-animal-toys-set-15pcs"
 ]);
 function qa6CatalogCanonical(key) {
-  return QA6_MIDEER_CANONICAL_REDIRECTS.get(key) || key;
+  return P0_OWNER_REF_REDIRECTS.get(key) || P0_ZERO_REF_REDIRECTS.get(key) || QA6_MIDEER_CANONICAL_REDIRECTS.get(key) || key;
 }
 function qa6ResurrectedCatalogKey(key) {
   return QA6_RESURRECTED_CATALOG_KEYS.has(key);
 }
-function qa6ResurrectionWins(key, base, remote2 = {}, tombstone = null) {
+function qa6ResurrectionWins(key, base, remote2 = {}, tombstone2 = null) {
   if (!qa6ResurrectedCatalogKey(key) || base?.resurrectionVersion !== "qa6-catalog-resurrection-v1") return false;
   const remoteAt = Date.parse(remote2.updatedAt || remote2.deletedAt || 0) || 0;
-  const tombstoneAt = Date.parse(tombstone?.deletedAt || tombstone?.updatedAt || 0) || 0;
+  const tombstoneAt = Date.parse(tombstone2?.deletedAt || tombstone2?.updatedAt || 0) || 0;
   const repairAt = Date.parse("2026-09-17T00:00:00.000Z");
   return Math.max(remoteAt, tombstoneAt) < repairAt;
 }
@@ -4629,7 +4656,7 @@ function catalogRichness(toy) {
   return (toy.children?.length || 0) * 20 + (toy.imageRef?.kind === "catalog" ? 15 : toy.imageRef?.kind === "remote" ? 5 : 0) + (toy.aliases?.length || 0) + (toy.names?.zh ? 3 : 0);
 }
 
-// src/domain/library-service.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/library-service.js
 function setToyInterest(store2, toyId, value) {
   store2.update((state) => {
     const toy = state.toys.find((item) => item.id === toyId);
@@ -4676,14 +4703,14 @@ function deleteToyOwnership(store2, toyId, { parentMode = "cascade_generated" } 
     }
     const impact = parentDeleteImpact(state.toys, toy);
     const cascade = parentMode === "cascade_generated";
-    const removed = cascade ? [toy, ...impact.generated] : [toy];
-    const removeIds = new Set(removed.map((item) => item.id));
+    const removed2 = cascade ? [toy, ...impact.generated] : [toy];
+    const removeIds = new Set(removed2.map((item) => item.id));
     const preserved = [...impact.generated, ...impact.independent].filter((item) => !removeIds.has(item.id));
     for (const child of preserved) detachChildFromParent(child, toy);
     state.toys = state.toys.filter((item) => !removeIds.has(item.id));
-    archiveRemovedOwnerships2(state, removed, "parent_delete_cascade");
+    archiveRemovedOwnerships2(state, removed2, "parent_delete_cascade");
     preserveDeletedReferences2(state, [...removeIds]);
-    result2 = { removed, preserved, target: toy, impact };
+    result2 = { removed: removed2, preserved, target: toy, impact };
   }, "toy-delete-ownership");
   return result2;
 }
@@ -4728,7 +4755,7 @@ function preserveDeletedReferences2(state, ids) {
   }
 }
 
-// src/domain/development-fit.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/development-fit.js
 var GENERIC = /* @__PURE__ */ new Set(["construction_general", "pretend_play_general", "sensory_general"]);
 var DEVELOPMENT_ABILITY_GROUPS = Object.freeze([
   { key: "thinking", mechanisms: ["puzzle", "matching_sorting", "shape_sorting", "counting_quantity", "color_pattern"] },
@@ -4915,7 +4942,7 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-// src/domain/profile-service.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/profile-service.js
 var MONTH_MS = 26298e5;
 var DAY_MS = 864e5;
 function childAgeMonths(birthDate, now3 = Date.now()) {
@@ -4943,7 +4970,7 @@ function saveProfileAndRotationSettings(store2, { childName, childBirthDate, rot
   }, "profile-and-rotation-settings");
 }
 
-// src/domain/substitution-engine.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/substitution-engine.js
 var GENERIC_MECHANICS = /* @__PURE__ */ new Set(["fine_motor_general", "construction_general", "pretend_play_general", "sensory_general"]);
 var SPECIFIC_SKILLS = /* @__PURE__ */ new Set(["logic", "math", "sorting", "memory", "problem_solving", "cause_effect", "spatial_awareness", "visual_spatial", "matching", "practical_life"]);
 var SubstitutionEngine = class {
@@ -5025,7 +5052,7 @@ function compareRelationship(a, b) {
   return rank2[b.level] - rank2[a.level] || b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName));
 }
 
-// src/domain/rotation-engine.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/rotation-engine.js
 var GENERIC_MECHANICS2 = /* @__PURE__ */ new Set(["fine_motor_general", "construction_general", "pretend_play_general", "sensory_general"]);
 function selectRotation({ toys = [], history = [], childAgeMonths: childAgeMonths3, size = 6, now: now3 = Date.now(), childDevelopmentProfile = {}, developmentFeedbackHistory = [] }) {
   const requestedRotationCount = Math.max(1, Number(size) || 6);
@@ -5439,7 +5466,7 @@ function cachedRelation(a, b, relations) {
   return relations.get(key);
 }
 
-// src/domain/development-presentation.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/development-presentation.js
 function challengeLabelKey(toy = {}) {
   return `developmentChallenge.${challengeLevel(toy)}`;
 }
@@ -5481,7 +5508,7 @@ function matchesAge(toy, age, childAgeMonths3) {
   return true;
 }
 
-// src/features/admin-service.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/admin-service.js
 var TOKEN_KEY = "toyRotationAdminTokenV095";
 var VERIFIED_KEY = "toyRotationAdminVerifiedV095";
 var AdminService = class {
@@ -5646,7 +5673,7 @@ function emitTrace(trace, stage, details) {
   }
 }
 
-// src/features/local-candidate-queue.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/local-candidate-queue.js
 function localCandidates(state) {
   return state?.catalogState?.syncMetadata?.localCandidates || [];
 }
@@ -5742,7 +5769,7 @@ function reopenLocalCandidateReview(state, candidateId, now3 = (/* @__PURE__ */ 
   return candidate;
 }
 
-// src/features/recognition-service.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/recognition-service.js
 var RecognitionService = class {
   #store;
   #images;
@@ -5762,14 +5789,14 @@ var RecognitionService = class {
   }
   async createDraft(file, setMode = "auto", { onPersisted = null } = {}) {
     if (!this.#base) throw new RecognitionError("recognitionServiceUnconfigured");
-    const image = await dataUrl(file);
+    const image2 = await dataUrl(file);
     const id = crypto.randomUUID();
-    const imageRef = await this.#images.savePersonal(image, `draft-${id}`);
+    const imageRef = await this.#images.savePersonal(image2, `draft-${id}`);
     const draft = { id, status: "queued", imageRef, setMode, productName: "", brand: "", categoryCode: "uncategorized", skillCodes: [], playMechanics: [], minAgeMonths: null, maxAgeMonths: null, isSet: false, children: [], error: null, createdAt: (/* @__PURE__ */ new Date()).toISOString() };
     this.#store.update((state) => state.drafts.unshift(draft), "recognition-queued");
     onPersisted?.(draft.id);
     setTimeout(() => {
-      void this.analyze(draft.id, { image });
+      void this.analyze(draft.id, { image: image2 });
     }, 0);
     return draft.id;
   }
@@ -5783,11 +5810,11 @@ var RecognitionService = class {
       item.error = null;
     }, "recognition-start");
     try {
-      const image = preloadedImage || await this.#images.resolve(draft.imageRef);
-      if (!image) throw new RecognitionError("recognitionImageUnavailable");
+      const image2 = preloadedImage || await this.#images.resolve(draft.imageRef);
+      if (!image2) throw new RecognitionError("recognitionImageUnavailable");
       const requestId = crypto.randomUUID();
       const response = await requestRecognition(`${this.#base}/analyze-batch`, {
-        items: [{ id, image }],
+        items: [{ id, image: image2 }],
         deviceId: deviceId(),
         locale: appLocale(this.#store),
         setMode: draft.setMode,
@@ -6104,7 +6131,7 @@ function dataUrl(file) {
   });
 }
 
-// src/features/catalog-report-store.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/catalog-report-store.js
 var REPORT_STATUSES = /* @__PURE__ */ new Set(["pending", "reviewing", "resolved", "dismissed"]);
 function reportsContainer(state) {
   state.catalogState ||= {};
@@ -6210,12 +6237,12 @@ function legacyReportId(job = {}) {
   const payload = job.payload || {};
   if (payload.reportId) return String(payload.reportId);
   const identity = JSON.stringify({ id: job.id || "", canonicalKey: payload.canonicalKey || "", reportType: payload.reportType || "", description: payload.description || "", createdAt: job.createdAt || "" });
-  let hash = 2166136261;
+  let hash2 = 2166136261;
   for (const char of identity) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
+    hash2 ^= char.charCodeAt(0);
+    hash2 = Math.imul(hash2, 16777619);
   }
-  return `legacy-report-${(hash >>> 0).toString(36)}`;
+  return `legacy-report-${(hash2 >>> 0).toString(36)}`;
 }
 function legacyReportPayload(job, attachmentRef = null) {
   const payload = job.payload || {};
@@ -6236,7 +6263,7 @@ function hasRawAttachment(payload = {}) {
   return typeof payload.optionalAttachment === "string" && /^data:image\//i.test(payload.optionalAttachment);
 }
 
-// src/features/shared-catalog-governance.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/shared-catalog-governance.js
 var SharedCatalogGovernance = class {
   #store;
   #catalog;
@@ -6470,12 +6497,12 @@ function deviceId2() {
   return v;
 }
 
-// src/features/review-count.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/review-count.js
 function getNeedsReviewCount(state) {
   return pendingCandidateCount(state) + getPendingCatalogReports(state).length;
 }
 
-// src/features/data-repair-diagnostic.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/data-repair-diagnostic.js
 var CURRENT_STORE_KEY = "toyRotation.cleanBaseline";
 var LEGACY_STORE_KEYS = ["toyRotationV04", "toyRotationV032", "toyRotationV03", "toyRotationV02"];
 var LEGACY_TOMBSTONE_KEYS = [
@@ -6763,13 +6790,13 @@ function scrub(value, key = "") {
   return output;
 }
 
-// src/features/persistence-diagnostic.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/persistence-diagnostic.js
 var IMAGE_DB = "toyRotationPhotosV04";
 async function buildPersistenceDiagnostic({ store: store2, images: images2 = null, release = null } = {}) {
   const base = store2?.persistence?.diagnostic || buildPersistenceSnapshot({ hydratedState: store2?.state || null, mode: store2?.persistence?.status || "unknown" });
   const databases = await listDatabases();
   const imageDatabase = databases.find((row) => row.name === IMAGE_DB) || null;
-  const image = await inspectKnownImageDatabase(imageDatabase);
+  const image2 = await inspectKnownImageDatabase(imageDatabase);
   let personalImageCount = null;
   let imageReadError = null;
   if (images2 && imageDatabase) {
@@ -6786,7 +6813,7 @@ async function buildPersistenceDiagnostic({ store: store2, images: images2 = nul
     release: release || null,
     origin: globalThis.location?.origin || null,
     localStorageKeys: storageKeyNames(),
-    indexedDb: { databases, knownImageDatabase: image, personalImageCount, imageReadError },
+    indexedDb: { databases, knownImageDatabase: image2, personalImageCount, imageReadError },
     raw: base,
     recovery: {
       status: store2?.persistence?.status || null,
@@ -6846,7 +6873,7 @@ function storageKeyNames() {
   }
 }
 
-// src/features/restore-diagnostic.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/restore-diagnostic.js
 function buildRestoreDiagnostic({ trace = null, release = null } = {}) {
   const stages = trace?.stages || [];
   const lastSuccessful = [...stages].reverse().find((stage) => stage.success) || null;
@@ -6877,7 +6904,7 @@ function buildRestoreDiagnostic({ trace = null, release = null } = {}) {
   };
 }
 
-// src/features/runtime-image-diagnostic.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/runtime-image-diagnostic.js
 var IMAGE_RESOLVER_BUILD_MARKER = "runtime-child-image-trace-20260827-a";
 var MAX_EVENTS = 500;
 var MAX_ROWS = 24;
@@ -7077,9 +7104,9 @@ function mapObject(map) {
 }
 function collectLiveDom(doc) {
   const result2 = {};
-  for (const image of doc?.querySelectorAll?.("img[data-runtime-image-toy-id]") || []) {
-    const id = image.dataset.runtimeImageToyId;
-    result2[id] = { domImgSrc: image.getAttribute("src") || null, domCurrentSrc: image.currentSrc || image.src || null, complete: Boolean(image.complete), naturalWidth: Number(image.naturalWidth || 0), isPlaceholder: isPlaceholderResult(parseJson(image.dataset.image), image.currentSrc || image.src) };
+  for (const image2 of doc?.querySelectorAll?.("img[data-runtime-image-toy-id]") || []) {
+    const id = image2.dataset.runtimeImageToyId;
+    result2[id] = { domImgSrc: image2.getAttribute("src") || null, domCurrentSrc: image2.currentSrc || image2.src || null, complete: Boolean(image2.complete), naturalWidth: Number(image2.naturalWidth || 0), isPlaceholder: isPlaceholderResult(parseJson(image2.dataset.image), image2.currentSrc || image2.src) };
   }
   return result2;
 }
@@ -7098,7 +7125,7 @@ async function cacheNames(storage) {
   }
 }
 
-// src/features/recognition-device-diagnostic.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/recognition-device-diagnostic.js
 var MAX_EVENTS2 = 500;
 var SNAPSHOT_LIMIT = 2e4;
 var now = () => (/* @__PURE__ */ new Date()).toISOString();
@@ -7272,7 +7299,7 @@ function storeSnapshot(state = {}) {
   return { toys: state.toys?.length || 0, wishlist: state.wishlist?.length || 0, localCandidates: localCandidates(state).length, drafts: state.drafts?.length || 0, schemaVersion: state.schemaVersion ?? null };
 }
 
-// src/features/admin-catalog-save-diagnostic.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/admin-catalog-save-diagnostic.js
 var MAX_EVENTS3 = 120;
 var AdminCatalogSaveDiagnostic = class {
   #recording = false;
@@ -7336,7 +7363,7 @@ function sanitize(details) {
   };
 }
 
-// src/features/storage-usage-diagnostic.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/storage-usage-diagnostic.js
 var encoder = new TextEncoder();
 var bytes = (value) => encoder.encode(typeof value === "string" ? value : JSON.stringify(value ?? null)).byteLength;
 var toyKey = (key) => /^toyRotation/i.test(key);
@@ -7372,7 +7399,7 @@ async function buildStorageUsageDiagnostic({ state, build = {} } = {}) {
   return { diagnosticVersion: 1, appVersion: build.appVersion || build.RELEASE || null, buildId: build.buildId || null, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), localStorage: { keys, canonicalBytes: canonical, stagingBytes: staging, shadowBytes: shadow, snapshotCount: keys.filter((item) => /snapshot-\d+/i.test(item.key)).length, snapshotBytes: snapshots, startupDiagnosticBytes: startupDiagnostic, persistenceHealthBytes: health, otherToyRotationBytes: other, estimatedFullStateCopies: canonical ? Number(((canonical + staging + shadow + snapshots) / canonical).toFixed(2)) : 0, totalToyRotationBytes: total }, stateBreakdown: { draftsBytes: bytes(state?.drafts), candidatesBytes: bytes(state?.catalogState?.syncMetadata?.localCandidates), governanceBytes: bytes(state?.catalogState?.syncMetadata?.governanceOutbox), diagnosticBytes: startupDiagnostic, embeddedDataImageCount: count3(state, /data:image\//gi), base64LikeCount: count3(state, /;base64,/gi) }, storageEstimate: estimate };
 }
 
-// src/features/catalog-count-diagnostic.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/catalog-count-diagnostic.js
 function buildCatalogCountDiagnostic({ catalog: catalog2, build = {}, uiSearchRows = null, exportedAt = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
   const snapshot = catalog2?.catalogCountSnapshot?.() || { raw: { base: 0, remote: 0, localLearned: 0, localRemote: 0, total: 0 }, tombstoneCount: 0, active: 0, publicVisible: 0, remoteIds: [], localOnlyIds: [], collisionSummary: { canonicalKeyCollisions: [], total: 0 } };
   return {
@@ -7386,7 +7413,7 @@ function buildCatalogCountDiagnostic({ catalog: catalog2, build = {}, uiSearchRo
   };
 }
 
-// src/domain/catalog-image-usability.js
+// ../../_work/Toy-Rotation-v0.11.6/src/domain/catalog-image-usability.js
 var IMAGE_USABILITY = Object.freeze({
   VERIFIED_USABLE_IMAGE: "VERIFIED_USABLE_IMAGE",
   VERIFIED_PACKAGED_IMAGE: "VERIFIED_PACKAGED_IMAGE",
@@ -7407,7 +7434,7 @@ function classifyCatalogImage(ref) {
   return IMAGE_USABILITY.NO_IMAGE;
 }
 
-// src/features/real-device-owned-wishlist-image-audit.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/real-device-owned-wishlist-image-audit.js
 var TOY_IMAGE_AUDIT_VERSION = "v0.11.6";
 var PRIORITY_BRANDS = /* @__PURE__ */ new Set(["mideer", "cherry-pick", "learning resources", "lego / duplo", "lego duplo"]);
 var USABLE = /* @__PURE__ */ new Set(["VERIFIED_PACKAGED", "VERIFIED_REMOTE", "CATALOG_IDB", "PERSONAL_IMAGE"]);
@@ -7511,7 +7538,7 @@ function resolveFromRows(reference, rows) {
   return rows.find((row) => keys.includes(String(row.canonicalKey)) || keys.includes(String(row.id))) || null;
 }
 
-// src/features/catalog-safety-audit.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/catalog-safety-audit.js
 var CATALOG_SAFETY_AUDIT_VERSION = "v0.11.6";
 var PRIORITY_BRANDS2 = /* @__PURE__ */ new Set(["mideer", "lovevery", "hape", "learning resources", "lego duplo", "lego / duplo", "vtech", "brio"]);
 function buildCatalogSafetyAudit({ state = {}, catalog: catalog2, build = {}, generatedAt = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
@@ -7579,7 +7606,7 @@ function distribution(items) {
   return Object.fromEntries(AGE_SAFETY_STATUSES.map((status) => [status, items.filter((item) => item.ageSafetyStatus === status).length]));
 }
 
-// src/features/raw-identity-reference-audit.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/raw-identity-reference-audit.js
 var PAIRS = [
   ["lego-duplo-brick-box", "lego-duplo-classic-brick-box", "10913"],
   ["hape-pound-tap-bench", "hape-pound-tap-bench-xylophone", "E0305"],
@@ -7702,7 +7729,7 @@ function buildRawIdentityReferenceAudit({ storage, catalog: catalog2 = null, bui
       const current = safeId(resolved?.canonicalKey) || hit.key;
       const status = statusFor(`${key}:${path}`, parent);
       const sourceArea = areaFor(path, key);
-      const image = /image|photo|media/i.test(path);
+      const image2 = /image|photo|media/i.test(path);
       const ref = {
         canonicalKeyFound: value,
         normalizedCurrentCanonicalKey: hit.childIndex ? `${current}:puzzle-${hit.childIndex}` : current,
@@ -7716,7 +7743,7 @@ function buildRawIdentityReferenceAudit({ storage, catalog: catalog2 = null, bui
         runtimeRedirectWouldResolve: current !== hit.key,
         migrationMayBeRequired: current !== hit.key,
         referenceViaToyId: viaToyId,
-        imageRefExists: image || !!parent?.imageRef || !!parent?.personalImageRef,
+        imageRefExists: image2 || !!parent?.imageRef || !!parent?.personalImageRef,
         noteRefExists: !!(parent?.notes || parent?.note),
         customFieldsExist: !!parent?.customFields,
         shelfState: parent?.currentShelf === true ? "current" : parent?.currentShelf === false ? "not-current" : null,
@@ -7734,7 +7761,7 @@ function buildRawIdentityReferenceAudit({ storage, catalog: catalog2 = null, bui
       if (status === "active") group.rawRefSummary.active++;
       else group.rawRefSummary.historical++;
       if (sourceArea === "backup/recovery") group.rawRefSummary.backup++;
-      if (image) group.rawRefSummary.image++;
+      if (image2) group.rawRefSummary.image++;
       if (ref.relation === "child") group.rawRefSummary.child++;
       if (sourceArea === "crossAgeApprovals") group.rawRefSummary.approval++;
     }, scan = function(value, path = "$", parent = null, field = "", depth = 0) {
@@ -7806,7 +7833,162 @@ function buildRawIdentityReferenceAudit({ storage, catalog: catalog2 = null, bui
   return { auditVersion: "v0.11.6-raw-p0-1", buildId: String(build.buildId || ""), generatedAt, scope: { p0Groups: groups.length }, storageSourcesScanned, groups, scanCoverage: { availableSources, unavailableSources } };
 }
 
-// src/features/cross-age-challenges.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/md1460-migration-audit.js
+var MD1460_AUDIT_VERSION = 1;
+var MD1460_PARENT = "mideer-my-first-puzzle-dinosaurs-6in1-md1460";
+var MD1460_LEGACY = Object.freeze(["mideer-my-first-puzzle-dinosaurs-6in1", "mideer-first-artist-cute-dinosaurs"]);
+var MD1460_CHILDREN = Object.freeze(Array.from({ length: 6 }, (_, index) => `${MD1460_PARENT}-puzzle-${index + 1}`));
+var parents = /* @__PURE__ */ new Set([MD1460_PARENT, ...MD1460_LEGACY]);
+var identities = /* @__PURE__ */ new Set([...parents, ...MD1460_CHILDREN]);
+var known = (value) => identities.has(canonicalKey(value));
+var suspicious = (value) => typeof value === "string" && /md1460|dinosaurs-6in1|cute-dinosaurs/i.test(value);
+var keysOf = (value) => value && typeof value === "object" && !Array.isArray(value) ? Object.keys(value) : [];
+async function hash(value) {
+  if (value == null || value === "") return { present: false, length: 0, sha256: null };
+  const input = String(value);
+  const bytes2 = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", bytes2);
+  return { present: true, length: input.length, sha256: Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("") };
+}
+async function image(ref) {
+  if (!ref) return { present: false, kind: null, idHash: null };
+  return { present: true, kind: ref.kind || null, idHash: ref.id || ref.storageKey ? await hash(ref.id || ref.storageKey) : null };
+}
+async function ownership(toy) {
+  return {
+    id: toy.id || null,
+    canonicalKey: toy.canonicalKey || null,
+    legacyCanonicalKeys: (toy.legacyCanonicalKeys || []).filter(suspicious),
+    setKind: toy.set?.kind || null,
+    parentId: toy.set?.parentId || null,
+    parentCanonicalKey: toy.set?.parentCanonicalKey || null,
+    partIndex: toy.set?.partIndex || null,
+    childIds: toy.set?.childIds || [],
+    intentionalRemovedChildKeys: toy.set?.intentionalRemovedChildKeys || [],
+    note: await hash(toy.notes),
+    image: await image(toy.imageRef)
+  };
+}
+async function removed(id, record) {
+  return {
+    id,
+    canonicalKey: record?.canonicalKey || null,
+    parentCanonicalKey: record?.parentCanonicalKey || record?.ownership?.parentCanonicalKey || null,
+    removedAt: record?.removedAt || null,
+    reason: record?.reason || null,
+    ownershipKind: record?.ownership?.kind || null,
+    fieldNames: keysOf(record),
+    note: await hash(record?.preservedUserData?.notes),
+    image: await image(record?.preservedUserData?.imageRef)
+  };
+}
+function tombstone(key, record) {
+  return {
+    key,
+    deletedAt: record?.deletedAt || null,
+    deleted: record?.deleted === true,
+    mergedInto: record?.mergedInto || null,
+    repairedBy: record?.repairedBy || null,
+    deletionProvenance: record?.deletionProvenance || null,
+    fieldNames: keysOf(record)
+  };
+}
+function parseStorage2(storage, key) {
+  try {
+    const raw = storage?.getItem?.(key);
+    if (raw == null) return { key, status: "missing", state: null };
+    const value = JSON.parse(raw);
+    const state = value?.state && typeof value.state === "object" ? value.state : value;
+    return { key, status: "available", state };
+  } catch {
+    return { key, status: "unavailable_or_invalid", state: null };
+  }
+}
+function references(state) {
+  const toys = (state?.toys || []).filter((toy) => suspicious(toy.canonicalKey) || suspicious(toy.set?.parentCanonicalKey));
+  const removedIds = Object.entries(state?.catalogState?.removedOwnerships || {}).filter(([, row]) => suspicious(row?.canonicalKey) || suspicious(row?.parentCanonicalKey)).map(([id]) => id);
+  const tombstoneKeys2 = Object.keys(state?.catalogState?.tombstones || {}).filter(suspicious);
+  const wishlistKeys = (state?.wishlist || []).map((row) => row.canonicalKey || row.catalogId || row.catalogKey).filter(suspicious);
+  return { activeIds: toys.map((toy) => toy.id), activeKeys: toys.map((toy) => toy.canonicalKey), removedIds, tombstoneKeys: tombstoneKeys2, wishlistKeys };
+}
+async function buildMd1460MigrationAudit({ state, storage = globalThis.localStorage, catalog: catalog2 = null, build = {}, generatedAt = (/* @__PURE__ */ new Date()).toISOString() }) {
+  const active = await Promise.all((state?.toys || []).filter((toy) => suspicious(toy.canonicalKey) || suspicious(toy.set?.parentCanonicalKey)).map(ownership));
+  const catalogState = state?.catalogState || {};
+  const tombstones = Object.entries(catalogState.tombstones || {}).filter(([key]) => suspicious(key)).map(([key, record]) => tombstone(key, record));
+  const removedOwnerships = await Promise.all(Object.entries(catalogState.removedOwnerships || {}).filter(([, row]) => suspicious(row?.canonicalKey) || suspicious(row?.parentCanonicalKey)).map(([id, row]) => removed(id, row)));
+  const wishlist = await Promise.all((state?.wishlist || []).filter((row) => suspicious(row.canonicalKey || row.catalogId || row.catalogKey)).map(async (row) => ({
+    id: row.id || null,
+    canonicalKey: row.canonicalKey || null,
+    catalogId: row.catalogId || null,
+    status: row.status || null,
+    stage: row.stage || null,
+    priority: row.priority || null,
+    addedAt: row.addedAt || null,
+    updatedAt: row.updatedAt || null,
+    fieldNames: keysOf(row),
+    note: await hash(row.notes),
+    image: await image(row.imageRef || row.catalogSnapshot?.imageRef)
+  })));
+  const relatedIds = /* @__PURE__ */ new Set([...active.map((row) => row.id), ...removedOwnerships.map((row) => row.id)]);
+  const history = (state?.rotationHistory || []).filter((round) => suspicious(round.canonicalKey) || suspicious(round.catalogKey) || (round.toyIds || []).some((id) => relatedIds.has(id)) || relatedIds.has(round.toyId)).map((round) => ({
+    id: round.id || null,
+    canonicalKey: round.canonicalKey || null,
+    catalogKey: round.catalogKey || null,
+    toyIds: (round.toyIds || []).filter((id) => relatedIds.has(id)),
+    historicalMissingToyIds: (round.historicalMissingToyIds || []).filter((id) => relatedIds.has(id))
+  }));
+  const snapshotKeys = [STORE_KEY, STORE_SHADOW_KEY, STORE_RECOVERY_STAGING_KEY, STORE_COMMIT_STAGING_KEY, ...STORE_SNAPSHOT_KEYS];
+  const snapshots = snapshotKeys.map((key) => {
+    const row = parseStorage2(storage, key);
+    return { key: row.key, status: row.status, refs: row.state ? references(row.state) : null };
+  });
+  const observedKeys = [
+    ...active.flatMap((row) => [row.canonicalKey, row.parentCanonicalKey, ...row.legacyCanonicalKeys]),
+    ...tombstones.flatMap((row) => [row.key, row.mergedInto]),
+    ...removedOwnerships.flatMap((row) => [row.canonicalKey, row.parentCanonicalKey]),
+    ...wishlist.flatMap((row) => [row.canonicalKey, row.catalogId]),
+    ...snapshots.flatMap((row) => row.refs ? [...row.refs.activeKeys, ...row.refs.tombstoneKeys, ...row.refs.wishlistKeys] : [])
+  ].filter(suspicious);
+  const parentRows = active.filter((row) => parents.has(canonicalKey(row.canonicalKey)) && row.setKind !== "child");
+  const children = MD1460_CHILDREN.map((key, index) => ({
+    canonicalKey: key,
+    partIndex: index + 1,
+    active: active.filter((row) => canonicalKey(row.canonicalKey) === key),
+    tombstones: tombstones.filter((row) => canonicalKey(row.key) === key),
+    removedOwnerships: removedOwnerships.filter((row) => canonicalKey(row.canonicalKey) === key),
+    wishlist: wishlist.filter((row) => canonicalKey(row.canonicalKey) === key),
+    historyPresent: history.some((round) => round.toyIds.some((id) => active.some((toy) => toy.id === id && canonicalKey(toy.canonicalKey) === key)))
+  }));
+  return {
+    auditVersion: MD1460_AUDIT_VERSION,
+    schemaVersion: state?.schemaVersion || null,
+    buildId: build.buildId || null,
+    generatedAt,
+    parent: {
+      canonicalKey: MD1460_PARENT,
+      legacyKeys: [...MD1460_LEGACY],
+      active: parentRows,
+      tombstones: tombstones.filter((row) => parents.has(canonicalKey(row.key))),
+      removedOwnerships: removedOwnerships.filter((row) => parents.has(canonicalKey(row.canonicalKey))),
+      wishlist: wishlist.filter((row) => parents.has(canonicalKey(row.canonicalKey))),
+      historyPresent: history.some((round) => round.toyIds.some((id) => parentRows.some((toy) => toy.id === id)))
+    },
+    children,
+    history,
+    snapshots,
+    diagnosticKeyNames: keysOf(catalogState.syncMetadata).filter((key) => /md1460|mideer|parentChild/i.test(key)),
+    unknownIdentityKeys: [...new Set(observedKeys.filter((key) => !known(key)))],
+    redirectResolution: {
+      legacyKeys: [...MD1460_LEGACY],
+      target: MD1460_PARENT,
+      actualLookups: [...MD1460_LEGACY, MD1460_PARENT].map((key) => ({ requested: key, resolvedCanonicalKey: catalog2?.getByKey?.(key)?.canonicalKey || null })),
+      observedTombstoneEdges: tombstones.filter((row) => row.mergedInto).map((row) => ({ from: row.key, to: row.mergedInto }))
+    },
+    backupImportMetadata: { available: false, reason: "External backup files are not accessible from the current PWA without explicit selection" }
+  };
+}
+
+// ../../_work/Toy-Rotation-v0.11.6/src/features/cross-age-challenges.js
 function challengeDecision(state, catalog2, toy, age, profile = {}) {
   const row = catalog2.resolve(toy);
   if (!row || age == null) return null;
@@ -7830,7 +8012,7 @@ function parentApprovableChallenges(state, catalog2, age, profile = {}) {
   return (state.toys || []).map((toy) => parentApprovableChallenge(state, catalog2, toy, age, profile)).filter(Boolean);
 }
 
-// src/features/startup-trace.js
+// ../../_work/Toy-Rotation-v0.11.6/src/features/startup-trace.js
 var WATCHDOG_DELAY_MS = 750;
 function now2() {
   return typeof performance === "undefined" ? Date.now() : performance.now();
@@ -7884,7 +8066,7 @@ function completeStartupWatchdog(handle) {
   clearTimeout(handle);
 }
 
-// src/ui/i18n.js
+// ../../_work/Toy-Rotation-v0.11.6/src/ui/i18n.js
 var PLAY_MECHANISM_LABELS = Object.freeze({
   counting_quantity: { en: "Counting / quantities", zh: "\u8BA1\u6570 / \u6570\u91CF" },
   color_pattern: { en: "Colors / patterns", zh: "\u989C\u8272 / \u89C4\u5F8B" },
@@ -8784,7 +8966,7 @@ function createI18n(store2) {
   } };
 }
 
-// src/ui/modal-manager.js
+// ../../_work/Toy-Rotation-v0.11.6/src/ui/modal-manager.js
 var ModalManager = class {
   #scrollY = 0;
   #dialog = null;
@@ -8844,7 +9026,7 @@ var ModalManager = class {
   }
 };
 
-// src/ui/admin-workspace-controller.js
+// ../../_work/Toy-Rotation-v0.11.6/src/ui/admin-workspace-controller.js
 function createAdminWorkspaceController({ dialog, getAdminAuthenticated, getPendingCount, renderSettings, renderWorkspace, closeSettingsDialog, trace = () => {
 } }) {
   const record = (stage, detail = {}) => trace(stage, detail);
@@ -8898,7 +9080,7 @@ function createAdminWorkspaceController({ dialog, getAdminAuthenticated, getPend
   return controller;
 }
 
-// src/ui/admin-governance-child.js
+// ../../_work/Toy-Rotation-v0.11.6/src/ui/admin-governance-child.js
 function renderAdminGovernanceChild({ dialog, loadGovernance, onReturn }) {
   let closeCount = 0;
   const close = () => {
@@ -8921,7 +9103,7 @@ function renderAdminGovernanceChild({ dialog, loadGovernance, onReturn }) {
   Promise.resolve().then(loadGovernance).then(() => unavailable(), unavailable);
 }
 
-// src/ui/recognition-review-submit-controller.js
+// ../../_work/Toy-Rotation-v0.11.6/src/ui/recognition-review-submit-controller.js
 function bindRecognitionReviewSubmit({ form, recognitionDraftId, saveDraft, confirm: confirm2, onComplete, onError, trace = () => {
 } }) {
   let submitting = false;
@@ -8956,7 +9138,7 @@ function bindRecognitionReviewSubmit({ form, recognitionDraftId, saveDraft, conf
   });
 }
 
-// src/ui/recognition-review-production.js
+// ../../_work/Toy-Rotation-v0.11.6/src/ui/recognition-review-production.js
 function openRecognitionReviewProduction({ document: document2, openModal: openModal2, recognitionDraftId, getState, getRecognition: getRecognition2, updateDraft, images: images2, attachPersonalImageEditor: attachPersonalImageEditor2, t: t2, escape: escape2, categoryCodes, skillCodes, messageFor: messageFor2, setView, render: render2, trace = () => {
 }, diagnostic = null }) {
   diagnostic?.begin(recognitionDraftId);
@@ -9044,10 +9226,10 @@ function openRecognitionReviewProduction({ document: document2, openModal: openM
   }, trace });
 }
 
-// src/ui/personal-image-editor.js
+// ../../_work/Toy-Rotation-v0.11.6/src/ui/personal-image-editor.js
 var OUTPUT_SIZE = 1024;
 function attachImageEditor({ input, host, t: t2, onEdited, initialSource = null, title = null }) {
-  let image = null;
+  let image2 = null;
   let sourceDataUrl = null;
   let state = freshState();
   let dragging = null;
@@ -9071,11 +9253,11 @@ function attachImageEditor({ input, host, t: t2, onEdited, initialSource = null,
   const loadSource = async (source) => {
     if (!source) return false;
     sourceDataUrl = source;
-    image = await loadImage(sourceDataUrl);
+    image2 = await loadImage(sourceDataUrl);
     state = freshState();
     zoom.value = "1";
     editor.classList.remove("hidden");
-    draw(context, canvas, image, state);
+    draw(context, canvas, image2, state);
     return true;
   };
   input.addEventListener("change", async () => {
@@ -9085,28 +9267,28 @@ function attachImageEditor({ input, host, t: t2, onEdited, initialSource = null,
   });
   zoom.addEventListener("input", () => {
     state.zoom = Number(zoom.value);
-    draw(context, canvas, image, state);
+    draw(context, canvas, image2, state);
   });
   editor.querySelector("[data-image-rotate]").addEventListener("click", () => {
     state.rotation = (state.rotation + 90) % 360;
-    draw(context, canvas, image, state);
+    draw(context, canvas, image2, state);
   });
   editor.querySelector("[data-image-reset]").addEventListener("click", () => {
     state = freshState();
     zoom.value = "1";
-    draw(context, canvas, image, state);
+    draw(context, canvas, image2, state);
   });
   editor.querySelector("[data-image-cancel]").addEventListener("click", () => {
     input.value = "";
     sourceDataUrl = null;
-    image = null;
+    image2 = null;
     state = freshState();
     editor.classList.add("hidden");
     onEdited(null);
   });
   editor.querySelector("[data-image-save]").addEventListener("click", () => {
-    if (!image) return;
-    draw(context, canvas, image, state);
+    if (!image2) return;
+    draw(context, canvas, image2, state);
     onEdited(canvas.toDataURL("image/jpeg", 0.92));
     editor.classList.add("hidden");
   });
@@ -9115,12 +9297,12 @@ function attachImageEditor({ input, host, t: t2, onEdited, initialSource = null,
     canvas.setPointerCapture?.(event.pointerId);
   });
   canvas.addEventListener("pointermove", (event) => {
-    if (!dragging || !image) return;
+    if (!dragging || !image2) return;
     const next = pointer(canvas, event);
     state.panX += next.x - dragging.x;
     state.panY += next.y - dragging.y;
     dragging = next;
-    draw(context, canvas, image, state);
+    draw(context, canvas, image2, state);
   });
   const stopDragging = (event) => {
     dragging = null;
@@ -9135,15 +9317,15 @@ function attachImageEditor({ input, host, t: t2, onEdited, initialSource = null,
       return sourceDataUrl;
     },
     editedDataUrl() {
-      if (!image) return null;
-      draw(context, canvas, image, state);
+      if (!image2) return null;
+      draw(context, canvas, image2, state);
       return canvas.toDataURL("image/jpeg", 0.92);
     },
     reset() {
       input.value = "";
       editor.classList.add("hidden");
       state = freshState();
-      image = null;
+      image2 = null;
       sourceDataUrl = null;
     }
   };
@@ -9158,15 +9340,15 @@ function imageDrawGeometry(imageWidth, imageHeight, rotation, zoom = 1, panX = 0
   const cover = Math.max(size / rotatedWidth, size / rotatedHeight);
   return { scale: cover * zoom, centerX: size / 2 + panX, centerY: size / 2 + panY };
 }
-function draw(context, canvas, image, state) {
-  if (!image) return;
-  const geometry = imageDrawGeometry(image.naturalWidth || image.width, image.naturalHeight || image.height, state.rotation, state.zoom, state.panX, state.panY, canvas.width);
+function draw(context, canvas, image2, state) {
+  if (!image2) return;
+  const geometry = imageDrawGeometry(image2.naturalWidth || image2.width, image2.naturalHeight || image2.height, state.rotation, state.zoom, state.panX, state.panY, canvas.width);
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.save();
   context.translate(geometry.centerX, geometry.centerY);
   context.rotate(state.rotation * Math.PI / 180);
   context.scale(geometry.scale, geometry.scale);
-  context.drawImage(image, -(image.naturalWidth || image.width) / 2, -(image.naturalHeight || image.height) / 2);
+  context.drawImage(image2, -(image2.naturalWidth || image2.width) / 2, -(image2.naturalHeight || image2.height) / 2);
   context.restore();
 }
 function pointer(canvas, event) {
@@ -9178,10 +9360,10 @@ function freshState() {
 }
 function loadImage(source) {
   return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = source;
+    const image2 = new Image();
+    image2.onload = () => resolve(image2);
+    image2.onerror = reject;
+    image2.src = source;
   });
 }
 function fileToDataUrl(file) {
@@ -9199,7 +9381,7 @@ function escapeAttribute(value) {
   return escapeHtml(value);
 }
 
-// src/main.js
+// ../../_work/Toy-Rotation-v0.11.6/src/main.js
 var root = document.querySelector("#app");
 var STARTUP_DIAGNOSTIC_KEY = "toyRotation.startupDiagnostic";
 var earlyStartup = window.__TOY_ROTATION_EARLY_STARTUP__;
@@ -9830,13 +10012,13 @@ function openWishlistItem() {
       reader.readAsDataURL(file);
     }));
     const snapshot = { canonicalKey: canonicalKey(`${values.get("brand")}-${values.get("productName")}`), brand: values.get("brand"), productName: values.get("productName"), categoryCode: values.get("categoryCode"), skillCodes: values.getAll("skillCodes"), imageRef };
-    const known = catalog.resolve(snapshot);
+    const known2 = catalog.resolve(snapshot);
     let wish;
     store.update((state) => {
-      wish = normalizeWishlistItem({ catalogId: known?.id || null, catalogSnapshot: snapshot, status: "want", priority: values.get("priority"), notes: values.get("notes"), sourceLink: values.get("sourceLink") });
+      wish = normalizeWishlistItem({ catalogId: known2?.id || null, catalogSnapshot: snapshot, status: "want", priority: values.get("priority"), notes: values.get("notes"), sourceLink: values.get("sourceLink") });
       state.wishlist.push(wish);
     }, "wishlist-manual-add");
-    if (!known) {
+    if (!known2) {
       governance.createLocalCandidate({ candidateId: `candidate-${wish.id}`, source: "manual", candidateType: "new_product_candidate", proposedCanonicalKey: snapshot.canonicalKey, brand: snapshot.brand, productName: snapshot.productName, nameEn: snapshot.productName, categoryCode: snapshot.categoryCode, skillCodes: snapshot.skillCodes, playMechanics: [], imageConsent: false, linkedWishlistId: wish.id });
       void governance.flushOutbox();
     }
@@ -10228,12 +10410,12 @@ function openCatalog({ initialFilters = catalogFilterDefaults() } = {}) {
 function renderCatalogCard(toy) {
   const owned = findOwnedToy(toy, store.state.toys);
   const wished = findWishlistItem(toy, store.state.wishlist);
-  const ownership = owned ? `<button disabled aria-label="${t("alreadyOwned")}">\u2713 ${t("alreadyOwned")}</button>` : `<button data-add="${toy.canonicalKey}" class="primary">${t("addToy")}</button>`;
+  const ownership2 = owned ? `<button disabled aria-label="${t("alreadyOwned")}">\u2713 ${t("alreadyOwned")}</button>` : `<button data-add="${toy.canonicalKey}" class="primary">${t("addToy")}</button>`;
   const wishlistState = owned ? "" : wished ? `<button disabled aria-label="${t("alreadyWishlisted")}">\u2713 ${t("alreadyWishlisted")}</button>` : `<button data-wish="${toy.canonicalKey}">${t("wishlist")}</button>`;
   const review = catalog.reviewMetadata(toy);
   const reviewBadge = admin.enabled && review ? `<p class="catalog-review-status">${t(`catalogReview.${review.status}`)}</p>` : "";
   const mechanics = developmentMechanics(toy).slice(0, 2).map((code) => `<span>${escape(mechanicLabel(code))}</span>`).join("");
-  return `<article class="card"><img data-image='${escapedJson(toy.imageRef)}' alt=""><div><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips" aria-label="${t("mechanicsReference")}"><span>${t(challengeLabelKey(toy))}</span>${mechanics}</div>${reviewBadge}<div class="catalog-card-actions"><div class="catalog-card-primary-actions">${ownership}${wishlistState}</div><button type="button" class="catalog-report-link" data-report="${toy.canonicalKey}">${t("catalogReportTitle")}</button>${admin.enabled ? `<button data-manage="${toy.canonicalKey}">${t("edit")}</button>` : ""}</div></div></article>`;
+  return `<article class="card"><img data-image='${escapedJson(toy.imageRef)}' alt=""><div><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips" aria-label="${t("mechanicsReference")}"><span>${t(challengeLabelKey(toy))}</span>${mechanics}</div>${reviewBadge}<div class="catalog-card-actions"><div class="catalog-card-primary-actions">${ownership2}${wishlistState}</div><button type="button" class="catalog-report-link" data-report="${toy.canonicalKey}">${t("catalogReportTitle")}</button>${admin.enabled ? `<button data-manage="${toy.canonicalKey}">${t("edit")}</button>` : ""}</div></div></article>`;
 }
 function catalogFilterLabel(group, value) {
   return group === "brands" ? brandLabel(value) : group === "categories" ? t(`category.${value}`) : group === "skills" ? t(`skill.${value}`) : group === "mechanics" ? mechanicLabel(value) : t(`developmentChallenge.${value}`);
@@ -10395,7 +10577,7 @@ function catalogSourceKey(source) {
 }
 function openSettings() {
   const recoveryNotice = !store.canPersist ? `<p class="danger">${t("persistenceRecoverySettingsNotice")}</p>` : "";
-  const adminControls = admin.enabled ? `<button type="button" id="restore-diagnostic-export">${t("exportRestoreDiagnostic")}</button><section class="panel"><h3>Recognition Device Diagnostics</h3><p id="recognition-trace-status">Stopped \xB7 0 events</p><button type="button" id="recognition-trace-start">Start Recognition Trace</button><button type="button" id="recognition-trace-stop">Stop Trace</button><button type="button" id="recognition-trace-clear">Clear Trace</button><button type="button" id="recognition-trace-export">Export Recognition Trace JSON</button></section><section class="panel"><h3>Admin Catalog Save Diagnostic</h3><p id="admin-catalog-save-trace-status">Stopped \xB7 0 events</p><button type="button" id="admin-catalog-save-trace-start">Start Trace</button><button type="button" id="admin-catalog-save-trace-stop">Stop Trace</button><button type="button" id="admin-catalog-save-trace-clear">Clear Trace</button><button type="button" id="admin-catalog-save-trace-export">Export Trace JSON</button></section><section class="panel"><h3>Storage Usage</h3><p id="storage-usage-status">Loading\u2026</p><button type="button" id="storage-audit-export">Export Storage Audit JSON</button></section><button type="button" id="manager-open">${t("managerDashboard")} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t("signOut")}</button>` : `<button type="button" id="admin-open">${t("adminMode")}</button>`;
+  const adminControls = admin.enabled ? `<button type="button" id="md1460-migration-audit-export">Export MD1460 Migration Audit</button><p id="md1460-migration-audit-status" role="status"></p><button type="button" id="restore-diagnostic-export">${t("exportRestoreDiagnostic")}</button><section class="panel"><h3>Recognition Device Diagnostics</h3><p id="recognition-trace-status">Stopped \xB7 0 events</p><button type="button" id="recognition-trace-start">Start Recognition Trace</button><button type="button" id="recognition-trace-stop">Stop Trace</button><button type="button" id="recognition-trace-clear">Clear Trace</button><button type="button" id="recognition-trace-export">Export Recognition Trace JSON</button></section><section class="panel"><h3>Admin Catalog Save Diagnostic</h3><p id="admin-catalog-save-trace-status">Stopped \xB7 0 events</p><button type="button" id="admin-catalog-save-trace-start">Start Trace</button><button type="button" id="admin-catalog-save-trace-stop">Stop Trace</button><button type="button" id="admin-catalog-save-trace-clear">Clear Trace</button><button type="button" id="admin-catalog-save-trace-export">Export Trace JSON</button></section><section class="panel"><h3>Storage Usage</h3><p id="storage-usage-status">Loading\u2026</p><button type="button" id="storage-audit-export">Export Storage Audit JSON</button></section><button type="button" id="manager-open">${t("managerDashboard")} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t("signOut")}</button>` : `<button type="button" id="admin-open">${t("adminMode")}</button>`;
   const dialog = openModal(`<form class="form"><header><h2>${t("settings")}</h2><button type="button" data-close>\xD7</button></header>${recoveryNotice}<label>${t("language")}<select name="language"><option value="system">${t("system")}</option><option value="en">${t("languageEnglish")}</option><option value="zh">${t("languageChinese")}</option></select></label><label>${t("theme")}<select name="theme"><option value="system">${t("system")}</option><option value="light">${t("light")}</option><option value="dark">${t("dark")}</option></select></label><hr>${profileSettingsFields()}<button class="primary" ${store.canPersist ? "" : "disabled"}>${t("save")}</button><button type="button" id="backup-export" ${store.canPersist ? "" : "disabled"}>${t("exportBackup")}</button><button type="button" id="persistence-diagnostic-export">${t("exportPersistenceDiagnostic")}</button><label>${t("restoreBackup")}<input id="backup-import" type="file" accept="application/json" ${store.canPersist ? "" : "disabled"}></label><p id="backup-restore-status" role="status" aria-live="polite"></p><section class="panel"><h3>${t("dataAudit")}</h3><p>${t("exportToyImageAuditHint")}</p><button type="button" id="toy-image-audit-export">${t("exportToyImageAudit")}</button><p>${t("exportCatalogSafetyAuditHint")}</p><button type="button" id="catalog-safety-audit-export">${t("exportCatalogSafetyAudit")}</button><p>${t("exportRawIdentityReferenceAuditHint")}</p><button type="button" id="raw-identity-reference-audit-export">${t("exportRawIdentityReferenceAudit")}</button></section><section id="admin-settings">${adminControls}</section></form>`);
   const form = dialog.querySelector("form");
   form.language.value = store.state.settings.language;
@@ -10477,6 +10659,7 @@ function openSettings() {
     }
   };
   dialog.querySelector("#restore-diagnostic-export")?.addEventListener("click", exportRestoreDiagnostic);
+  bindMd1460AuditExport(dialog);
   const updateRecognitionTraceStatus = () => {
     const active = recognitionDeviceDiagnostic.sessions.at(-1);
     const status = dialog.querySelector("#recognition-trace-status");
@@ -10937,7 +11120,8 @@ function openAdminInSettings(dialog) {
   host.querySelector("#admin-sign-in").onclick = async () => {
     try {
       await admin.signIn(host.querySelector("#admin-password").value);
-      host.innerHTML = `<p role="status">${t("adminMode")}</p><button type="button" id="manager-open">${t("managerDashboard")} <span class="badge">${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t("signOut")}</button>`;
+      host.innerHTML = `<p role="status">${t("adminMode")}</p><button type="button" id="md1460-migration-audit-export">Export MD1460 Migration Audit</button><p id="md1460-migration-audit-status" role="status"></p><button type="button" id="manager-open">${t("managerDashboard")} <span class="badge">${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t("signOut")}</button>`;
+      bindMd1460AuditExport(dialog);
       host.querySelector("#manager-open").onclick = () => openAdminWorkspaceInSettings(dialog);
       host.querySelector("#admin-open").onclick = () => {
         admin.signOut();
@@ -10947,6 +11131,19 @@ function openAdminInSettings(dialog) {
       host.querySelector("#admin-error").textContent = messageFor(error.message);
     }
   };
+}
+function bindMd1460AuditExport(dialog) {
+  dialog.querySelector("#md1460-migration-audit-export")?.addEventListener("click", async () => {
+    if (!admin.enabled) return;
+    const status = dialog.querySelector("#md1460-migration-audit-status");
+    try {
+      const audit = await buildMd1460MigrationAudit({ state: store.state, storage: localStorage, catalog, build: window.TOY_ROTATION_CONFIG });
+      downloadJson(audit, `toy-rotation-md1460-owner-audit-${auditFilenameStamp()}.json`);
+      if (status) status.textContent = "MD1460 audit downloaded; no toy data changed.";
+    } catch (error) {
+      if (status) status.textContent = "MD1460 audit could not be exported. No toy data changed.";
+    }
+  });
 }
 function traceAdminWorkspace(stage, detail = {}) {
   const trace = window.__TOY_ROTATION_ADMIN_WORKSPACE_TRACE__ ||= [];
@@ -11048,50 +11245,50 @@ function restoreSettingsFromWorkspace(dialog, { onOpenWorkspace, onClose } = {})
 }
 async function bindImages(scope = document) {
   const targets = [...scope.querySelectorAll("img[data-image]")];
-  runtimeImageDiagnostics.mark("bind_images_start", { targetCount: targets.length, runtimeToyImageCount: targets.filter((image) => image.dataset.runtimeImageToyId).length });
-  await Promise.all(targets.map(async (image) => {
-    if (image.closest("[data-candidate-detail]")) image.classList.add("candidate-review-image-preview");
-    image.loading = "lazy";
-    image.decoding = "async";
-    const toyId = image.dataset.runtimeImageToyId || null;
+  runtimeImageDiagnostics.mark("bind_images_start", { targetCount: targets.length, runtimeToyImageCount: targets.filter((image2) => image2.dataset.runtimeImageToyId).length });
+  await Promise.all(targets.map(async (image2) => {
+    if (image2.closest("[data-candidate-detail]")) image2.classList.add("candidate-review-image-preview");
+    image2.loading = "lazy";
+    image2.decoding = "async";
+    const toyId = image2.dataset.runtimeImageToyId || null;
     let rendererImageRef = null;
     try {
-      rendererImageRef = JSON.parse(image.dataset.image);
+      rendererImageRef = JSON.parse(image2.dataset.image);
     } catch {
     }
-    const record = (state, error = null) => runtimeImageDiagnostics.recordDom({ toyId, rendererImageRef, src: image.getAttribute("src"), currentSrc: image.currentSrc || image.src, complete: image.complete, naturalWidth: image.naturalWidth, state, error });
+    const record = (state, error = null) => runtimeImageDiagnostics.recordDom({ toyId, rendererImageRef, src: image2.getAttribute("src"), currentSrc: image2.currentSrc || image2.src, complete: image2.complete, naturalWidth: image2.naturalWidth, state, error });
     if (toyId) {
-      image.addEventListener("load", () => record("loaded"), { once: true });
-      image.addEventListener("error", () => record("error", "image_element_error"), { once: true });
+      image2.addEventListener("load", () => record("loaded"), { once: true });
+      image2.addEventListener("error", () => record("error", "image_element_error"), { once: true });
     }
     try {
       const resolvedImage = await images.resolve(rendererImageRef);
-      if (!resolvedImage && replaceCandidateReviewPreviewWithUnavailable(image)) {
+      if (!resolvedImage && replaceCandidateReviewPreviewWithUnavailable(image2)) {
         record("unavailable");
         return;
       }
-      image.src = resolvedImage || "./icons/icon-192.png";
+      image2.src = resolvedImage || "./icons/icon-192.png";
       record("assigned");
     } catch (error) {
-      if (replaceCandidateReviewPreviewWithUnavailable(image)) {
+      if (replaceCandidateReviewPreviewWithUnavailable(image2)) {
         record("resolve_error", error?.message || String(error));
         return;
       }
-      image.src = "./icons/icon-192.png";
+      image2.src = "./icons/icon-192.png";
       record("resolve_error", error?.message || String(error));
     }
   }));
-  runtimeImageDiagnostics.mark("bind_images_complete", { targetCount: targets.length, runtimeToyImageCount: targets.filter((image) => image.dataset.runtimeImageToyId).length });
+  runtimeImageDiagnostics.mark("bind_images_complete", { targetCount: targets.length, runtimeToyImageCount: targets.filter((image2) => image2.dataset.runtimeImageToyId).length });
 }
-function replaceCandidateReviewPreviewWithUnavailable(image) {
-  if (!image.matches("[data-candidate-review-preview]")) return false;
+function replaceCandidateReviewPreviewWithUnavailable(image2) {
+  if (!image2.matches("[data-candidate-review-preview]")) return false;
   const placeholder = document.createElement("div");
   placeholder.className = "candidate-review-image-placeholder";
   placeholder.dataset.candidateReviewPlaceholder = "";
   placeholder.setAttribute("role", "img");
   placeholder.setAttribute("aria-label", t("candidateImageUnavailable"));
   placeholder.textContent = t("candidateImageUnavailable");
-  image.replaceWith(placeholder);
+  image2.replaceWith(placeholder);
   return true;
 }
 function applyTheme() {

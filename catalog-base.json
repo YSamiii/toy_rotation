@@ -3332,20 +3332,6 @@
       "nameZh": "弹跳烤面包机过家家套装"
     },
     {
-      "key": "hape-pound-tap-bench",
-      "brand": "Hape",
-      "name": "Pound & Tap Bench with Slide Out Xylophone",
-      "sku": "E0305",
-      "ageMinMonths": 12,
-      "ageMaxMonths": 36,
-      "category": "音乐",
-      "skills": [
-        "因果关系",
-        "精细动作",
-        "手眼协调"
-      ]
-    },
-    {
       "key": "hape-pull-along-frog-family",
       "brand": "Hape",
       "name": "Pull Along Frog Family",
@@ -4793,20 +4779,25 @@
       "pieceCount": 4,
       "exactTitle": "Helping Hands Fine Motor Tool Set",
       "identitySource": "https://www.learningresources.com/item-helping-hands-fine-motor-tool-set-8482",
-      "ageMinMonths": 24,
+      "sourceUrl": "https://www.learningresources.com/item-helping-hands-fine-motor-tool-set-8482",
+      "ageMinMonths": 36,
       "ageMaxMonths": 60,
       "category": "精细动作",
       "skills": [
         "精细动作",
-        "手眼协调"
+        "手眼协调",
+        "抓握能力",
+        "分类能力"
       ],
       "aliases": [
         "Helping Hands Fine Motor Tool Set",
+        "Helping Hands 精细动作工具套装",
         "lr-helping-hands",
         "lr-helping-hands-fine-motor-tool-set"
       ],
       "legacyCanonicalKeys": [
-        "lr-helping-hands-fine-motor-tool-set"
+        "lr-helping-hands-fine-motor-tool-set",
+        "learningresources-helping-hands-fine-motor-tool-set"
       ]
     },
     {
@@ -5497,21 +5488,15 @@
       "key": "lego-duplo-brick-box",
       "brand": "LEGO / DUPLO",
       "name": "DUPLO Brick Box",
-      "userMetadata": { "safety": { "ageSafetyStatus": "VERIFIED_NO_EXTRA_GATE", "hardMinAgeMonths": null, "smallParts": false, "requiresStandingStability": false, "warningType": null, "safetySource": "https://www.lego.com/en-ca/product/brick-box-10913", "evidenceNote": "Official exact set 10913 page describes age 1.5+ developmental building and toddler-friendly bricks meeting strict safety standards; no separate hard safety gate is given.", "safetyVerifiedAt": "2026-09-24" } },
-      "ageMinMonths": 18,
-      "ageMaxMonths": 60,
-      "category": "积木/建构",
-      "skills": [
-        "创造力",
-        "精细动作",
-        "视觉空间"
+      "sku": "10913",
+      "sourceUrl": "https://www.lego.com/en-ca/product/brick-box-10913",
+      "aliases": [
+        "DUPLO Classic Brick Box"
       ],
-      "shelfMode": "permanent"
-    },
-    {
-      "key": "lego-duplo-classic-brick-box",
-      "brand": "LEGO / DUPLO",
-      "name": "DUPLO Classic Brick Box",
+      "legacyCanonicalKeys": [
+        "lego-duplo-classic-brick-box"
+      ],
+      "userMetadata": { "safety": { "ageSafetyStatus": "VERIFIED_NO_EXTRA_GATE", "hardMinAgeMonths": null, "smallParts": false, "requiresStandingStability": false, "warningType": null, "safetySource": "https://www.lego.com/en-ca/product/brick-box-10913", "evidenceNote": "Official exact set 10913 page describes age 1.5+ developmental building and toddler-friendly bricks meeting strict safety standards; no separate hard safety gate is given.", "safetyVerifiedAt": "2026-09-24" } },
       "ageMinMonths": 18,
       "ageMaxMonths": 60,
       "category": "积木/建构",
@@ -8951,20 +8936,6 @@
       ]
     },
     {
-      "key": "mideer-dressup-princess-fashion",
-      "brand": "Mideer",
-      "name": "3-in-1 Dress Up Game Set: Princess Fashion Show",
-      "nameZh": "3合1公主时装秀换装游戏",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 84,
-      "category": "角色扮演",
-      "skills": [
-        "角色扮演",
-        "创造力",
-        "精细动作"
-      ]
-    },
-    {
       "key": "mideer-32-in-1-classic-games",
       "brand": "Mideer",
       "name": "32 In 1 Classic Games",
@@ -9115,7 +9086,7 @@
       "name": "Colorful Magnetic Tiles: Jurassic Adventure 48P",
       "nameZh": "侏罗纪冒险彩色磁力片 48片",
       "ageMinMonths": 36,
-      "ageMaxMonths": 120,
+      "ageMaxMonths": 96,
       "category": "积木/建构",
       "skills": [
         "空间认知",
@@ -9124,14 +9095,15 @@
         "问题解决"
       ],
       "aliases": [
-        "Colorful Magnetic Tiles: Jurassic Adventure 48P",
         "彩色磁力片：侏罗纪冒险48片",
         "mideer-magnetic-jurassic-48",
-        "侏罗纪冒险彩色磁力片 48片",
-        "mideer-colorful-magnetic-tiles-jurassic-48p"
+        "mideer-colorful-magnetic-tiles-jurassic-48p",
+        "彩色磁力片：侏罗纪冒险 48片",
+        "Jurassic Adventure Magnetic Tiles 48P"
       ],
       "legacyCanonicalKeys": [
-        "mideer-magnetic-jurassic-48"
+        "mideer-magnetic-jurassic-48",
+        "mideer-magnetic-tiles-jurassic-adventure-48p"
       ]
     },
     {
@@ -9140,22 +9112,24 @@
       "name": "Colorful Magnetic Tiles: Wonderful Forest 40P",
       "nameZh": "奇妙森林彩色磁力片 40片",
       "ageMinMonths": 36,
-      "ageMaxMonths": 120,
+      "ageMaxMonths": 96,
       "category": "积木/建构",
       "skills": [
         "空间认知",
         "创造力",
-        "精细动作"
+        "精细动作",
+        "专注力"
       ],
       "aliases": [
-        "Colorful Magnetic Tiles: Wonderful Forest 40P",
         "彩色磁力片：奇妙森林40片",
         "mideer-magnetic-forest-40",
-        "奇妙森林彩色磁力片 40片",
-        "mideer-colorful-magnetic-tiles-wonderful-forest-40p"
+        "mideer-colorful-magnetic-tiles-wonderful-forest-40p",
+        "彩色磁力片：奇妙森林 40片",
+        "Wonderful Forest Magnetic Tiles 40P"
       ],
       "legacyCanonicalKeys": [
-        "mideer-magnetic-forest-40"
+        "mideer-magnetic-forest-40",
+        "mideer-magnetic-tiles-wonderful-forest-40p"
       ]
     },
     {
@@ -9432,34 +9406,6 @@
       ]
     },
     {
-      "key": "mideer-level1-animals-2-6",
-      "brand": "Mideer",
-      "name": "Level Up! Puzzles with Storage Bag - Level 1: Animals 2P-6P",
-      "nameZh": "进阶拼图袋装1级：动物2-6片",
-      "ageMinMonths": 24,
-      "ageMaxMonths": 48,
-      "category": "拼图/配对",
-      "skills": [
-        "视觉空间",
-        "精细动作",
-        "认知配对"
-      ]
-    },
-    {
-      "key": "mideer-level1-animals-vehicles-2-6",
-      "brand": "Mideer",
-      "name": "Level Up! Puzzles with Storage Bag - Level 1: Animals and Vehicles 2P-6P",
-      "nameZh": "进阶拼图袋装1级：动物与车辆2-6片",
-      "ageMinMonths": 24,
-      "ageMaxMonths": 48,
-      "category": "拼图/配对",
-      "skills": [
-        "视觉空间",
-        "精细动作",
-        "认知配对"
-      ]
-    },
-    {
       "key": "mideer-level2-animal-families",
       "brand": "Mideer",
       "name": "Level Up! Puzzles with Storage Bag - Level 2: Animal Families 9P-16P",
@@ -9492,13 +9438,23 @@
       "brand": "Mideer",
       "name": "Level Up! Puzzles with Storage Bag - Level 3: Busy Community Helpers 24P-35P",
       "nameZh": "进阶拼图袋装3级：忙碌社区帮手24-35片",
+      "catalogSource": "remote",
       "ageMinMonths": 36,
-      "ageMaxMonths": 72,
+      "ageMaxMonths": 60,
       "category": "拼图/配对",
       "skills": [
         "视觉空间",
         "语言",
-        "问题解决"
+        "问题解决",
+        "精细动作",
+        "手眼协调",
+        "社会认知"
+      ],
+      "legacyCanonicalKeys": [
+        "mideer-level-up-l3-community-helpers-24-35p"
+      ],
+      "aliases": [
+        "进阶拼图收纳袋 Level 3：忙碌的社区工作者 24–35片"
       ]
     },
     {
@@ -9520,13 +9476,22 @@
       "brand": "Mideer",
       "name": "Level Up! Puzzles with Storage Bag - Level 3: Natural Scenery 24P-35P",
       "nameZh": "进阶拼图袋装3级：自然风景24-35片",
+      "catalogSource": "remote",
       "ageMinMonths": 36,
-      "ageMaxMonths": 72,
+      "ageMaxMonths": 60,
       "category": "拼图/配对",
       "skills": [
         "视觉空间",
         "问题解决",
-        "专注力"
+        "专注力",
+        "精细动作",
+        "手眼协调"
+      ],
+      "legacyCanonicalKeys": [
+        "mideer-level-up-l3-natural-scenery-24-35p"
+      ],
+      "aliases": [
+        "进阶拼图收纳袋 Level 3：自然风景 24–35片"
       ]
     },
     {
@@ -9554,20 +9519,6 @@
       "skills": [
         "视觉空间",
         "语言",
-        "专注力"
-      ]
-    },
-    {
-      "key": "mideer-level4-construction",
-      "brand": "Mideer",
-      "name": "Level Up! Puzzles with Storage Bag - Level 4: Clanging Construction Site 48P-72P",
-      "nameZh": "进阶拼图袋装4级：建筑工地48-72片",
-      "ageMinMonths": 42,
-      "ageMaxMonths": 84,
-      "category": "拼图/配对",
-      "skills": [
-        "视觉空间",
-        "问题解决",
         "专注力"
       ]
     },
@@ -9648,22 +9599,23 @@
       "name": "Level Up! Puzzles with Storage Bag - Level 5: Wonderful Adventure 88P-126P",
       "nameZh": "进阶拼图 Level 5：奇妙冒险 88-126片",
       "ageMinMonths": 60,
-      "ageMaxMonths": 108,
+      "ageMaxMonths": 120,
       "category": "拼图/配对",
       "skills": [
         "视觉空间",
         "问题解决",
-        "专注力"
+        "专注力",
+        "精细动作"
       ],
       "aliases": [
-        "Level Up! Puzzles with Storage Bag - Level 5: Wonderful Adventure 88P-126P",
         "进阶拼图袋装5级：奇妙冒险88-126片",
         "mideer-level5-adventure",
-        "进阶拼图 Level 5：奇妙冒险 88-126片",
-        "mideer-level5-wonderful-adventure"
+        "mideer-level5-wonderful-adventure",
+        "进阶拼图收纳袋 Level 5：奇妙冒险 88-126片"
       ],
       "legacyCanonicalKeys": [
-        "mideer-level5-adventure"
+        "mideer-level5-adventure",
+        "mideer-level-up-l5-wonderful-adventure"
       ]
     },
     {
@@ -9754,19 +9706,6 @@
       ]
     },
     {
-      "key": "mideer-magnetic-maze-parking",
-      "brand": "Mideer",
-      "name": "Magnetic Maze: Parking Lot",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 72,
-      "category": "益智类玩具",
-      "skills": [
-        "逻辑推理",
-        "精细动作",
-        "问题解决"
-      ]
-    },
-    {
       "key": "mideer-magnetic-playset-sweet-girl",
       "brand": "Mideer",
       "name": "Magnetic Playset - Sweet Girl",
@@ -9779,21 +9718,6 @@
         "精细动作",
         "角色扮演",
         "审美表达"
-      ]
-    },
-    {
-      "key": "mideer-magnetic-tangram",
-      "brand": "Mideer",
-      "name": "Magnetic Tangram",
-      "nameZh": "磁性七巧板",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 96,
-      "category": "拼图/配对",
-      "skills": [
-        "空间认知",
-        "问题解决",
-        "精细动作",
-        "观察力"
       ]
     },
     {
@@ -10106,20 +10030,6 @@
       ]
     },
     {
-      "key": "mideer-paper-craft-windmill",
-      "brand": "Mideer",
-      "name": "Paper Craft Workshop: Windmill Kingdom",
-      "nameZh": "纸艺工坊：风车王国",
-      "ageMinMonths": 48,
-      "ageMaxMonths": 96,
-      "category": "开放式材料",
-      "skills": [
-        "创造力",
-        "精细动作",
-        "空间认知"
-      ]
-    },
-    {
       "key": "mideer-poke-dressup-royal",
       "brand": "Mideer",
       "name": "Poke-in Dress-Up Set: Royal Vintage Attire",
@@ -10131,49 +10041,6 @@
         "角色扮演",
         "创造力",
         "精细动作"
-      ]
-    },
-    {
-      "key": "mideer-portable-puzzle-our-world-100",
-      "brand": "Mideer",
-      "name": "Portable Puzzle Box: Our World 100P",
-      "nameZh": "便携拼图盒：我们的世界 100片",
-      "ageMinMonths": 48,
-      "ageMaxMonths": 108,
-      "category": "拼图/配对",
-      "skills": [
-        "视觉空间",
-        "问题解决",
-        "专注力",
-        "观察力"
-      ]
-    },
-    {
-      "key": "mideer-portable-wonderful-ocean-104p",
-      "brand": "Mideer",
-      "name": "Portable Puzzle Box: Wonderful Ocean 104P",
-      "nameZh": "便携拼图盒：奇妙海洋104片",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 84,
-      "category": "拼图/配对",
-      "skills": [
-        "视觉空间",
-        "问题解决",
-        "专注力"
-      ]
-    },
-    {
-      "key": "mideer-racing-track-magnetic-115",
-      "brand": "Mideer",
-      "name": "Racing Track Grooved Magnetic Tiles 115P",
-      "nameZh": "磁力赛车轨道115片",
-      "ageMinMonths": 36,
-      "ageMaxMonths": 120,
-      "category": "积木/建构",
-      "skills": [
-        "创造力",
-        "空间认知",
-        "问题解决"
       ]
     },
     {
