@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-09-27T17:37:59.931Z",
+  "generatedAt": "2026-09-28T13:58:53.397Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.6",
-    "buildName": "Toy Rotation v0.11.6 MD1460 Preflight QA17a",
-    "buildDate": "20260927",
-    "buildId": "v0.11.6-md1460-preflight-qa17a-20260927"
+    "buildName": "Toy Rotation v0.11.6 MD1460 Preview QA17b",
+    "buildDate": "20260928",
+    "buildId": "v0.11.6-md1460-preview-qa17b-20260928"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 870961,
-      "sha256": "38c29d8221a42dd122706e20b88e3f39e43a87f5fabe14917fdba25558d5e1b0",
+      "bytes": 878822,
+      "sha256": "c2abc0c236c383b2fc59423776bed8931b7691243998d63869b423569c5792ba",
       "importedBy": [
         "index.html"
       ],
@@ -602,8 +602,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 550,
-      "sha256": "5a52d0893ae3e66812ff5cd4e616c1b25221e190647365c545d27c3d5bb3fffe",
+      "bytes": 544,
+      "sha256": "2b1ef10ba803d813e89a71eb4560cc4e54264a17c1c3f56049d7149720e763c3",
       "importedBy": [
         "deployment-static",
         "index.html"
@@ -799,8 +799,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2697,
-      "sha256": "f22d10f97773f035a7ff9038d3cb3d5a57ae181f7b6c8980643110c6808df9ad",
+      "bytes": 2695,
+      "sha256": "38185a3ea159b68c6a956fcc398fea3d88a0c5cc49700469af1e2b70325fede8",
       "importedBy": [
         "deployment-static"
       ],
