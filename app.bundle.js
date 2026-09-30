@@ -642,12 +642,12 @@ var partFor = (value) => {
 };
 var isIdentityRedirect = (row) => row?.mergedInto === MD1460_PARENT && row?.deleted !== true && !row?.deletedAt;
 var isDeletion = (row) => row?.deleted === true || !!row?.deletedAt && !row?.mergedInto;
-var snapshotStates = (snapshots) => snapshots.map((row) => row?.state || row?.value?.state || row?.value || row).filter((value) => value && typeof value === "object");
+var snapshotStates = (snapshots2) => snapshots2.map((row) => row?.state || row?.value?.state || row?.value || row).filter((value) => value && typeof value === "object");
 var removedRows = (state) => Object.entries(state.catalogState?.removedOwnerships || state.removedOwnerships || {}).map(([id, row]) => ({ id, ...row })).filter((row) => isParentKey(row.canonicalKey) || partFor(row.canonicalKey) !== null);
-var historicalEvidence = (removed2, activeIds, snapshots) => {
+var historicalEvidence = (removed2, activeIds, snapshots2) => {
   if (!removed2.length) return true;
   if (removed2.some((row) => !row?.id || activeIds.includes(row.id) || row.reason !== "parent_delete_cascade" || !(row.deletedAt || row.removedAt))) return false;
-  return snapshotStates(snapshots).filter((state) => {
+  return snapshotStates(snapshots2).filter((state) => {
     const ids = (state.toys || []).map((toy) => toy.id);
     const gone = new Set(removedRows(state).map((row) => row.id));
     return activeIds.every((id) => ids.includes(id)) && removed2.every((row) => gone.has(row.id));
@@ -663,9 +663,17 @@ function semanticState(state) {
   const wishlist = (state.wishlist || []).filter((row) => isParentKey(row.canonicalKey) || isParentKey(row.catalogId)).map((row) => ({ id: row.id || null, canonicalKey: canonicalKey(row.canonicalKey || row.catalogId || ""), preservationHash: preservation(row) })).sort((a, b) => `${a.id}:${a.canonicalKey}`.localeCompare(`${b.id}:${b.canonicalKey}`));
   return { parent: parent ? toy(parent) : null, children: children.map(toy).sort((a, b) => (a.set.partIndex || 0) - (b.set.partIndex || 0)), tombstones, removed: removed2, wishlist, marker: state.catalogState?.syncMetadata?.[MD1460_IDENTITY_MIGRATION_MARKER] || null };
 }
-function buildMD1460SemanticFingerprint(state, { snapshots = [] } = {}) {
-  const generations = snapshotStates(snapshots).map(semanticState).sort((a, b) => JSON.stringify(stable(a)).localeCompare(JSON.stringify(stable(b))));
+function buildMD1460SemanticFingerprint(state, { snapshots: snapshots2 = [] } = {}) {
+  const generations = snapshotStates(snapshots2).map(semanticState).sort((a, b) => JSON.stringify(stable(a)).localeCompare(JSON.stringify(stable(b))));
   return fingerprint({ current: semanticState(state), internalSnapshots: generations });
+}
+function buildMD1460OwnerFingerprint(state, { snapshots: snapshots2 = [] } = {}) {
+  const withoutMarker = (value) => {
+    const copy = structuredClone(value);
+    if (copy?.catalogState?.syncMetadata) delete copy.catalogState.syncMetadata[MD1460_IDENTITY_MIGRATION_MARKER];
+    return copy;
+  };
+  return buildMD1460SemanticFingerprint(withoutMarker(state), { snapshots: snapshotStates(snapshots2).map(withoutMarker) });
 }
 function summary(state) {
   const toys = state.toys || [];
@@ -673,7 +681,7 @@ function summary(state) {
   const children = toys.filter((toy) => partFor(toy.canonicalKey) !== null || toy.set?.parentCanonicalKey === MD1460_PARENT);
   return { parents: parents2, children };
 }
-function invariantReport(state, { snapshots = [] } = {}) {
+function invariantReport(state, { snapshots: snapshots2 = [] } = {}) {
   const issues = [];
   const { parents: parents2, children } = summary(state);
   if (parents2.length !== 1) issues.push("PARENT_COUNT_NOT_ONE");
@@ -697,13 +705,13 @@ function invariantReport(state, { snapshots = [] } = {}) {
   const deletions = Object.entries(tombstones).filter(([key, row]) => isParentKey(key) && isDeletion(row));
   if (deletions.length) issues.push("ACTIVE_DELETION_CONFLICT");
   const removed2 = removedRows(state);
-  if (parent && !historicalEvidence(removed2, [parent.id, ...children.map((child) => child.id)], snapshots)) issues.push("HISTORICAL_ARCHIVE_NOT_CORROBORATED");
+  if (parent && !historicalEvidence(removed2, [parent.id, ...children.map((child) => child.id)], snapshots2)) issues.push("HISTORICAL_ARCHIVE_NOT_CORROBORATED");
   return { ok: issues.length === 0, issues: [...new Set(issues)], parentCount: parents2.length, childCount: children.length, removedOwnershipCount: removed2.length, snapshotEvidence: !issues.includes("HISTORICAL_ARCHIVE_NOT_CORROBORATED") };
 }
-function runMD1460IdentityMigration(input, { context = "startup", mode = "shadow", snapshots = [] } = {}) {
+function runMD1460IdentityMigration(input, { context = "startup", mode = "shadow", snapshots: snapshots2 = [] } = {}) {
   const source = clone(input);
-  const before = invariantReport(source, { snapshots });
-  const initialHash = buildMD1460SemanticFingerprint(source, { snapshots });
+  const before = invariantReport(source, { snapshots: snapshots2 });
+  const initialHash = buildMD1460SemanticFingerprint(source, { snapshots: snapshots2 });
   const marker = source.catalogState?.syncMetadata?.[MD1460_IDENTITY_MIGRATION_MARKER];
   if (!before.ok) return { status: "BLOCKED", context, mode, inputHash: initialHash, proposedHash: initialHash, diff: { changed: false, ownerDataChanged: false, markerChanged: false }, invariants: before, plannedMarker: null, proposedState: source };
   const proposed = clone(source);
@@ -735,9 +743,9 @@ function runMD1460IdentityMigration(input, { context = "startup", mode = "shadow
       changes.push(`REDIRECT_${legacy}`);
     }
   }
-  const after = invariantReport(proposed, { snapshots });
+  const after = invariantReport(proposed, { snapshots: snapshots2 });
   if (!after.ok) return { status: "BLOCKED", context, mode, inputHash: initialHash, proposedHash: initialHash, diff: { changed: false, ownerDataChanged: false, markerChanged: false }, invariants: after, plannedMarker: null, proposedState: source };
-  const proposedHash = buildMD1460SemanticFingerprint(proposed, { snapshots });
+  const proposedHash = buildMD1460SemanticFingerprint(proposed, { snapshots: snapshots2 });
   const plannedMarker = { version: 1, status: "applied", sourceHash: initialHash, proposedHash, context: "authorised_future_commit_only" };
   const markerChanged = marker?.status !== "applied";
   const status = marker?.status === "applied" ? "ALREADY_MIGRATED" : "READY";
@@ -1037,7 +1045,7 @@ function buildPersistenceSnapshot({ current = readStoredJson(STORE_KEY), legacyR
   const shadow = readStoredJson(STORE_SHADOW_KEY);
   const staging = readStoredJson(STORE_RECOVERY_STAGING_KEY);
   const commitStaging = readStoredJson(STORE_COMMIT_STAGING_KEY);
-  const snapshots = STORE_SNAPSHOT_KEYS.map((key) => readStoredJson(key));
+  const snapshots2 = STORE_SNAPSHOT_KEYS.map((key) => readStoredJson(key));
   const health = readStoredJson(STORE_HEALTH_KEY);
   const classification = classifyPersistence({ current, legacyRecords, hydratedState, recovery, writeFailure });
   const byteAccounting = {
@@ -1045,7 +1053,7 @@ function buildPersistenceSnapshot({ current = readStoredJson(STORE_KEY), legacyR
     shadow: storageBytes(shadow.raw),
     recoveryStaging: storageBytes(staging.raw),
     commitStaging: storageBytes(commitStaging.raw),
-    snapshots: snapshots.map((record) => ({ key: record.key, bytes: storageBytes(record.raw) })),
+    snapshots: snapshots2.map((record) => ({ key: record.key, bytes: storageBytes(record.raw) })),
     health: storageBytes(health.raw)
   };
   byteAccounting.total = byteAccounting.current + byteAccounting.shadow + byteAccounting.recoveryStaging + byteAccounting.commitStaging + byteAccounting.snapshots.reduce((total, item) => total + item.bytes, 0) + byteAccounting.health;
@@ -1058,7 +1066,7 @@ function buildPersistenceSnapshot({ current = readStoredJson(STORE_KEY), legacyR
     shadow: { key: STORE_SHADOW_KEY, status: shadow.status, rawBytes: shadow.raw?.length || 0, counts: stateCounts(shadow.value), error: shadow.error || null },
     recoveryStaging: { key: STORE_RECOVERY_STAGING_KEY, status: staging.status, sourceKey: staging.value?.sourceKey || null, stagedAt: staging.value?.stagedAt || null, counts: stateCounts(staging.value?.state), error: staging.error || null },
     commitStaging: { key: STORE_COMMIT_STAGING_KEY, status: commitStaging.status, rawBytes: commitStaging.raw?.length || 0, error: commitStaging.error || null },
-    snapshots: snapshots.map((record) => ({ key: record.key, status: record.status, rawBytes: record.raw?.length || 0, counts: stateCounts(record.value), error: record.error || null })),
+    snapshots: snapshots2.map((record) => ({ key: record.key, status: record.status, rawBytes: record.raw?.length || 0, counts: stateCounts(record.value), error: record.error || null })),
     health: { key: STORE_HEALTH_KEY, status: health.status, rawBytes: health.raw?.length || 0, error: health.error || null },
     byteAccounting,
     legacy: legacyRecords.map((record) => ({ key: record.key, status: record.status, rawBytes: record.raw?.length || 0, counts: stateCounts(record.value), error: record.error || null })),
@@ -7513,7 +7521,7 @@ function count3(value, pattern) {
 }
 async function buildStorageUsageDiagnostic({ state, build = {} } = {}) {
   const keys = [];
-  let total = 0, canonical = 0, staging = 0, shadow = 0, snapshots = 0, startupDiagnostic = 0, health = 0, other = 0;
+  let total = 0, canonical = 0, staging = 0, shadow = 0, snapshots2 = 0, startupDiagnostic = 0, health = 0, other = 0;
   for (let index = 0; index < (globalThis.localStorage?.length || 0); index++) {
     const key = localStorage.key(index);
     if (!toyKey(key)) continue;
@@ -7524,7 +7532,7 @@ async function buildStorageUsageDiagnostic({ state, build = {} } = {}) {
     if (key === "toyRotation.cleanBaseline") canonical += item.utf8Bytes;
     else if (/commitStaging|recoveryStaging/i.test(key)) staging += item.utf8Bytes;
     else if (/lastKnownGood/i.test(key)) shadow += item.utf8Bytes;
-    else if (/snapshot-\d+/i.test(key)) snapshots += item.utf8Bytes;
+    else if (/snapshot-\d+/i.test(key)) snapshots2 += item.utf8Bytes;
     else if (/startupDiagnostic/i.test(key)) startupDiagnostic += item.utf8Bytes;
     else if (/persistenceHealth/i.test(key)) health += item.utf8Bytes;
     else other += item.utf8Bytes;
@@ -7537,7 +7545,7 @@ async function buildStorageUsageDiagnostic({ state, build = {} } = {}) {
     }
   } catch {
   }
-  return { diagnosticVersion: 1, appVersion: build.appVersion || build.RELEASE || null, buildId: build.buildId || null, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), localStorage: { keys, canonicalBytes: canonical, stagingBytes: staging, shadowBytes: shadow, snapshotCount: keys.filter((item) => /snapshot-\d+/i.test(item.key)).length, snapshotBytes: snapshots, startupDiagnosticBytes: startupDiagnostic, persistenceHealthBytes: health, otherToyRotationBytes: other, estimatedFullStateCopies: canonical ? Number(((canonical + staging + shadow + snapshots) / canonical).toFixed(2)) : 0, totalToyRotationBytes: total }, stateBreakdown: { draftsBytes: bytes(state?.drafts), candidatesBytes: bytes(state?.catalogState?.syncMetadata?.localCandidates), governanceBytes: bytes(state?.catalogState?.syncMetadata?.governanceOutbox), diagnosticBytes: startupDiagnostic, embeddedDataImageCount: count3(state, /data:image\//gi), base64LikeCount: count3(state, /;base64,/gi) }, storageEstimate: estimate };
+  return { diagnosticVersion: 1, appVersion: build.appVersion || build.RELEASE || null, buildId: build.buildId || null, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), localStorage: { keys, canonicalBytes: canonical, stagingBytes: staging, shadowBytes: shadow, snapshotCount: keys.filter((item) => /snapshot-\d+/i.test(item.key)).length, snapshotBytes: snapshots2, startupDiagnosticBytes: startupDiagnostic, persistenceHealthBytes: health, otherToyRotationBytes: other, estimatedFullStateCopies: canonical ? Number(((canonical + staging + shadow + snapshots2) / canonical).toFixed(2)) : 0, totalToyRotationBytes: total }, stateBreakdown: { draftsBytes: bytes(state?.drafts), candidatesBytes: bytes(state?.catalogState?.syncMetadata?.localCandidates), governanceBytes: bytes(state?.catalogState?.syncMetadata?.governanceOutbox), diagnosticBytes: startupDiagnostic, embeddedDataImageCount: count3(state, /data:image\//gi), base64LikeCount: count3(state, /;base64,/gi) }, storageEstimate: estimate };
 }
 
 // ../_work/Toy-Rotation-v0.11.6/src/features/catalog-count-diagnostic.js
@@ -8079,7 +8087,7 @@ async function buildMd1460MigrationAudit({ state, storage = globalThis.localStor
     historicalMissingToyIds: (round.historicalMissingToyIds || []).filter((id) => relatedIds.has(id))
   }));
   const snapshotKeys = [STORE_KEY, STORE_SHADOW_KEY, STORE_RECOVERY_STAGING_KEY, STORE_COMMIT_STAGING_KEY, ...STORE_SNAPSHOT_KEYS];
-  const snapshots = snapshotKeys.map((key) => {
+  const snapshots2 = snapshotKeys.map((key) => {
     const row = parseStorage2(storage, key);
     return { key: row.key, status: row.status, refs: row.state ? references(row.state) : null };
   });
@@ -8088,7 +8096,7 @@ async function buildMd1460MigrationAudit({ state, storage = globalThis.localStor
     ...tombstones.flatMap((row) => [row.key, row.mergedInto]),
     ...removedOwnerships.flatMap((row) => [row.canonicalKey, row.parentCanonicalKey]),
     ...wishlist.flatMap((row) => [row.canonicalKey, row.catalogId]),
-    ...snapshots.flatMap((row) => row.refs ? [...row.refs.activeKeys, ...row.refs.tombstoneKeys, ...row.refs.wishlistKeys] : [])
+    ...snapshots2.flatMap((row) => row.refs ? [...row.refs.activeKeys, ...row.refs.tombstoneKeys, ...row.refs.wishlistKeys] : [])
   ].filter(suspicious);
   const parentRows = active.filter((row) => parents.has(canonicalKey(row.canonicalKey)) && row.setKind !== "child");
   const children = MD1460_CHILDREN2.map((key, index) => ({
@@ -8116,7 +8124,7 @@ async function buildMd1460MigrationAudit({ state, storage = globalThis.localStor
     },
     children,
     history,
-    snapshots,
+    snapshots: snapshots2,
     diagnosticKeyNames: keysOf(catalogState.syncMetadata).filter((key) => /md1460|mideer|parentChild/i.test(key)),
     unknownIdentityKeys: [...new Set(observedKeys.filter((key) => !known(key)))],
     redirectResolution: {
@@ -8127,6 +8135,72 @@ async function buildMd1460MigrationAudit({ state, storage = globalThis.localStor
     },
     backupImportMetadata: { available: false, reason: "External backup files are not accessible from the current PWA without explicit selection" }
   };
+}
+
+// ../_work/Toy-Rotation-v0.11.6/src/domain/md1460-execution-service.js
+var MD1460_ROLLBACK_STAGING_KEY = "toyRotation.cleanBaseline.md1460MigrationRollbackV1";
+var read = (storage, key) => {
+  const raw = storage.getItem(key);
+  return raw ? { raw, state: JSON.parse(raw) } : null;
+};
+var snapshots = (storage) => [STORE_SHADOW_KEY, ...STORE_SNAPSHOT_KEYS].flatMap((key) => {
+  try {
+    const row = read(storage, key);
+    return row ? [{ key, value: row.state.state || row.state }] : [];
+  } catch {
+    return [];
+  }
+});
+var ownerHash = (state, internal) => buildMD1460OwnerFingerprint(state, { snapshots: internal });
+function executeMD1460MarkerOnly({ storage = globalThis.localStorage, previewFingerprint, buildId }) {
+  let current;
+  try {
+    current = read(storage, STORE_KEY);
+  } catch {
+    return { status: "FAILED", reason: "CANONICAL_STATE_UNREADABLE" };
+  }
+  if (!current?.state) return { status: "FAILED", reason: "CANONICAL_STATE_UNREADABLE" };
+  const internal = snapshots(storage);
+  const revalidated = runMD1460IdentityMigration(current.state, { context: "execution", mode: "execute", snapshots: internal });
+  if (revalidated.status === "ALREADY_MIGRATED") return { status: "ALREADY_MIGRATED", preview: revalidated };
+  if (previewFingerprint && previewFingerprint !== revalidated.inputHash) return { status: "STALE_PREVIEW", reason: "STATE_CHANGED_PREVIEW_REQUIRED", preview: revalidated };
+  if (revalidated.status !== "READY" || revalidated.diff.ownerDataChanged || !revalidated.diff.markerChanged || !revalidated.invariants.ok) return { status: "FAILED", reason: "EXECUTION_INVARIANT_FAILED", preview: revalidated };
+  const preOwnerFingerprint = ownerHash(current.state, internal);
+  const beforeMarker = current.state.catalogState?.syncMetadata?.[MD1460_IDENTITY_MIGRATION_MARKER] || null;
+  const rollback = { version: 1, createdAt: (/* @__PURE__ */ new Date()).toISOString(), markerBefore: beforeMarker, preOwnerFingerprint, qa6MutationGateBefore: false, status: "prepared" };
+  try {
+    storage.setItem(MD1460_ROLLBACK_STAGING_KEY, JSON.stringify(rollback));
+  } catch {
+    return { status: "FAILED", reason: "ROLLBACK_STAGING_WRITE_FAILED" };
+  }
+  const candidate = structuredClone(current.state);
+  candidate.catalogState ||= {};
+  candidate.catalogState.syncMetadata ||= {};
+  candidate.catalogState.syncMetadata[MD1460_IDENTITY_MIGRATION_MARKER] = { version: 1, status: "applied", completedAt: (/* @__PURE__ */ new Date()).toISOString(), buildId, preMigrationSemanticFingerprint: preOwnerFingerprint, postMigrationSemanticFingerprint: preOwnerFingerprint, ownerDataChanged: false, migrationMode: "marker-only" };
+  try {
+    storage.setItem(STORE_KEY, JSON.stringify(candidate));
+  } catch {
+    return { status: "FAILED", reason: "MARKER_COMMIT_FAILED" };
+  }
+  try {
+    const persisted = read(storage, STORE_KEY)?.state;
+    if (!persisted) throw new Error("readback");
+    const postOwnerFingerprint = ownerHash(persisted, internal);
+    const post = runMD1460IdentityMigration(persisted, { context: "post_commit", mode: "execute", snapshots: internal });
+    if (postOwnerFingerprint !== preOwnerFingerprint) throw new Error("owner_fingerprint_changed");
+    if (post.status !== "ALREADY_MIGRATED") throw new Error(`post_status_${post.status}`);
+    if (!post.invariants.ok) throw new Error("post_invariants_failed");
+    storage.setItem(MD1460_ROLLBACK_STAGING_KEY, JSON.stringify({ ...rollback, status: "validated", postOwnerFingerprint, markerWritten: true }));
+    return { status: "COMPLETED", preOwnerFingerprint, postOwnerFingerprint, preview: post };
+  } catch (error) {
+    try {
+      storage.setItem(STORE_KEY, current.raw);
+      storage.setItem(MD1460_ROLLBACK_STAGING_KEY, JSON.stringify({ ...rollback, status: "rolled_back", reason: String(error?.message || error) }));
+      return { status: "ROLLED_BACK", reason: "POST_COMMIT_VALIDATION_FAILED", detail: String(error?.message || error) };
+    } catch {
+      return { status: "ROLLBACK_FAILED", reason: "POST_COMMIT_VALIDATION_FAILED" };
+    }
+  }
 }
 
 // ../_work/Toy-Rotation-v0.11.6/src/features/cross-age-challenges.js
@@ -11299,7 +11373,31 @@ function bindMd1460MigrationPreview(dialog) {
       result2.hidden = true;
       result2.textContent = JSON.stringify({ status: preview.status, inputHash: preview.inputHash, proposedHash: preview.proposedHash, diff: preview.diff, invariants: preview.invariants, plannedMarker: preview.plannedMarker }, null, 2);
     }
+    dialog.__md1460Preview = preview;
+    let execute = dialog.querySelector("#md1460-migration-execute");
+    if (preview.status === "READY" && !execute) {
+      execute = document.createElement("button");
+      execute.type = "button";
+      execute.id = "md1460-migration-execute";
+      execute.textContent = "Execute MD1460 Migration";
+      status?.after(execute);
+      execute.addEventListener("click", () => executeMd1460Migration(dialog));
+    }
+    if (execute) execute.hidden = preview.status !== "READY";
   });
+}
+function executeMd1460Migration(dialog) {
+  const preview = dialog.__md1460Preview;
+  if (!preview || !confirm("MD1460 Migration\n\nNo toy data changes are planned. This writes only the migration marker and retires the legacy QA6 mutation path for the current live state.")) return;
+  const result2 = executeMD1460MarkerOnly({ storage: localStorage, previewFingerprint: preview.inputHash, buildId: window.TOY_ROTATION_CONFIG?.buildId });
+  const status = dialog.querySelector("#md1460-migration-audit-status");
+  if (result2.status === "COMPLETED") {
+    status.textContent = `MD1460 Migration Complete. Owner data changed: No. Parent: ${result2.preview.invariants.parentCount}; Children: ${result2.preview.invariants.childCount}; Historical removals preserved: ${result2.preview.invariants.removedOwnershipCount}; Migration marker: Written. Post-commit validation: PASS.`;
+    dialog.querySelector("#md1460-migration-execute")?.setAttribute("hidden", "");
+  } else if (result2.status === "STALE_PREVIEW") status.textContent = "Migration not executed. State changed since Preview. Run Preview again.";
+  else if (result2.status === "ROLLED_BACK") status.textContent = "Migration failed. No owner data changes were retained. Migration marker rolled back.";
+  else if (result2.status === "ROLLBACK_FAILED") status.textContent = "ROLLBACK FAILED. Do not continue any MD1460 mutation.";
+  else status.textContent = `Migration not executed: ${result2.reason || result2.status}.`;
 }
 function md1460PreviewSnapshots() {
   return [STORE_SHADOW_KEY, ...STORE_SNAPSHOT_KEYS].flatMap((key) => {
