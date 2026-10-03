@@ -1,4 +1,4 @@
-// ../_work/Toy-Rotation-v0.11.6/src/data/schema.js
+// src/data/schema.js
 var SCHEMA_VERSION = 12;
 var CATEGORY_CODES = Object.freeze([
   "uncategorized",
@@ -287,7 +287,7 @@ function plainObject(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/catalog-safety.js
+// src/domain/catalog-safety.js
 var AGE_SAFETY_STATUSES = Object.freeze([
   "VERIFIED_NO_EXTRA_GATE",
   "NO_DOCUMENTED_HARD_GATE",
@@ -376,7 +376,7 @@ function withCatalogSafety(toy, catalogRow) {
   return { ...toy, userMetadata };
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/identity-service.js
+// src/domain/identity-service.js
 function identityTokens(toy = {}) {
   const keys = unique([toy.canonicalKey, toy.catalogKey, toy.catalogId, toy.key].map(canonicalKey));
   const brand = normalizeBrand2(toy.brand);
@@ -613,7 +613,7 @@ function earliest(a, b) {
   return !a ? b : !b ? a : new Date(a) < new Date(b) ? a : b;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/md1460-identity-migration.js
+// src/domain/md1460-identity-migration.js
 var MD1460_IDENTITY_MIGRATION_MARKER = "md1460IdentityMigrationV1";
 var MD1460_PARENT = "mideer-my-first-puzzle-dinosaurs-6in1-md1460";
 var MD1460_LEGACY = Object.freeze(["mideer-my-first-puzzle-dinosaurs-6in1", "mideer-first-artist-cute-dinosaurs"]);
@@ -755,7 +755,7 @@ function isMD1460IdentityMigrationApplied(state) {
   return state?.catalogState?.syncMetadata?.[MD1460_IDENTITY_MIGRATION_MARKER]?.status === "applied";
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/store.js
+// src/data/store.js
 var LEGACY_KEYS = ["toyRotationV04", "toyRotationV032", "toyRotationV03", "toyRotationV02"];
 var STORE_KEY = "toyRotation.cleanBaseline";
 var STORE_SHADOW_KEY = "toyRotation.cleanBaseline.lastKnownGood";
@@ -1639,7 +1639,7 @@ function parse(value) {
   }
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/duplicate-engine.js
+// src/domain/duplicate-engine.js
 function findDuplicates(toys = []) {
   const results = [];
   for (let a = 0; a < toys.length; a++) for (let b = a + 1; b < toys.length; b++) {
@@ -1712,7 +1712,7 @@ function rank(kind) {
   return { exact_duplicate: 6, same_child_legacy_duplicate: 5, strong_probable_duplicate: 4, parent_child_relation: 3, sibling_child: 2, related_variant: 1, none: 0 }[kind] || 0;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/set-service.js
+// src/domain/set-service.js
 function validateSetGraph(toys) {
   const byId = new Map(toys.map((toy) => [toy.id, toy]));
   return toys.filter((toy) => toy.set?.kind === "child").every((child) => byId.has(child.set.parentId) && byId.get(child.set.parentId).set.kind === "parent");
@@ -2660,7 +2660,7 @@ function isSearchOrTransientChildImage(ref) {
   return /(?:bing\.net\/th|bing\.com\/images|google(?:usercontent)?\.com\/search|[?&](?:token|expires|signature)=|^(?:blob|data):)/i.test(value) || ["search-fallback", "missing-catalog-metadata"].includes(ref?.source);
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/backup-service.js
+// src/data/backup-service.js
 async function exportBackup(store2, imageRepository) {
   const state = structuredClone(store2.state);
   const imageRefs = state.toys.map((toy) => toy.imageRef).filter((ref) => ref?.kind === "personal" || ref?.kind === "catalog");
@@ -2976,7 +2976,7 @@ function createRestoreTrace() {
   return trace;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/image-repository.js
+// src/data/image-repository.js
 var LEGACY_DB = "toyRotationPhotosV04";
 var LEGACY_STORE = "photos";
 var CATALOG_PREFIX = "catalog:";
@@ -3168,7 +3168,163 @@ function imageIdVariants(value) {
   return [id, bare, `personal:${bare}`, `photo:${bare}`, `image:${bare}`];
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/catalog-presentation.js
+// src/data/early-rotation-evidence-batch1.js
+var official = (sourceUrl, sourceTitle, claim) => ({
+  sourceType: "OFFICIAL_PRODUCT_PAGE",
+  sourceUrl,
+  sourceTitle,
+  manufacturer: "Learning Resources",
+  retrievedAt: "2026-09-30",
+  evidenceType: "sku_product_and_safety_review",
+  quotedOrStructuredClaim: claim,
+  confidence: "high",
+  reviewStatus: "reviewed",
+  sourceAvailability: "AVAILABLE_AT_RESEARCH"
+});
+var early = (sourceUrl, sourceTitle, claim, prerequisiteSkills, maximumEarlyMonths = 3) => ({
+  earlyRotationEligibility: "EARLY_ROTATION_ALLOWED",
+  safetyEvidenceStatus: "OFFICIAL_REVIEWED",
+  maximumEarlyMonths,
+  prerequisiteSkills,
+  stretchSkills: [],
+  evidence: official(sourceUrl, sourceTitle, claim),
+  insufficientReason: null,
+  researchStatus: "RESEARCHED_RESOLVED",
+  researchBatch: "Batch 1"
+});
+var ageOnly = (sourceUrl, sourceTitle, claim, prerequisiteSkills) => ({
+  earlyRotationEligibility: "AGE_RECOMMENDED_ONLY",
+  safetyEvidenceStatus: "OFFICIAL_REVIEWED",
+  prerequisiteSkills,
+  stretchSkills: [],
+  evidence: official(sourceUrl, sourceTitle, claim),
+  insufficientReason: "Official product evidence supports the recommended age and learning purpose, but not an earlier-use recommendation.",
+  researchStatus: "RESEARCHED_RESOLVED",
+  researchBatch: "Batch 1"
+});
+var hard = (sourceUrl, sourceTitle, claim, prerequisiteSkills) => ({
+  earlyRotationEligibility: "HARD_SAFETY_GATE",
+  safetyEvidenceStatus: "OFFICIAL_REVIEWED",
+  prerequisiteSkills,
+  stretchSkills: [],
+  evidence: official(sourceUrl, sourceTitle, claim),
+  safety: {
+    ageSafetyStatus: "SMALL_PARTS_GATE",
+    hardMinAgeMonths: 36,
+    smallParts: true,
+    safetySource: sourceUrl,
+    safetyVerifiedAt: "2026-09-30",
+    evidenceNote: claim,
+    warningType: "CHOKING_HAZARD_SMALL_PARTS"
+  },
+  insufficientReason: null,
+  researchStatus: "RESEARCHED_RESOLVED",
+  researchBatch: "Batch 1"
+});
+var EARLY_ROTATION_EVIDENCE_BATCH_1 = Object.freeze({
+  "lr-all-about-me-sorting-neighborhood": hard("https://www.learningresources.com/item-all-about-me-sorting-neighborhood-set", "All About Me Sorting Neighborhood Set (LER3369)", "Official page identifies LER3369, ages 3+, and an explicit choking hazard / small-parts warning; hard minimum is 36 months.", { matching: 2, sorting: 2 }),
+  "lr-counting-surprise-party": hard("https://www.learningresources.com/item-counting-surprise-party", "Counting Surprise Party (LER6803)", "Official page identifies LER6803, ages 3+, and explicitly states choking hazard / small parts; hard minimum is 36 months.", { earlyMath: 2, matching: 2, fineMotor: 2 }),
+  "lr-code-go-robot-mouse": hard("https://www.learningresources.com/media/onlinecatalog/LR-2020/files/basic-html/page102.html", "Learning Resources 2020 Catalog, page 102 (LER2831)", "Official catalog identifies LER2831 and labels the related small-parts warning \u201CNot for < 3 yrs.\u201D; 4+ remains developmental guidance above that hard floor.", { problemSolving: 3, attentionPersistence: 3, visualSpatial: 3 }),
+  "lr-botley-2-coding-robot": ageOnly("https://www.learningresources.com/catalog/product/view/id/5891/s/item-botleyr-the-coding-robot-2/category/3055/", "Botley 2.0 the Coding Robot (LER2941)", "Official page identifies LER2941, ages 5+, screen-free coding and multi-step sequences. It also requires five AAA batteries and a Phillips screwdriver nearby; no earlier-use recommendation is documented.", { problemSolving: 4, attentionPersistence: 4 }),
+  "lr-easy-grip-tweezers": ageOnly("https://www.learningresources.com/item-easy-grip-preschool-tweezers", "Easy-Grip Tweezers (LER2965)", "Official page identifies LER2965, ages 2+, and its fine-motor purpose. The page does not establish an earlier-use window.", { fineMotor: 2 }),
+  "lr-hide-seek-vegetable-garden": early("https://www.learningresources.com/item-hide-seek-vegetable-garden", "Hide & Seek Vegetable Garden (LER3604)", "Official page identifies LER3604, ages 18 months+, and says the pieces are designed without small parts; listed activities are counting, colour matching and memory.", { matching: 1, sorting: 1, fineMotor: 1 }),
+  "lr-snap-n-learn-counting-cows": early("https://www.learningresources.com/item-snap-n-learntm-counting-cows", "Snap-n-Learn Counting Cows (LER6707)", "Official page identifies LER6707, ages 18 months+, with chunky snap-together pieces for toddler hands and counting, sorting and matching play.", { fineMotor: 1, matching: 1 }),
+  "lr-snap-learn-counting-sheep": early("https://www.learningresources.com/item-snap-n-learn-counting-sheep", "Snap-n-Learn Counting Sheep (LER6712)", "Official page identifies LER6712, ages 18 months+, toddler-sized snap-on wool and matching/counting play.", { fineMotor: 1, matching: 1 }),
+  "lr-peekaboo-learning-farm": early("https://www.learningresources.com/catalog/product/view/id/5933/s/item-peekaboo-learning-farm/category/3021/", "Peekaboo Learning Farm (LER6805)", "Official page identifies LER6805, ages 18 months+, and describes toddler-safe five two-piece barns and animal finger puppets.", { fineMotor: 1, matching: 1, pretendPlay: 1 }),
+  "lr-snap-learn-matching-dinos": early("https://www.learningresources.com/item-snap-n-learntm-matching-dinos", "Snap-n-Learn Matching Dinos (LER6708)", "Official page identifies LER6708, ages 18 months+, with chunky dinosaur halves designed for small hands and matching play.", { fineMotor: 1, matching: 1 }),
+  "learning-resources-spike-hedgehog": early("https://www.learningresources.com/item-spike-the-fine-motor-hedgehogtm", "Spike the Fine Motor Hedgehog", "Official product page presents the removable quills as toddler fine-motor play; the catalog record remains the exact product identity.", { fineMotor: 1 }),
+  "lr-smart-snacks-counting-cookies": early("https://www.learningresources.com/item-smart-snacksr-counting-cookiestm", "Smart Snacks Counting Cookies (LER7348)", "Official page identifies LER7348, ages 18 months+, and describes 18-month container play progressing to counting and early arithmetic.", { fineMotor: 1, earlyMath: 1 }),
+  "lr-smart-snacks-shape-sorting-cupcakes": early("https://www.learningresources.com/item-smart-snacksr-shape-sorting-cupcakes", "Smart Snacks Shape Sorting Cupcakes (LER7347)", "Official page identifies LER7347, ages 18 months+, thick rubber-like pieces, and shape/colour matching for toddler play.", { fineMotor: 1, matching: 1, visualSpatial: 1 }),
+  "lr-new-sprouts-fix-it-tool-set": early("https://www.learningresources.com/item-new-sproutsr-fix-it-my-very-own-tool-set", "New Sprouts Fix It! (LER9230)", "Official page identifies LER9230, ages 2+, chunky soft-plastic toddler tools described as safe and easy for little hands.", { fineMotor: 1, pretendPlay: 1 }),
+  "lr-new-sprouts-munch-it": early("https://www.learningresources.com/item-new-sproutsr-munch-it-my-very-own-play-food", "New Sprouts Munch It! (LER7711)", "Official page identifies LER7711, ages 18 months+, with soft durable pretend-food pieces for toddler hands and language/pretend play.", { pretendPlay: 1, language: 1 }),
+  "lr-new-sprouts-garden-fresh-salad": early("https://www.learningresources.com/item-new-sproutsr-garden-fresh-salad-set", "New Sprouts Garden Fresh Salad Set (LER9745-D)", "Official page identifies LER9745-D, ages 18 months+, with flexible pretend food described as safe for little hands.", { pretendPlay: 1, fineMotor: 1 }),
+  "lr-new-sprouts-fresh-picked-fruit-veggie": early("https://www.learningresources.com/item-new-sproutsr-fruit-veg-tote", "New Sprouts Fruit & Veggies Tote", "Official page describes the exact Fruit & Veggies Tote as ages 18 months+ with soft, durable, non-toxic pieces for young hands.", { pretendPlay: 1, language: 1 }),
+  "lr-smart-snacks-number-pops": early("https://www.learningresources.com/item-smart-snacksr-number-popstm", "Smart Snacks Number Pops (LER7344)", "Official product page identifies LER7344 as 18 months+ toddler number play with chunky, easy-to-handle pieces for counting and fine-motor learning.", { earlyMath: 1, matching: 1, fineMotor: 1 }),
+  "lr-smart-snacks-alpha-pops": early("https://www.learningresources.com/catalog/product/view/id/5204/s/item-smart-snacksr-alpha-popstm/link", "Smart Snacks Alpha Pops (LER7345)", "Official product page identifies LER7345 as ages 2+ alphabet and matching play for toddler hands.", { language: 1, matching: 1, fineMotor: 1 }),
+  "lr-new-sprouts-bake-it": early("https://www.learningresources.com/item-new-sproutsr-bake-it", "New Sprouts Bake It! (LER9258-D)", "Official product page identifies LER9258-D as 18 months+ pretend baking with soft, durable food pieces for little hands.", { pretendPlay: 1, language: 1, fineMotor: 1 }),
+  "lr-new-sprouts-breakfast-basket": early("https://www.learningresources.com/item-new-sproutsr-breakfast-basket", "New Sprouts Breakfast Basket (LER9730)", "Official product page identifies LER9730 as 18 months+ pretend breakfast play with durable toddler-sized food.", { pretendPlay: 1, language: 1, fineMotor: 1 }),
+  "lr-new-sprouts-dinner-basket": early("https://www.learningresources.com/item-new-sproutsr-dinner-basket", "New Sprouts Dinner Basket (LER9732)", "Official product page identifies LER9732 as 18 months+ pretend dinner play with toddler-sized food pieces.", { pretendPlay: 1, language: 1, fineMotor: 1 }),
+  "lr-new-sprouts-deluxe-market": early("https://www.learningresources.com/item-new-sproutsr-deluxe-market-set", "New Sprouts Deluxe Market Set (LER9725)", "Official product page identifies LER9725 as 18 months+ pretend market play with durable toddler-safe food and basket pieces.", { pretendPlay: 1, language: 1, sorting: 1, fineMotor: 1 }),
+  "lr-new-sprouts-lunch-basket": early("https://www.learningresources.com/item-new-sproutsr-lunch-basket", "New Sprouts Lunch Basket (LER9731)", "Official product page identifies LER9731 as 18 months+ pretend lunch play with toddler-sized food pieces.", { pretendPlay: 1, language: 1, fineMotor: 1 }),
+  "lr-new-sprouts-cure-it-doctor": early("https://www.learningresources.com/item-new-sproutsr-cure-it", "New Sprouts Cure It! Doctor Set (LER9248)", "Official product page identifies LER9248 as 18 months+ soft, durable pretend-doctor tools for little hands.", { pretendPlay: 1, language: 1, fineMotor: 1 }),
+  "lr-new-sprouts-pasta-time": early("https://www.learningresources.com/item-new-sprouts-pasta-time", "New Sprouts Pasta Time (LER9746)", "Official product page identifies LER9746 as pretend pasta play designed for children 18 months+ with soft durable food pieces.", { pretendPlay: 1, language: 1, fineMotor: 1 }),
+  "lr-new-sprouts-grill-it": early("https://www.learningresources.com/item-new-sproutsr-grill-it", "New Sprouts Grill It! (LER9260-D)", "Official product page identifies LER9260-D as 18 months+ pretend grilling with durable toddler-friendly pieces.", { pretendPlay: 1, language: 1, fineMotor: 1 }),
+  "lr-new-sprouts-taco-night": early("https://www.learningresources.com/item-new-sprouts-174-taco-time", "New Sprouts Taco Night! (LER9748)", "Official product page identifies LER9748 as 18 months+ pretend taco play with durable food pieces for young hands.", { pretendPlay: 1, language: 1, fineMotor: 1 }),
+  "lr-mini-farmstand-sorting-set": hard("https://www.learningresources.com/item-mini-farmstand-sorting-set", "Mini Farmstand Sorting Set (LER6822)", "Official product page identifies LER6822, ages 3+, and explicitly states \u201CCHOKING HAZARD! Small parts. Not for children under 3 yrs.\u201D", { sorting: 2, matching: 2, earlyMath: 2, fineMotor: 2 }),
+  "lr-snap-learn-alphabet-alligators": early("https://www.learningresources.com/item-snap-n-learntm-alphabet-alligators", "Snap-n-Learn Alphabet Alligators (LER6704)", "Official product page identifies LER6704 as 18 months+ alphabet matching with chunky, toddler-sized snap-together pieces.", { language: 1, matching: 1, fineMotor: 1 }),
+  "lr-new-sprouts-classroom-food": early("https://www.learningresources.com/item-new-sproutsr-classroom-play-food-set", "New Sprouts Classroom Play Food Set (LER9723)", "Official product page identifies LER9723 as 18 months+ durable, soft pretend food sized for young hands.", { pretendPlay: 1, language: 1, sorting: 1, fineMotor: 1 }),
+  "lr-new-sprouts-multicultural-food": early("https://www.learningresources.com/item-new-sproutsr-multicultural-food-set", "New Sprouts Multicultural Food Set (LER7712)", "Official product page identifies LER7712 as 18 months+ durable pretend food for young children and imaginative play.", { pretendPlay: 1, language: 1, sorting: 1, fineMotor: 1 }),
+  "lr-new-sprouts-serve-it": early("https://www.learningresources.com/item-new-sproutsr-serve-it-my-very-own-dish-set", "New Sprouts Serve It! My Very Own Dish Set (LER3294)", "Official product page identifies LER3294 as toddler pretend tableware for children 18 months+.", { pretendPlay: 1, language: 1, fineMotor: 1 }),
+  "lr-primary-science-lab": hard("https://www.learningresources.com/item-primary-sciencetm-lab-set", "Primary Science Lab Set (LER2784)", "Official product page identifies LER2784, ages 3+, and explicitly states \u201CCHOKING HAZARD! Small parts. Not for children under 3 yrs.\u201D", { problemSolving: 2, fineMotor: 2, attentionPersistence: 2 }),
+  "lr-pretend-play-doctor-set": hard("https://www.learningresources.com/item-pretend-playr-doctor-set", "Pretend & Play Doctor Set (LER9048)", "Official product page identifies LER9048, ages 3+, and explicitly states \u201CCHOKING HAZARD! Small parts. Not for children under 3 yrs.\u201D", { pretendPlay: 2, language: 2, fineMotor: 2 }),
+  "lr-pretend-play-cash-register": hard("https://www.learningresources.com/catalog/product/view/id/1620/s/pretend-playr-calculator-cash-register/", "Pretend & Play Calculator Cash Register (LER2629)", "Official product page identifies LER2629, ages 3+, and explicitly states \u201CCHOKING HAZARD! Small parts. Not for children under 3 yrs.\u201D", { earlyMath: 2, pretendPlay: 2, fineMotor: 2 }),
+  "lr-silly-science-fine-motor-sorting-set": hard("https://www.learningresources.com/item-silly-science-fine-motor-sorting-set", "Silly Science Fine Motor Sorting Set (LER5542)", "Official product page identifies LER5542, ages 3+, and explicitly states \u201CCHOKING HAZARD! Small parts. Not for children under 3 yrs.\u201D", { sorting: 2, matching: 2, fineMotor: 2 }),
+  "lr-cool-down-cubes": hard("https://www.learningresources.com/item-cool-down-cubes-sensory-fidget-set", "Cool Down Cubes Sensory Fidget Set (LER5582)", "Official product page identifies LER5582, ages 4+, and explicitly states \u201CCHOKING HAZARD! Small parts. Not for children under 3 yrs.\u201D", { fineMotor: 2, attentionPersistence: 2 }),
+  "lr-a-to-z-mini-foods": {
+    ...ageOnly("https://www.learningresources.com/item-mini-alphabet-foods", "A to Z Mini Foods (LER6795)", "Official product page identifies LER6795, ages 3+, 28 pieces, and letter/language, pretend-play, matching and sorting purposes. No official SKU-level choking/small-parts warning was located in this review.", { language: 2, matching: 2, sorting: 2, fineMotor: 2 }),
+    ownerRelevant: true,
+    researchPriority: "P0",
+    researchBatch: "Batch 1",
+    evidence: { ...official("https://www.learningresources.com/item-mini-alphabet-foods", "A to Z Mini Foods (LER6795)", "Official product page identifies LER6795, ages 3+, 28 pieces, and letter/language, pretend-play, matching and sorting purposes. No official SKU-level choking/small-parts warning was located in this review."), retrievedAt: "2026-10-03" }
+  },
+  "lr-stem-explorers-brainometry": {
+    ...early("https://www.learningresources.com/catalog/product/view/id/6098/s/item-stem-explorers-brainometry/", "STEM Explorers Brainometry (LER9306)", "Official product page identifies LER9306, ages 5+, 34 pieces, and expressly states \u201CCHOKING HAZARD! Small parts. Not for children under 3 yrs.\u201D; 5+ remains the developmental recommendation.", { visualSpatial: 4, problemSolving: 4, matching: 3, attentionPersistence: 4 }, 3),
+    ownerRelevant: true,
+    researchPriority: "P0",
+    researchBatch: "Batch 1",
+    safety: { ageSafetyStatus: "SMALL_PARTS_GATE", hardMinAgeMonths: 36, smallParts: true, safetySource: "https://www.learningresources.com/catalog/product/view/id/6098/s/item-stem-explorers-brainometry/", safetyVerifiedAt: "2026-10-03", evidenceNote: "LER9306 official page: CHOKING HAZARD! Small parts. Not for children under 3 yrs.", warningType: "CHOKING_HAZARD_SMALL_PARTS" },
+    evidence: { ...official("https://www.learningresources.com/catalog/product/view/id/6098/s/item-stem-explorers-brainometry/", "STEM Explorers Brainometry (LER9306)", "Official product page identifies LER9306, ages 5+, 34 pieces, and expressly states \u201CCHOKING HAZARD! Small parts. Not for children under 3 yrs.\u201D; 5+ remains the developmental recommendation."), retrievedAt: "2026-10-03" }
+  }
+});
+function earlyRotationEvidenceFor(canonicalKey2) {
+  return EARLY_ROTATION_EVIDENCE_BATCH_1[String(canonicalKey2 || "")] || null;
+}
+
+// src/domain/early-rotation-baseline.js
+var EARLY_ROTATION_ELIGIBILITY = Object.freeze(["EARLY_ROTATION_ALLOWED", "AGE_RECOMMENDED_ONLY", "HARD_SAFETY_GATE", "INSUFFICIENT_EVIDENCE"]);
+var HARD = /* @__PURE__ */ new Set(["SMALL_PARTS_GATE", "GROSS_MOTOR_GATE", "OTHER_HARD_GATE"]);
+var PREREQUISITES = Object.freeze({ shape_sorting: { matching: 2, visualSpatial: 2 }, puzzle: { visualSpatial: 2, attentionPersistence: 2 }, matching_sorting: { matching: 2, sorting: 2 }, blocks_build: { fineMotor: 2, visualSpatial: 2 }, threading_lacing: { bilateralCoordination: 3, fineMotor: 3 }, lock_key: { problemSolving: 3, fineMotor: 3 }, screw_bolt_tool: { toolUse: 3, handStrength: 3 }, magnetic_build: { fineMotor: 3, visualSpatial: 3 }, counting_quantity: { earlyMath: 3, attentionPersistence: 2 }, pretend_role: { pretendPlay: 2, language: 2 }, balance: { grossMotor: 3 }, fine_motor_general: { fineMotor: 2 }, cause_effect: { causeEffect: 2 } });
+var fallbackMechanism = (toy) => {
+  const category = String(toy.categoryCode || "").toLowerCase();
+  if (/puzzle/.test(category)) return "puzzle";
+  if (/block|construct/.test(category)) return "blocks_build";
+  if (/vehicle|track/.test(category)) return "vehicles_tracks";
+  if (/music/.test(category)) return "music_play";
+  if (/pretend/.test(category)) return "pretend_role";
+  if (/sensory/.test(category)) return "sensory";
+  return "general_play";
+};
+var evidence = (toy) => {
+  const safety = toy.userMetadata?.safety || {};
+  const status = catalogSafetyStatus(toy);
+  if (status !== "UNKNOWN") return { safetyEvidenceStatus: status === "NO_DOCUMENTED_HARD_GATE" ? "PARTIAL" : "VERIFIED", evidence: { sourceType: "OFFICIAL_OR_REVIEWED_EXISTING", sourceUrl: safety.safetySource, sourceTitle: null, manufacturer: toy.brand, retrievedAt: safety.safetyVerifiedAt, evidenceType: "safety_review", quotedOrStructuredClaim: safety.evidenceNote, confidence: status === "NO_DOCUMENTED_HARD_GATE" ? "partial" : "high", reviewStatus: "reviewed" } };
+  return { safetyEvidenceStatus: "INSUFFICIENT", evidence: { sourceType: null, sourceUrl: null, sourceTitle: null, manufacturer: toy.brand, retrievedAt: null, evidenceType: "insufficient", quotedOrStructuredClaim: "No SKU-level safety evidence has been reviewed; early rotation is fail-closed.", confidence: "insufficient", reviewStatus: "backlog" } };
+};
+function withEarlyRotationBaseline(toy = {}) {
+  const mechanisms = (toy.playMechanics || []).filter(Boolean);
+  const mechanism = mechanisms[0] || fallbackMechanism(toy);
+  const safetyStatus = catalogSafetyStatus(toy);
+  const overlay = earlyRotationEvidenceFor(toy.canonicalKey);
+  const existing = { ...toy.userMetadata?.developmentFit || {}, ...overlay || {} };
+  const evidenceInfo = evidence(toy);
+  const inferred = HARD.has(safetyStatus) ? "HARD_SAFETY_GATE" : safetyStatus === "VERIFIED_NO_EXTRA_GATE" ? "EARLY_ROTATION_ALLOWED" : safetyStatus === "NO_DOCUMENTED_HARD_GATE" ? "AGE_RECOMMENDED_ONLY" : "INSUFFICIENT_EVIDENCE";
+  const earlyRotationEligibility = EARLY_ROTATION_ELIGIBILITY.includes(existing.earlyRotationEligibility) ? existing.earlyRotationEligibility : inferred;
+  const safetyEvidenceStatus = existing.safetyEvidenceStatus || evidenceInfo.safetyEvidenceStatus;
+  const researchStatus = existing.researchStatus || (safetyEvidenceStatus === "INSUFFICIENT" ? "NOT_RESEARCHED" : "RESEARCHED_RESOLVED");
+  const prerequisiteSkills = existing.prerequisiteSkills || PREREQUISITES[mechanism] || {};
+  const maximumEarlyMonths = earlyRotationEligibility === "EARLY_ROTATION_ALLOWED" && Number(existing.maximumEarlyMonths) > 0 ? Number(existing.maximumEarlyMonths) : null;
+  const record = { ...existing, mechanism, prerequisiteSkills, stretchSkills: existing.stretchSkills || [], developmentalEntryAge: existing.developmentalEntryAge ?? toy.minAgeMonths ?? null, earlyRotationEligibility, safetyEvidenceStatus, researchStatus, evidence: existing.evidence || evidenceInfo.evidence, maximumEarlyMonths, insufficientReason: existing.insufficientReason ?? (safetyEvidenceStatus === "INSUFFICIENT" ? "SKU-level safety evidence has not yet been reviewed." : null) };
+  return { ...toy, recommendedAgeMin: toy.minAgeMonths ?? null, recommendedAgeMax: toy.maxAgeMonths ?? null, developmentalEntryAge: record.developmentalEntryAge, earlyRotationEligibility, safetyEvidenceStatus, mechanism, prerequisiteSkills, maximumEarlyMonths, userMetadata: { ...toy.userMetadata || {}, ...overlay?.safety ? { safety: overlay.safety } : {}, developmentFit: record } };
+}
+function prerequisitesSatisfied(toy, profile = {}) {
+  for (const [skill, level] of Object.entries(toy.prerequisiteSkills || toy.userMetadata?.developmentFit?.prerequisiteSkills || {})) {
+    const value = profile[skill]?.manualLevel ?? profile[skill]?.currentLevel ?? profile[skill]?.autoLevel ?? 0;
+    if (value < level) return false;
+  }
+  return true;
+}
+
+// src/domain/catalog-presentation.js
 var MECHANIC_RULES = Object.freeze({
   jigsaw: ["\u62FC\u56FE", "puzzle"],
   matching_sorting: ["\u914D\u5BF9", "matching", "\u5206\u7C7B", "sorting", "sorter"],
@@ -3262,7 +3418,7 @@ function canonicalIdentity(value) {
   return String(value?.canonicalKey || value || "").normalize("NFKC").toLowerCase();
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch1.js
+// src/data/catalog-image-assets-batch1.js
 var BATCH1_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["btoys-critter-clinic", "https://mybtoys.com/wp-content/uploads/BX2015_PR.png", "https://mybtoys.com/shop/critter-clinic/"],
   ["btoys-happy-cruisers", "https://mybtoys.com/wp-content/uploads/BX1944_PR-1024x1024.png", "https://mybtoys.com/shop/happy-cruisers/"],
@@ -3499,7 +3655,7 @@ var BATCH1_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["toi-travel-around-the-world-board-game", "https://qiniu.digood-assets-fallback.work/210/image_1577937441_%E5%8C%85%E8%A3%85.jpg", "https://www.toiworld.com/product/toi-travel-around-the-world-board-game.html"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch2.js
+// src/data/catalog-image-assets-batch2.js
 var BATCH2_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["connetix-ball-run-bright-pack-114", "https://cdn11.bigcommerce.com/s-uy8s41qw5g/images/stencil/original/products/288/3953/image_1786081635__32582.1786081638.webp?compression=lossy", "https://connetixtiles.com/product/ball-run-bright-pack-114-pc/"],
   ["connetix-clear-creative", "https://cdn11.bigcommerce.com/s-uy8s41qw5g/images/stencil/original/products/178/3418/image_1785733218__01048.1785733220.png?compression=lossy", "https://connetixtiles.com/product/clear-shape-expansion-pack-24-pc/"],
@@ -3624,7 +3780,7 @@ var BATCH2_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["haba-lighthouse-rainbow-stacker", "https://www.habausa.com/cdn/shop/files/stacking-toy-lighthouse-300170-1.jpg?v=1739485277", "https://www.habausa.com/products/lighthouse-stacking-game"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch3.js
+// src/data/catalog-image-assets-batch3.js
 var BATCH3_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["mfb-animals-activity", "https://cdn.shopify.com/s/files/1/0701/3371/1090/files/1_7b33c7b7-c9d6-4efc-9f5c-82d275ff0fad-364598.jpg?v=1732083463", "https://myfirstbook.us/products/mini-book-panda"],
   ["mfb-baby-shark", "https://cdn.shopify.com/s/files/1/0701/3371/1090/files/Everything_Included_in_My_First_Book_Baby_Shark_Busy_Book-197276.jpg?v=1732083467", "https://myfirstbook.us/products/my-first-book-baby-shark"],
@@ -3712,7 +3868,7 @@ var BATCH3_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["infantino-textured-multi-ball", "https://cdn.shopify.com/s/files/1/0617/9701/products/206-688J_P1.jpg?v=1532985897", "https://infantino.com/products/textured-multi-ball-set"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch4.js
+// src/data/catalog-image-assets-batch4.js
 var BATCH4_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["ikea-duktig-vegetable-set", "https://www.ikea.com/us/en/images/products/duktig-14-piece-vegetables-set__0712393_pe728809_s5.jpg", "https://www.ikea.com/us/en/p/duktig-14-piece-vegetables-set-70185750/"],
   ["ikea-duktig-cookware-set", "https://www.ikea.com/us/en/images/products/duktig-5-piece-toy-cookware-set-stainless-steel__0712391_pe728808_s5.jpg", "https://www.ikea.com/us/en/p/duktig-5-piece-toy-cookware-set-stainless-steel-00130167/"],
@@ -3726,7 +3882,7 @@ var BATCH4_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["toi-leveled-puzzles-series", "https://qiniu.digood-assets-fallback.work/210/image_1565344248_1\u9636.png", "https://www.toiworld.com/product/toi-leveled-puzzles-educational-toy-paper-jigsaw-puzzles-for-kids.html"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch5.js
+// src/data/catalog-image-assets-batch5.js
 var BATCH5_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-inspector-part-1", "https://images.ctfassets.net/0sea1vycfyqy/3MEZJlHfdZlFpzCCXcL455/1107b82bccfb0eb7eb0e657d40dda478/K4.Ball.Drop.Box_BH_V1_web.png", "https://lovevery.com/products/the-play-kits-the-inspector"],
   ["lovevery-inspector-part-2", "https://images.ctfassets.net/0sea1vycfyqy/54h9EACgGgpBzQO4p0o3ye/a4b7f996c153ca8f1d5f04f904898081/K4_Wood-Balls_BH_V1_web.png", "https://lovevery.com/products/the-play-kits-the-inspector"],
@@ -3766,7 +3922,7 @@ var BATCH5_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-music-set-part-6", "https://images.ctfassets.net/0sea1vycfyqy/68KZ1Qd3m0dtVXXd6YG9Ra/8944a9732bb4ee77a8daa40163cb523f/2022_02_01_Metronome_Studio_ISO_0001_BH_EDIT_CG_v1.20230731203746724.png", "https://lovevery.com/products/the-music-set"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch6.js
+// src/data/catalog-image-assets-batch6.js
 var BATCH6_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-adventurer", "https://images.ctfassets.net/0sea1vycfyqy/5xClG7UVG7RzizKNfSEGwL/814958b45c4e3f171e683e63800aa4ff/Lovevery-VKS-Playkit-Adventurer-ISO-130_v8_web.20250714212602632.png", "https://lovevery.com/products/the-play-kits-the-adventurer"],
   ["lovevery-adventurer-part-1", "https://images.ctfassets.net/0sea1vycfyqy/4PDeMXYxABm4yq4QmGkYey/5e92c8681e944c0a4a1dc51736ea4505/Products_Overhead_23348_VS_CarRun_R2_CL_transparent_BG.png", "https://lovevery.com/products/the-play-kits-the-adventurer"],
@@ -3779,7 +3935,7 @@ var BATCH6_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-thinker-part-2", "https://i0.wp.com/blog.lovevery.com/wp-content/uploads/2020/05/The_Thinker_Doll_Accessories_Overhead.png?resize=1024%2C1024&ssl=1", "https://blog.lovevery.com/product-recommendations/welcome-to-the-thinker-play-kit-for-months-11-12/"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch7.js
+// src/data/catalog-image-assets-batch7.js
 var BATCH7_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-free-spirit", "https://images.ctfassets.net/0sea1vycfyqy/5YVz9DXS5hSl2flksdE6tf/75346670e7b0ad983b0a3361054e836b/Lovevery-VKS-Playkit-TheFreeSpirit-ISO-163-US_April2021_web_v2.png", "https://lovevery.com/products/the-play-kits-the-free-spirit"],
   ["lovevery-free-spirit-part-1", "https://images.ctfassets.net/0sea1vycfyqy/1R2TGfUlbuM77CyeBMkdzv/e4c6111ae3cb9209f8e1f4a3261fb419/Year_2_Playkit_10633_VS_R2_CL_web.png", "https://lovevery.com/products/the-play-kits-the-free-spirit"],
@@ -3825,7 +3981,7 @@ var BATCH7_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-storyteller-part-5", "https://images.ctfassets.net/0sea1vycfyqy/5tcqqgXk3qjkHTDzdfHehO/4f023b2b54eccff9cc41d847cbd455fc/2022_05_25_Studio_ECO_5019.png", "https://lovevery.com/products/the-play-kits-the-storyteller"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch8.js
+// src/data/catalog-image-assets-batch8.js
 var BATCH8_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-charmer-part-1", "https://images.ctfassets.net/0sea1vycfyqy/1Oy8pa7M2lfkx64BxXMVHk/4c91b91b514eeb96e054590d090512b8/Lovevery_Playkit_The_Charmer_Wrap_Rattles_0098_v3.png", "https://lovevery.com/products/the-play-kits-the-charmer"],
   ["lovevery-charmer-part-2", "https://images.ctfassets.net/0sea1vycfyqy/1h7x06YxrGmG5lRTS21Fae/eaa1a31fa37e96982627c018b3228ca0/SubscriptionBox2_Lovevery-VKS-WoodenRattle-ISO-0111-June2020-1.png", "https://lovevery.com/products/the-play-kits-the-charmer"],
@@ -3895,7 +4051,7 @@ var BATCH8_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-planner-part-5", "https://images.ctfassets.net/0sea1vycfyqy/skBDUuQVwXikfokJSmYWv/c575dcc25031969fecfacf92ec7d5d8f/2023_04_13_4YO_Group_ISO_11275_v3_web.webp", "https://lovevery.com/products/the-play-kits-the-planner"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch9.js
+// src/data/catalog-image-assets-batch9.js
 var BATCH9_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-play-gym", "https://images.ctfassets.net/0sea1vycfyqy/14CK3m4HoTJHQVxvkJOSjJ/035cc8dc5c2dbb02c345323f92d9ea1f/Play_Gym_Slide_1.png", "https://lovevery.com/products/the-play-gym"],
   ["lovevery-montessori-animal-match", "https://images.ctfassets.net/0sea1vycfyqy/94m8f5ukdpItLqxu0EnTK/f47c3a965d80abf610b527a46f7c3e3f/MontessoriAnimalMatch.WEB_PENTA_CG_v2_1.webp", "https://lovevery.com/products/the-play-kits-the-companion"],
@@ -3904,7 +4060,7 @@ var BATCH9_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["lovevery-wooden-counting-box", "https://images.ctfassets.net/0sea1vycfyqy/5f2zAlfUXQHOVeodZQRdsf/8ea5a3163b1230610c8eadf8207f0f70/Lovevery_8-06-25_ISO_Wooden-Counting-Box_0070_v2.png", "https://lovevery.com/products/the-play-kits-the-free-spirit"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch10.js
+// src/data/catalog-image-assets-batch10.js
 var BATCH10_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["vtech-chomp-count-dino", "https://www.vtechtoys.com/assets/data/products/%7BE73D31C6-1326-48F7-9C07-ABF4E8E4192B%7D/images/157700prod_large.jpg", "https://www.vtechtoys.com/product/detail/15465"],
   ["vtech-drop-go-dump-truck", "https://www.vtechtoys.com/assets/data/products/%7B460B206D-A9C5-4AE6-83E2-F7FF9F9F8F5E%7D/images/166500-Img1-prod_thumb_detail_sm.jpg", "https://www.vtechtoys.com/product/detail/16600/Drop_and_Go_Dump_Truck"],
@@ -3914,15 +4070,15 @@ var BATCH10_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["vtech-busy-learners-music-activity-cube", "https://www.vtechtoys.com/assets/data/products/%7B177B35F1-9A25-8112-E063-0A7104678112%7D/images/80-574100-Main_thumb_detail_sm.jpg", "https://www.vtechtoys.com/product/detail/21124"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch11.js
+// src/data/catalog-image-assets-batch11.js
 var BATCH11_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["md-lock-latch-board", "https://www.melissaanddoug.com/cdn/shop/files/2024-07-09_d65753e7-d07a-4833-9f86-8c4590c888d4_grande.jpg?v=1720546199", "https://www.melissaanddoug.com/products/lock-latch-board"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch12.js
+// src/data/catalog-image-assets-batch12.js
 var BATCH12_OFFICIAL_IMAGE_ROWS = Object.freeze([]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-batch13.js
+// src/data/catalog-image-assets-batch13.js
 var BATCH13_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["smartgames-logic-lane", "https://d32bxxnq6qs937.cloudfront.net/sites/default/files/SG044_Logic-Lane_Product-Thumbnail-2.jpg", "https://www.smartgames.eu/uk/one-player-games/logic-lane"],
   ["smartgames-brain-train", "https://d32bxxnq6qs937.cloudfront.net/sites/default/files/smartgames_braintrain_thumbnail_0.jpg", "https://www.smartgames.eu/uk/one-player-games/brain-train"],
@@ -3931,7 +4087,7 @@ var BATCH13_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["smartgames-wolf-seven-goats", "https://d32bxxnq6qs937.cloudfront.net/sites/default/files/SG-027-MULTI-Wolf%26the7Goats-%28pack%29.jpg", "https://www.smartgames.eu/uk/one-player-games/wolf-seven-goats"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-hape-batch1.js
+// src/data/catalog-image-assets-hape-batch1.js
 var HAPE_PRIORITY_BATCH1_IMAGE_ROWS = Object.freeze([
   Object.freeze({
     canonicalKey: "hape-bath-basketball-elephant-pal",
@@ -4023,7 +4179,7 @@ var HAPE_PRIORITY_BATCH1_IMAGE_ROWS = Object.freeze([
   })
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-hape-batch2.js
+// src/data/catalog-image-assets-hape-batch2.js
 var HAPE_PRIORITY_BATCH2_IMAGE_ROWS = Object.freeze([
   Object.freeze({
     canonicalKey: "hape-color-shape-sorter",
@@ -4123,7 +4279,7 @@ var HAPE_PRIORITY_BATCH2_IMAGE_ROWS = Object.freeze([
   })
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-hape-final-resolution.js
+// src/data/catalog-image-assets-hape-final-resolution.js
 var HAPE_FINAL_RESOLUTION_IMAGE_ROWS = Object.freeze([
   Object.freeze({
     canonicalKey: "hape-mighty-mini-band",
@@ -4145,7 +4301,7 @@ var HAPE_FINAL_RESOLUTION_IMAGE_ROWS = Object.freeze([
   })
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets-expansion-qa9.js
+// src/data/catalog-image-assets-expansion-qa9.js
 var IMAGE_EXPANSION_QA9_ROWS = Object.freeze([
   ["lego-duplo-cargo-train", "https://www.lego.com/cdn/cs/set/assets/blt6da2b0a6f8fe7eb9/10875_Prod.png?fit=bounds&format=jpg&quality=80&width=1500&height=1500&dpr=1", "https://www.lego.com/en-us/product/cargo-train-10875", "10875", "Cargo Train"],
   ["lego-duplo-steam-train", "https://www.lego.com/cdn/cs/set/assets/blt892b06b079302476/10874.jpg?fit=bounds&format=jpg&quality=80&width=1500&height=1500&dpr=1", "https://www.lego.com/en-ca/product/steam-train-10874", "10874", "Steam Train"],
@@ -4174,7 +4330,7 @@ var IMAGE_EXPANSION_QA9_ROWS = Object.freeze([
   ["lr-snap-n-learn-counting-cows", "https://www.learningresources.com/media/catalog/product/f/2/f288a2e87fede1858781c3426cf8a8b1682121be.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=265&width=265&canvas=265:265", "https://www.learningresources.com/item-snap-n-learntm-counting-cows", "LER6707", "Snap-n-Learn Counting Cows"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-image-assets.js
+// src/data/catalog-image-assets.js
 var UPDATED_AT = "2026-08-24T00:00:00.000Z";
 function remote(url, imageSource, imageSourceType) {
   return { kind: "remote", url, catalogImageRef: url, imageSource, imageSourceType, verificationStatus: imageSourceType === "official_cdn" ? "verified_real" : "manually_confirmed", updatedAt: UPDATED_AT, fallbackState: "none", assetState: imageSourceType === "official_cdn" ? "verified_real" : "stable_remote" };
@@ -4361,7 +4517,7 @@ function catalogImageAsset(key) {
   return CATALOG_IMAGE_ASSETS[canonical] || CATALOG_IMAGE_ASSETS[canonical.replace(/-puzzle-(\d+)$/i, ":puzzle-$1")] || null;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-p0-zero-ref-redirects.js
+// src/data/catalog-p0-zero-ref-redirects.js
 var P0_ZERO_REF_REDIRECTS = /* @__PURE__ */ new Map([
   ["hape-pound-tap-bench", "hape-pound-tap-bench-xylophone"],
   ["mideer-dressup-princess-fashion", "mideer-ct2283-princess-fashion-show"],
@@ -4381,13 +4537,13 @@ var P0_ZERO_REF_REDIRECTS = /* @__PURE__ */ new Map([
   ["mideer-racing-track-magnetic-115", "mideer-racing-track-grooved-magnetic-tiles-115p-md6395"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/catalog-p0-owner-ref-redirects.js
+// src/data/catalog-p0-owner-ref-redirects.js
 var P0_OWNER_REF_REDIRECTS = /* @__PURE__ */ new Map([
   ["lego-duplo-classic-brick-box", "lego-duplo-brick-box"],
   ["learningresources-helping-hands-fine-motor-tool-set", "lr-helping-hands"]
 ]);
 
-// ../_work/Toy-Rotation-v0.11.6/src/data/hape-final-resolution-review.js
+// src/data/hape-final-resolution-review.js
 var HAPE_FINAL_RESOLUTION_REVIEW = Object.freeze([
   Object.freeze({ canonicalKey: "hape-shape-sorter", status: "identity_hold", reason: "Multiple official products (E0516, E0407, E0364, E0515) fit the generic stored name; no row-level SKU or structural evidence." }),
   Object.freeze({ canonicalKey: "hape-wooden-shape-sorter", status: "identity_hold", reason: "Multiple official products (E0516, E0407, E0364, E0515) fit the generic stored name; no row-level SKU or structural evidence." }),
@@ -4406,7 +4562,7 @@ function isPublicCatalogVisible(toy) {
   return !HIDDEN_FROM_PUBLIC_CATALOG.has(catalogReviewMetadata(toy?.canonicalKey)?.status);
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/catalog-repository.js
+// src/domain/catalog-repository.js
 var CatalogRepository = class {
   #base = [];
   #remote = [];
@@ -4678,7 +4834,7 @@ var CatalogRepository = class {
       const legacyImage = imageRefsByKey[key] || imageRefsByIdentity[catalogIdentity(serverToy)];
       const asset = catalogImageAsset(key);
       const edited = normalizeCatalogToy({ ...serverToy, ...asset ? { imageRef: asset } : {}, ...legacyImage ? { imageRef: legacyImage } : {}, ...adminEdits[key] || {} });
-      merged.set(key, { ...edited, playMechanics: deriveCatalogMechanics(edited), imageRef: catalogImageRef(edited) });
+      merged.set(key, withEarlyRotationBaseline({ ...edited, playMechanics: deriveCatalogMechanics(edited), imageRef: catalogImageRef(edited) }));
     }
     this.#mergedInto = new Map(Object.entries(tombstones).filter(([, record]) => record?.mergedInto).map(([from, record]) => [canonicalKey(from), canonicalKey(record.mergedInto)]));
     for (const [from, to] of this.#mergedInto) if (merged.has(to)) {
@@ -4805,7 +4961,7 @@ function catalogRichness(toy) {
   return (toy.children?.length || 0) * 20 + (toy.imageRef?.kind === "catalog" ? 15 : toy.imageRef?.kind === "remote" ? 5 : 0) + (toy.aliases?.length || 0) + (toy.names?.zh ? 3 : 0);
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/library-service.js
+// src/domain/library-service.js
 function setToyInterest(store2, toyId, value) {
   store2.update((state) => {
     const toy = state.toys.find((item) => item.id === toyId);
@@ -4904,7 +5060,7 @@ function preserveDeletedReferences2(state, ids) {
   }
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/development-fit.js
+// src/domain/development-fit.js
 var GENERIC = /* @__PURE__ */ new Set(["construction_general", "pretend_play_general", "sensory_general"]);
 var DEVELOPMENT_ABILITY_GROUPS = Object.freeze([
   { key: "thinking", mechanisms: ["puzzle", "matching_sorting", "shape_sorting", "counting_quantity", "color_pattern"] },
@@ -5091,7 +5247,7 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/profile-service.js
+// src/domain/profile-service.js
 var MONTH_MS = 26298e5;
 var DAY_MS = 864e5;
 function childAgeMonths(birthDate, now3 = Date.now()) {
@@ -5119,7 +5275,7 @@ function saveProfileAndRotationSettings(store2, { childName, childBirthDate, rot
   }, "profile-and-rotation-settings");
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/substitution-engine.js
+// src/domain/substitution-engine.js
 var GENERIC_MECHANICS = /* @__PURE__ */ new Set(["fine_motor_general", "construction_general", "pretend_play_general", "sensory_general"]);
 var SPECIFIC_SKILLS = /* @__PURE__ */ new Set(["logic", "math", "sorting", "memory", "problem_solving", "cause_effect", "spatial_awareness", "visual_spatial", "matching", "practical_life"]);
 var SubstitutionEngine = class {
@@ -5201,7 +5357,7 @@ function compareRelationship(a, b) {
   return rank2[b.level] - rank2[a.level] || b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName));
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/rotation-engine.js
+// src/domain/rotation-engine.js
 var GENERIC_MECHANICS2 = /* @__PURE__ */ new Set(["fine_motor_general", "construction_general", "pretend_play_general", "sensory_general"]);
 function selectRotation({ toys = [], history = [], childAgeMonths: childAgeMonths3, size = 6, now: now3 = Date.now(), childDevelopmentProfile = {}, developmentFeedbackHistory = [] }) {
   const requestedRotationCount = Math.max(1, Number(size) || 6);
@@ -5531,6 +5687,14 @@ function rotationAgeEligibility(toy, age, profile = {}) {
   if (Number.isFinite(requiredBalance) && requiredBalance > 0 && (profile.balance?.manualLevel ?? profile.balance?.currentLevel ?? 1) < requiredBalance) return result2(false, "HARD_SAFETY_BLOCK");
   if (safety.requiresAgeConfirmation === true) return result2(false, "HARD_SAFETY_BLOCK");
   if (toy.minAgeMonths != null && age < toy.minAgeMonths) {
+    if (toy.earlyRotationEligibility === "INSUFFICIENT_EVIDENCE") return result2(false, "INSUFFICIENT_EVIDENCE_BLOCK");
+    if (toy.earlyRotationEligibility === "AGE_RECOMMENDED_ONLY") return result2(false, "AGE_RECOMMENDED_ONLY_BLOCK");
+    if (toy.earlyRotationEligibility === "EARLY_ROTATION_ALLOWED") {
+      const maximumEarlyMonths = Number(toy.maximumEarlyMonths ?? toy.userMetadata?.developmentFit?.maximumEarlyMonths);
+      if (Number.isFinite(maximumEarlyMonths) && maximumEarlyMonths > 0 && toy.minAgeMonths - age > maximumEarlyMonths) return result2(false, "MAXIMUM_EARLY_WINDOW_BLOCK");
+      return prerequisitesSatisfied(toy, profile) ? result2(true, "EARLY_ROTATION_ALLOWED") : result2(false, "PREREQUISITES_NOT_MET");
+    }
+    if (toy.earlyRotationEligibility === "HARD_SAFETY_GATE") return result2(false, "HARD_SAFETY_BLOCK");
     if (status === "VERIFIED_NO_EXTRA_GATE") return result2(true, "VERIFIED_CROSS_AGE_ALLOWED");
     if (["SMALL_PARTS_GATE", "GROSS_MOTOR_GATE", "OTHER_HARD_GATE"].includes(status)) return result2(true, "VERIFIED_CROSS_AGE_ALLOWED");
     if (status === "NO_DOCUMENTED_HARD_GATE") return validCrossAgeApproval(toy, toy.crossAgeApproval) ? result2(true, "PARENT_APPROVED_CROSS_AGE") : result2(false, "PARENT_APPROVAL_REQUIRED");
@@ -5615,7 +5779,7 @@ function cachedRelation(a, b, relations) {
   return relations.get(key);
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/development-presentation.js
+// src/domain/development-presentation.js
 function challengeLabelKey(toy = {}) {
   return `developmentChallenge.${challengeLevel(toy)}`;
 }
@@ -5657,7 +5821,7 @@ function matchesAge(toy, age, childAgeMonths3) {
   return true;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/admin-service.js
+// src/features/admin-service.js
 var TOKEN_KEY = "toyRotationAdminTokenV095";
 var VERIFIED_KEY = "toyRotationAdminVerifiedV095";
 var AdminService = class {
@@ -5822,7 +5986,7 @@ function emitTrace(trace, stage, details) {
   }
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/local-candidate-queue.js
+// src/features/local-candidate-queue.js
 function localCandidates(state) {
   return state?.catalogState?.syncMetadata?.localCandidates || [];
 }
@@ -5918,7 +6082,7 @@ function reopenLocalCandidateReview(state, candidateId, now3 = (/* @__PURE__ */ 
   return candidate;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/recognition-service.js
+// src/features/recognition-service.js
 var RecognitionService = class {
   #store;
   #images;
@@ -6280,7 +6444,7 @@ function dataUrl(file) {
   });
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/catalog-report-store.js
+// src/features/catalog-report-store.js
 var REPORT_STATUSES = /* @__PURE__ */ new Set(["pending", "reviewing", "resolved", "dismissed"]);
 function reportsContainer(state) {
   state.catalogState ||= {};
@@ -6412,7 +6576,7 @@ function hasRawAttachment(payload = {}) {
   return typeof payload.optionalAttachment === "string" && /^data:image\//i.test(payload.optionalAttachment);
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/shared-catalog-governance.js
+// src/features/shared-catalog-governance.js
 var SharedCatalogGovernance = class {
   #store;
   #catalog;
@@ -6646,12 +6810,12 @@ function deviceId2() {
   return v;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/review-count.js
+// src/features/review-count.js
 function getNeedsReviewCount(state) {
   return pendingCandidateCount(state) + getPendingCatalogReports(state).length;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/data-repair-diagnostic.js
+// src/features/data-repair-diagnostic.js
 var CURRENT_STORE_KEY = "toyRotation.cleanBaseline";
 var LEGACY_STORE_KEYS = ["toyRotationV04", "toyRotationV032", "toyRotationV03", "toyRotationV02"];
 var LEGACY_TOMBSTONE_KEYS = [
@@ -6939,7 +7103,7 @@ function scrub(value, key = "") {
   return output;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/persistence-diagnostic.js
+// src/features/persistence-diagnostic.js
 var IMAGE_DB = "toyRotationPhotosV04";
 async function buildPersistenceDiagnostic({ store: store2, images: images2 = null, release = null } = {}) {
   const base = store2?.persistence?.diagnostic || buildPersistenceSnapshot({ hydratedState: store2?.state || null, mode: store2?.persistence?.status || "unknown" });
@@ -7022,7 +7186,7 @@ function storageKeyNames() {
   }
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/restore-diagnostic.js
+// src/features/restore-diagnostic.js
 function buildRestoreDiagnostic({ trace = null, release = null } = {}) {
   const stages = trace?.stages || [];
   const lastSuccessful = [...stages].reverse().find((stage) => stage.success) || null;
@@ -7053,7 +7217,7 @@ function buildRestoreDiagnostic({ trace = null, release = null } = {}) {
   };
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/runtime-image-diagnostic.js
+// src/features/runtime-image-diagnostic.js
 var IMAGE_RESOLVER_BUILD_MARKER = "runtime-child-image-trace-20260827-a";
 var MAX_EVENTS = 500;
 var MAX_ROWS = 24;
@@ -7274,7 +7438,7 @@ async function cacheNames(storage) {
   }
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/recognition-device-diagnostic.js
+// src/features/recognition-device-diagnostic.js
 var MAX_EVENTS2 = 500;
 var SNAPSHOT_LIMIT = 2e4;
 var now = () => (/* @__PURE__ */ new Date()).toISOString();
@@ -7448,7 +7612,7 @@ function storeSnapshot(state = {}) {
   return { toys: state.toys?.length || 0, wishlist: state.wishlist?.length || 0, localCandidates: localCandidates(state).length, drafts: state.drafts?.length || 0, schemaVersion: state.schemaVersion ?? null };
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/admin-catalog-save-diagnostic.js
+// src/features/admin-catalog-save-diagnostic.js
 var MAX_EVENTS3 = 120;
 var AdminCatalogSaveDiagnostic = class {
   #recording = false;
@@ -7512,7 +7676,7 @@ function sanitize(details) {
   };
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/storage-usage-diagnostic.js
+// src/features/storage-usage-diagnostic.js
 var encoder = new TextEncoder();
 var bytes = (value) => encoder.encode(typeof value === "string" ? value : JSON.stringify(value ?? null)).byteLength;
 var toyKey = (key) => /^toyRotation/i.test(key);
@@ -7548,7 +7712,7 @@ async function buildStorageUsageDiagnostic({ state, build = {} } = {}) {
   return { diagnosticVersion: 1, appVersion: build.appVersion || build.RELEASE || null, buildId: build.buildId || null, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), localStorage: { keys, canonicalBytes: canonical, stagingBytes: staging, shadowBytes: shadow, snapshotCount: keys.filter((item) => /snapshot-\d+/i.test(item.key)).length, snapshotBytes: snapshots2, startupDiagnosticBytes: startupDiagnostic, persistenceHealthBytes: health, otherToyRotationBytes: other, estimatedFullStateCopies: canonical ? Number(((canonical + staging + shadow + snapshots2) / canonical).toFixed(2)) : 0, totalToyRotationBytes: total }, stateBreakdown: { draftsBytes: bytes(state?.drafts), candidatesBytes: bytes(state?.catalogState?.syncMetadata?.localCandidates), governanceBytes: bytes(state?.catalogState?.syncMetadata?.governanceOutbox), diagnosticBytes: startupDiagnostic, embeddedDataImageCount: count3(state, /data:image\//gi), base64LikeCount: count3(state, /;base64,/gi) }, storageEstimate: estimate };
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/catalog-count-diagnostic.js
+// src/features/catalog-count-diagnostic.js
 function buildCatalogCountDiagnostic({ catalog: catalog2, build = {}, uiSearchRows = null, exportedAt = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
   const snapshot = catalog2?.catalogCountSnapshot?.() || { raw: { base: 0, remote: 0, localLearned: 0, localRemote: 0, total: 0 }, tombstoneCount: 0, active: 0, publicVisible: 0, remoteIds: [], localOnlyIds: [], collisionSummary: { canonicalKeyCollisions: [], total: 0 } };
   return {
@@ -7562,7 +7726,7 @@ function buildCatalogCountDiagnostic({ catalog: catalog2, build = {}, uiSearchRo
   };
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/catalog-image-usability.js
+// src/domain/catalog-image-usability.js
 var IMAGE_USABILITY = Object.freeze({
   VERIFIED_USABLE_IMAGE: "VERIFIED_USABLE_IMAGE",
   VERIFIED_PACKAGED_IMAGE: "VERIFIED_PACKAGED_IMAGE",
@@ -7583,7 +7747,7 @@ function classifyCatalogImage(ref) {
   return IMAGE_USABILITY.NO_IMAGE;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/real-device-owned-wishlist-image-audit.js
+// src/features/real-device-owned-wishlist-image-audit.js
 var TOY_IMAGE_AUDIT_VERSION = "v0.11.6";
 var PRIORITY_BRANDS = /* @__PURE__ */ new Set(["mideer", "cherry-pick", "learning resources", "lego / duplo", "lego duplo"]);
 var USABLE = /* @__PURE__ */ new Set(["VERIFIED_PACKAGED", "VERIFIED_REMOTE", "CATALOG_IDB", "PERSONAL_IMAGE"]);
@@ -7687,7 +7851,7 @@ function resolveFromRows(reference, rows) {
   return rows.find((row) => keys.includes(String(row.canonicalKey)) || keys.includes(String(row.id))) || null;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/catalog-safety-audit.js
+// src/features/catalog-safety-audit.js
 var CATALOG_SAFETY_AUDIT_VERSION = "v0.11.6";
 var PRIORITY_BRANDS2 = /* @__PURE__ */ new Set(["mideer", "lovevery", "hape", "learning resources", "lego duplo", "lego / duplo", "vtech", "brio"]);
 function buildCatalogSafetyAudit({ state = {}, catalog: catalog2, build = {}, generatedAt = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
@@ -7755,7 +7919,7 @@ function distribution(items) {
   return Object.fromEntries(AGE_SAFETY_STATUSES.map((status) => [status, items.filter((item) => item.ageSafetyStatus === status).length]));
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/raw-identity-reference-audit.js
+// src/features/raw-identity-reference-audit.js
 var PAIRS = [
   ["lego-duplo-brick-box", "lego-duplo-classic-brick-box", "10913"],
   ["hape-pound-tap-bench", "hape-pound-tap-bench-xylophone", "E0305"],
@@ -7982,7 +8146,7 @@ function buildRawIdentityReferenceAudit({ storage, catalog: catalog2 = null, bui
   return { auditVersion: "v0.11.6-raw-p0-1", buildId: String(build.buildId || ""), generatedAt, scope: { p0Groups: groups.length }, storageSourcesScanned, groups, scanCoverage: { availableSources, unavailableSources } };
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/md1460-migration-audit.js
+// src/features/md1460-migration-audit.js
 var MD1460_AUDIT_VERSION = 1;
 var MD1460_PARENT2 = "mideer-my-first-puzzle-dinosaurs-6in1-md1460";
 var MD1460_LEGACY2 = Object.freeze(["mideer-my-first-puzzle-dinosaurs-6in1", "mideer-first-artist-cute-dinosaurs"]);
@@ -8137,7 +8301,7 @@ async function buildMd1460MigrationAudit({ state, storage = globalThis.localStor
   };
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/domain/md1460-execution-service.js
+// src/domain/md1460-execution-service.js
 var MD1460_ROLLBACK_STAGING_KEY = "toyRotation.cleanBaseline.md1460MigrationRollbackV1";
 var read = (storage, key) => {
   const raw = storage.getItem(key);
@@ -8203,7 +8367,7 @@ function executeMD1460MarkerOnly({ storage = globalThis.localStorage, previewFin
   }
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/cross-age-challenges.js
+// src/features/cross-age-challenges.js
 function challengeDecision(state, catalog2, toy, age, profile = {}) {
   const row = catalog2.resolve(toy);
   if (!row || age == null) return null;
@@ -8227,7 +8391,7 @@ function parentApprovableChallenges(state, catalog2, age, profile = {}) {
   return (state.toys || []).map((toy) => parentApprovableChallenge(state, catalog2, toy, age, profile)).filter(Boolean);
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/features/startup-trace.js
+// src/features/startup-trace.js
 var WATCHDOG_DELAY_MS = 750;
 function now2() {
   return typeof performance === "undefined" ? Date.now() : performance.now();
@@ -8281,7 +8445,7 @@ function completeStartupWatchdog(handle) {
   clearTimeout(handle);
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/ui/i18n.js
+// src/ui/i18n.js
 var PLAY_MECHANISM_LABELS = Object.freeze({
   counting_quantity: { en: "Counting / quantities", zh: "\u8BA1\u6570 / \u6570\u91CF" },
   color_pattern: { en: "Colors / patterns", zh: "\u989C\u8272 / \u89C4\u5F8B" },
@@ -9181,7 +9345,7 @@ function createI18n(store2) {
   } };
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/ui/modal-manager.js
+// src/ui/modal-manager.js
 var ModalManager = class {
   #scrollY = 0;
   #dialog = null;
@@ -9241,7 +9405,7 @@ var ModalManager = class {
   }
 };
 
-// ../_work/Toy-Rotation-v0.11.6/src/ui/admin-workspace-controller.js
+// src/ui/admin-workspace-controller.js
 function createAdminWorkspaceController({ dialog, getAdminAuthenticated, getPendingCount, renderSettings, renderWorkspace, closeSettingsDialog, trace = () => {
 } }) {
   const record = (stage, detail = {}) => trace(stage, detail);
@@ -9295,7 +9459,7 @@ function createAdminWorkspaceController({ dialog, getAdminAuthenticated, getPend
   return controller;
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/ui/admin-governance-child.js
+// src/ui/admin-governance-child.js
 function renderAdminGovernanceChild({ dialog, loadGovernance, onReturn }) {
   let closeCount = 0;
   const close = () => {
@@ -9318,7 +9482,7 @@ function renderAdminGovernanceChild({ dialog, loadGovernance, onReturn }) {
   Promise.resolve().then(loadGovernance).then(() => unavailable(), unavailable);
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/ui/recognition-review-submit-controller.js
+// src/ui/recognition-review-submit-controller.js
 function bindRecognitionReviewSubmit({ form, recognitionDraftId, saveDraft, confirm: confirm2, onComplete, onError, trace = () => {
 } }) {
   let submitting = false;
@@ -9353,7 +9517,7 @@ function bindRecognitionReviewSubmit({ form, recognitionDraftId, saveDraft, conf
   });
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/ui/recognition-review-production.js
+// src/ui/recognition-review-production.js
 function openRecognitionReviewProduction({ document: document2, openModal: openModal2, recognitionDraftId, getState, getRecognition: getRecognition2, updateDraft, images: images2, attachPersonalImageEditor: attachPersonalImageEditor2, t: t2, escape: escape2, categoryCodes, skillCodes, messageFor: messageFor2, setView, render: render2, trace = () => {
 }, diagnostic = null }) {
   diagnostic?.begin(recognitionDraftId);
@@ -9441,7 +9605,7 @@ function openRecognitionReviewProduction({ document: document2, openModal: openM
   }, trace });
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/ui/personal-image-editor.js
+// src/ui/personal-image-editor.js
 var OUTPUT_SIZE = 1024;
 function attachImageEditor({ input, host, t: t2, onEdited, initialSource = null, title = null }) {
   let image2 = null;
@@ -9596,7 +9760,7 @@ function escapeAttribute(value) {
   return escapeHtml(value);
 }
 
-// ../_work/Toy-Rotation-v0.11.6/src/main.js
+// src/main.js
 var root = document.querySelector("#app");
 var STARTUP_DIAGNOSTIC_KEY = "toyRotation.startupDiagnostic";
 var earlyStartup = window.__TOY_ROTATION_EARLY_STARTUP__;
@@ -10876,6 +11040,7 @@ function openSettings() {
   dialog.querySelector("#restore-diagnostic-export")?.addEventListener("click", exportRestoreDiagnostic);
   bindMd1460AuditExport(dialog);
   bindMd1460MigrationPreview(dialog);
+  closeCompletedMd1460Controls(dialog);
   const updateRecognitionTraceStatus = () => {
     const active = recognitionDeviceDiagnostic.sessions.at(-1);
     const status = dialog.querySelector("#recognition-trace-status");
@@ -11339,6 +11504,7 @@ function openAdminInSettings(dialog) {
       host.innerHTML = `<p role="status">${t("adminMode")}</p><button type="button" id="md1460-migration-audit-export">Export MD1460 Migration Audit</button><button type="button" id="md1460-migration-preview">Preview MD1460 Migration</button><p id="md1460-migration-audit-status" role="status"></p><pre id="md1460-migration-preview-result" hidden></pre><button type="button" id="manager-open">${t("managerDashboard")} <span class="badge">${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t("signOut")}</button>`;
       bindMd1460AuditExport(dialog);
       bindMd1460MigrationPreview(dialog);
+      closeCompletedMd1460Controls(dialog);
       host.querySelector("#manager-open").onclick = () => openAdminWorkspaceInSettings(dialog);
       host.querySelector("#admin-open").onclick = () => {
         admin.signOut();
@@ -11408,6 +11574,14 @@ function md1460PreviewSnapshots() {
       return [];
     }
   });
+}
+function closeCompletedMd1460Controls(dialog) {
+  if (store.state?.catalogState?.syncMetadata?.md1460IdentityMigrationV1?.status !== "applied") return;
+  dialog.querySelector("#md1460-migration-audit-export")?.remove();
+  dialog.querySelector("#md1460-migration-preview")?.remove();
+  dialog.querySelector("#md1460-migration-execute")?.remove();
+  const status = dialog.querySelector("#md1460-migration-audit-status");
+  if (status) status.textContent = "MD1460 Migration Status: Complete";
 }
 function traceAdminWorkspace(stage, detail = {}) {
   const trace = window.__TOY_ROTATION_ADMIN_WORKSPACE_TRACE__ ||= [];

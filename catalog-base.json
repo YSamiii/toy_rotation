@@ -13189,6 +13189,42 @@
       "category": "益智类玩具",
       "playMechanics": ["matching_sorting"],
       "skills": ["认知配对", "形状认知", "颜色认知", "精细动作", "因果关系"]
+    },
+    {
+      "key": "lr-a-to-z-mini-foods",
+      "brand": "Learning Resources",
+      "name": "A to Z Mini Foods",
+      "nameEn": "A to Z Mini Foods",
+      "nameZh": "A 到 Z 迷你食物",
+      "exactTitle": "A to Z Mini Foods",
+      "sku": "LER6795",
+      "pieceCount": 28,
+      "identitySource": "https://www.learningresources.com/item-mini-alphabet-foods",
+      "sourceUrl": "https://www.learningresources.com/item-mini-alphabet-foods",
+      "aliases": ["Mini Alphabet Foods", "Alphabet Foods", "A to Z Foods"],
+      "ageMinMonths": 36,
+      "ageMaxMonths": 72,
+      "category": "语言/认知",
+      "playMechanics": ["pretend_role", "matching_sorting"],
+      "skills": ["语言", "字母启蒙", "认知配对", "分类能力", "精细动作"]
+    },
+    {
+      "key": "lr-stem-explorers-brainometry",
+      "brand": "Learning Resources",
+      "name": "STEM Explorers Brainometry",
+      "nameEn": "STEM Explorers Brainometry",
+      "nameZh": "STEM Explorers 脑力几何挑战",
+      "exactTitle": "STEM Explorers Brainometry",
+      "sku": "LER9306",
+      "pieceCount": 34,
+      "identitySource": "https://www.learningresources.com/catalog/product/view/id/6098/s/item-stem-explorers-brainometry/",
+      "sourceUrl": "https://www.learningresources.com/catalog/product/view/id/6098/s/item-stem-explorers-brainometry/",
+      "aliases": ["Brainometry", "STEM Explorers Brainometry", "LER9306"],
+      "ageMinMonths": 60,
+      "ageMaxMonths": 96,
+      "category": "益智类玩具",
+      "playMechanics": ["puzzle", "matching_sorting", "fine_motor_general"],
+      "skills": ["视觉空间", "逻辑推理", "认知配对", "精细动作", "专注力"]
     }
   ]
 }
