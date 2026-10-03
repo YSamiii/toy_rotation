@@ -3308,12 +3308,14 @@ function withEarlyRotationBaseline(toy = {}) {
   const existing = { ...toy.userMetadata?.developmentFit || {}, ...overlay || {} };
   const evidenceInfo = evidence(toy);
   const inferred = HARD.has(safetyStatus) ? "HARD_SAFETY_GATE" : safetyStatus === "VERIFIED_NO_EXTRA_GATE" ? "EARLY_ROTATION_ALLOWED" : safetyStatus === "NO_DOCUMENTED_HARD_GATE" ? "AGE_RECOMMENDED_ONLY" : "INSUFFICIENT_EVIDENCE";
-  const earlyRotationEligibility = EARLY_ROTATION_ELIGIBILITY.includes(existing.earlyRotationEligibility) ? existing.earlyRotationEligibility : inferred;
+  const explicitEligibility = EARLY_ROTATION_ELIGIBILITY.includes(existing.earlyRotationEligibility);
+  const earlyRotationEligibility = explicitEligibility ? existing.earlyRotationEligibility : inferred;
+  const eligibilityPolicyOrigin = existing.eligibilityPolicyOrigin || (explicitEligibility ? "OFFICIAL_EVIDENCE" : "SAFETY_INFERRED");
   const safetyEvidenceStatus = existing.safetyEvidenceStatus || evidenceInfo.safetyEvidenceStatus;
   const researchStatus = existing.researchStatus || (safetyEvidenceStatus === "INSUFFICIENT" ? "NOT_RESEARCHED" : "RESEARCHED_RESOLVED");
   const prerequisiteSkills = existing.prerequisiteSkills || PREREQUISITES[mechanism] || {};
   const maximumEarlyMonths = earlyRotationEligibility === "EARLY_ROTATION_ALLOWED" && Number(existing.maximumEarlyMonths) > 0 ? Number(existing.maximumEarlyMonths) : null;
-  const record = { ...existing, mechanism, prerequisiteSkills, stretchSkills: existing.stretchSkills || [], developmentalEntryAge: existing.developmentalEntryAge ?? toy.minAgeMonths ?? null, earlyRotationEligibility, safetyEvidenceStatus, researchStatus, evidence: existing.evidence || evidenceInfo.evidence, maximumEarlyMonths, insufficientReason: existing.insufficientReason ?? (safetyEvidenceStatus === "INSUFFICIENT" ? "SKU-level safety evidence has not yet been reviewed." : null) };
+  const record = { ...existing, mechanism, prerequisiteSkills, stretchSkills: existing.stretchSkills || [], developmentalEntryAge: existing.developmentalEntryAge ?? toy.minAgeMonths ?? null, earlyRotationEligibility, eligibilityPolicyOrigin, safetyEvidenceStatus, researchStatus, evidence: existing.evidence || evidenceInfo.evidence, maximumEarlyMonths, insufficientReason: existing.insufficientReason ?? (safetyEvidenceStatus === "INSUFFICIENT" ? "SKU-level safety evidence has not yet been reviewed." : null) };
   return { ...toy, recommendedAgeMin: toy.minAgeMonths ?? null, recommendedAgeMax: toy.maxAgeMonths ?? null, developmentalEntryAge: record.developmentalEntryAge, earlyRotationEligibility, safetyEvidenceStatus, mechanism, prerequisiteSkills, maximumEarlyMonths, userMetadata: { ...toy.userMetadata || {}, ...overlay?.safety ? { safety: overlay.safety } : {}, developmentFit: record } };
 }
 function prerequisitesSatisfied(toy, profile = {}) {
@@ -5687,6 +5689,8 @@ function rotationAgeEligibility(toy, age, profile = {}) {
   if (Number.isFinite(requiredBalance) && requiredBalance > 0 && (profile.balance?.manualLevel ?? profile.balance?.currentLevel ?? 1) < requiredBalance) return result2(false, "HARD_SAFETY_BLOCK");
   if (safety.requiresAgeConfirmation === true) return result2(false, "HARD_SAFETY_BLOCK");
   if (toy.minAgeMonths != null && age < toy.minAgeMonths) {
+    const policyOrigin = toy.eligibilityPolicyOrigin ?? toy.userMetadata?.developmentFit?.eligibilityPolicyOrigin;
+    if (status === "NO_DOCUMENTED_HARD_GATE" && policyOrigin !== "OFFICIAL_EVIDENCE") return validCrossAgeApproval(toy, toy.crossAgeApproval) ? result2(true, "PARENT_APPROVED_CROSS_AGE") : result2(false, "PARENT_APPROVAL_REQUIRED");
     if (toy.earlyRotationEligibility === "INSUFFICIENT_EVIDENCE") return result2(false, "INSUFFICIENT_EVIDENCE_BLOCK");
     if (toy.earlyRotationEligibility === "AGE_RECOMMENDED_ONLY") return result2(false, "AGE_RECOMMENDED_ONLY_BLOCK");
     if (toy.earlyRotationEligibility === "EARLY_ROTATION_ALLOWED") {

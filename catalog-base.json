@@ -4836,7 +4836,7 @@
           "smallParts": "unknown",
           "requiresStandingStability": "unknown",
           "safetySource": "https://www.learningresources.com/item-lock-key-clubhouse",
-          "evidenceNote": "Exact LER9807 official product and details reviewed. No explicit choking, small-parts, gross-motor or other hard warning documented there. Official 18m+ differs from existing Catalog guidance of 36m; this does not establish safety below the manufacturer's age grade and requires individual parent approval for cross-age Rotation.",
+          "evidenceNote": "QA2 owner finding correction: the historical Catalog guidance of 36m was erroneous. Exact LER9807 official product page states ages 18 months and up. No explicit choking, small-parts, gross-motor or other hard warning is documented there; 18m remains developmental guidance, not a hard safety age.",
           "safetyVerifiedAt": "2026-09-24"
         }
       },
@@ -4844,7 +4844,7 @@
       "pieceCount": 6,
       "exactTitle": "Lock & Key Clubhouse",
       "identitySource": "https://www.learningresources.com/item-lock-key-clubhouse",
-      "ageMinMonths": 36,
+      "ageMinMonths": 18,
       "ageMaxMonths": 72,
       "category": "益智类玩具",
       "skills": [
