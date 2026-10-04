@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-10-03T17:59:13.641Z",
+  "generatedAt": "2026-10-04T17:10:15.065Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.7",
-    "buildName": "Toy Rotation v0.11.7 Evidence Research Batch 1 QA2 Fix 1",
-    "buildDate": "20261003",
-    "buildId": "v0.11.7-evidence-research-batch1-qa2-fix1-20261003"
+    "buildName": "Toy Rotation v0.11.7 Evidence Research Batch 2 QA3",
+    "buildDate": "20261004",
+    "buildId": "v0.11.7-evidence-research-batch2-qa3-20261004"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 913553,
-      "sha256": "cbf5aca41a88d3851cbf46eef7471975b2834c8103c8567ac462e6bb6f025cab",
+      "bytes": 932482,
+      "sha256": "4a7b265581ae94c230870d0bc2b81de539e28ae935bdb31f2f9bfd9cc543b496",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -752,8 +752,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 442,
-      "sha256": "40021e8a44757d0c3ee20e7c15f8038265e47d1df35a4eb5b67f295602fd0b95",
+      "bytes": 425,
+      "sha256": "a0c28ca8c1f9ce54a28a7bf22109cef0e1489656a58987e9d94f572d5e0d893c",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -842,8 +842,8 @@
     {
       "path": "manifest.webmanifest",
       "resolvedDeployPath": "./manifest.webmanifest",
-      "bytes": 348,
-      "sha256": "ac47c081757921510a1ff51874ea6123903f28c6ce638cfc7ed35be8c0a28a15",
+      "bytes": 342,
+      "sha256": "eb786519fc022699c7e8e76a134d50db05ce7b562ec1b1931f76ddffc9df5731",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -962,8 +962,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2708,
-      "sha256": "34fb8a6a495fb85759db127800d4aa16875fb9fa66f43889f5cb6099ecc6e2e5",
+      "bytes": 2703,
+      "sha256": "ab43cf4475445ae32d784287bdb88549ea346579e5b524f84dd0f0aee4f30ca0",
       "importedBy": [
         "qa2-runtime-package"
       ],

@@ -3280,6 +3280,115 @@ function earlyRotationEvidenceFor(canonicalKey2) {
   return EARLY_ROTATION_EVIDENCE_BATCH_1[String(canonicalKey2 || "")] || null;
 }
 
+// src/data/early-rotation-evidence-batch2.js
+var official2 = (manufacturer, sourceUrl, sourceTitle, claim) => ({
+  sourceType: "OFFICIAL_PRODUCT_PAGE",
+  sourceUrl,
+  sourceTitle,
+  manufacturer,
+  retrievedAt: "2026-10-04",
+  evidenceType: "sku_product_and_safety_review",
+  quotedOrStructuredClaim: claim,
+  confidence: "high",
+  reviewStatus: "reviewed",
+  sourceAvailability: "AVAILABLE_AT_RESEARCH"
+});
+var ageOnly2 = (manufacturer, sourceUrl, sourceTitle, claim, prerequisiteSkills) => ({
+  earlyRotationEligibility: "AGE_RECOMMENDED_ONLY",
+  safetyEvidenceStatus: "OFFICIAL_REVIEWED",
+  prerequisiteSkills,
+  stretchSkills: [],
+  evidence: official2(manufacturer, sourceUrl, sourceTitle, claim),
+  insufficientReason: "Official product evidence supports the recommended age and learning purpose, but not an earlier-use recommendation.",
+  researchStatus: "RESEARCHED_RESOLVED",
+  researchBatch: "Batch 2"
+});
+var early2 = (manufacturer, sourceUrl, sourceTitle, claim, prerequisiteSkills) => ({
+  earlyRotationEligibility: "EARLY_ROTATION_ALLOWED",
+  safetyEvidenceStatus: "OFFICIAL_REVIEWED",
+  maximumEarlyMonths: 3,
+  prerequisiteSkills,
+  stretchSkills: [],
+  evidence: official2(manufacturer, sourceUrl, sourceTitle, claim),
+  insufficientReason: null,
+  researchStatus: "RESEARCHED_RESOLVED",
+  researchBatch: "Batch 2"
+});
+var hard2 = (manufacturer, sourceUrl, sourceTitle, claim, prerequisiteSkills) => ({
+  earlyRotationEligibility: "HARD_SAFETY_GATE",
+  safetyEvidenceStatus: "OFFICIAL_REVIEWED",
+  prerequisiteSkills,
+  stretchSkills: [],
+  evidence: official2(manufacturer, sourceUrl, sourceTitle, claim),
+  safety: {
+    ageSafetyStatus: "SMALL_PARTS_GATE",
+    hardMinAgeMonths: 36,
+    smallParts: true,
+    safetySource: sourceUrl,
+    safetyVerifiedAt: "2026-10-04",
+    evidenceNote: claim,
+    warningType: "CHOKING_HAZARD_SMALL_PARTS"
+  },
+  insufficientReason: null,
+  researchStatus: "RESEARCHED_RESOLVED",
+  researchBatch: "Batch 2"
+});
+var insufficient = (manufacturer, sourceUrl, sourceTitle, claim, prerequisiteSkills, insufficientReason) => ({
+  earlyRotationEligibility: "INSUFFICIENT_EVIDENCE",
+  safetyEvidenceStatus: "OFFICIAL_REVIEWED",
+  prerequisiteSkills,
+  stretchSkills: [],
+  evidence: official2(manufacturer, sourceUrl, sourceTitle, claim),
+  insufficientReason,
+  researchStatus: "RESEARCHED_INSUFFICIENT",
+  researchBatch: "Batch 2"
+});
+var EARLY_ROTATION_EVIDENCE_BATCH_2 = Object.freeze({
+  "lego-duplo-bath-time-fun-floating-animal-train": ageOnly2("LEGO", "https://www.lego.com/en-us/product/bath-time-fun-floating-animal-train-10965", "Bath Time Fun: Floating Animal Train (DUPLO 10965)", "Official page identifies DUPLO 10965, ages 18 months+, 14 pieces, and toddler motor/imaginative bath play. It confirms safety-standard testing but does not establish an earlier-use window.", { fineMotor: 1, causeEffect: 1 }),
+  "lego-duplo-number-train": ageOnly2("LEGO", "https://www.lego.com/en-us/product/number-train-learn-to-count-10954", "Number Train \u2013 Learn To Count (DUPLO 10954)", "Official building-instructions record identifies DUPLO 10954 as 18 months+, 23 pieces. The exact-product review does not establish an earlier-use window.", { fineMotor: 1, matching: 1, earlyMath: 1 }),
+  "lego-duplo-animal-train": ageOnly2("LEGO", "https://www.lego.com/en-us/product/animal-train-10955", "Animal Train (DUPLO 10955)", "Official page identifies DUPLO 10955, ages 18 months+, 15 pieces, with toddler-sized build/play components. It does not establish an earlier-use window.", { fineMotor: 1, matching: 1, visualSpatial: 1 }),
+  "lego-duplo-3in1-construction-vehicles-10475": ageOnly2("LEGO", "https://www.lego.com/en-us/product/3-in-1-construction-vehicles-10475", "3 in 1 Construction Vehicles (DUPLO 10475)", "Official page identifies DUPLO 10475, ages 2+, 22 bricks, and construction/role-play problem solving. It does not establish an earlier-use window.", { fineMotor: 2, problemSolving: 2, pretendPlay: 1 }),
+  "smartgames-bunny-boo": ageOnly2("SmartGames", "https://www.smartgames.eu/fr/node/143", "Bunny Boo (SG 037)", "Official product page identifies Bunny Boo as a 2\u20135 preschool game with 60 challenges, spatial insight, logic and problem solving. It does not establish an earlier-use window.", { visualSpatial: 2, problemSolving: 2, attentionPersistence: 2 }),
+  "smartgames-peek-a-zoo": ageOnly2("SmartGames", "https://www.smartgames.eu/uk/one-player-games/peek-zoo", "Peek-A-Zoo", "Official product page identifies Peek-A-Zoo as age 2+ with 48 stacking challenges and language, logic, problem solving and spatial insight. It does not establish an earlier-use window.", { visualSpatial: 2, problemSolving: 2, language: 1 }),
+  "smartgames-day-night": early2("SmartGames", "https://www.smartgames.eu/nl/node/785", "Day & Night", "Official SmartGames educational page identifies Day & Night basic play from 18 months: young children slide cubes over the sticks for fine-motor practice; challenge-book play is separately described for age 3+. The catalog 24-month recommendation can therefore use the bounded 3-month early window only when prerequisites are met.", { fineMotor: 1, visualSpatial: 1, attentionPersistence: 1 }),
+  "hape-lock-learn-playboard": hard2("Hape", "https://toys.hape.com/products/hape-learning-board", "Lock & Learn Playboard (E1111)", "Official Hape page identifies E1111, suitable 3Y+, and expressly warns: \u201CChoking Hazard - Small parts. Not for children under 3 yrs.\u201D", { fineMotor: 2, problemSolving: 2, attentionPersistence: 2 }),
+  "lego-duplo-fire-truck-hose-firefighter-10473": ageOnly2("LEGO", "https://www.lego.com/en-us/product/fire-truck-with-hose-and-firefighter-10473", "Fire Truck with Hose and Firefighter (DUPLO 10473)", "Official page identifies DUPLO 10473, ages 2+, 28 pieces, and firefighter role play/fine-motor construction. It does not establish an earlier-use window.", { fineMotor: 2, pretendPlay: 1, problemSolving: 1 }),
+  "lego-duplo-steam-train": ageOnly2("LEGO", "https://www.lego.com/en-us/product/steam-train-10874", "Steam Train (DUPLO 10874)", "Official page identifies DUPLO 10874 as a 2\u20135 preschool train set with a Push & Go motor, action bricks and role play. It does not establish an earlier-use window.", { fineMotor: 2, causeEffect: 2, pretendPlay: 1 }),
+  "lego-duplo-cargo-train": ageOnly2("LEGO", "https://www.lego.com/en-ee/product/cargo-train-10875", "Cargo Train (DUPLO 10875)", "Official LEGO product page identifies DUPLO 10875 as the exact Cargo Train with Push & Go motor, action bricks, track and toddler role play. It does not establish an earlier-use window.", { fineMotor: 2, causeEffect: 2, pretendPlay: 1 }),
+  "md-take-along-shape-sorter": early2("Melissa & Doug", "https://www.melissaanddoug.com/products/take-along-shape-sorter-baby-and-toddler-toy", "K\u2019s Kids Take-Along Shape Sorter (9185)", "Official page identifies item 9185 as a 9 months+ baby/toddler shape sorter with graspable textured blocks, sensory play and matching. The catalog 18-month recommendation can therefore use the bounded 3-month early window only when prerequisites are met.", { fineMotor: 1, matching: 1, visualSpatial: 1 }),
+  "md-match-roll-shape-sorter": ageOnly2("Melissa & Doug", "https://www.melissaanddoug.com/products/match-roll-shape-sorter", "Match & Roll Shape Sorter (9041)", "Official page identifies item 9041 as a 1\u20133 years shape sorter for colour/shape recognition, sorting, problem solving and manual dexterity. It does not establish an earlier-use window.", { fineMotor: 1, matching: 1, sorting: 1, visualSpatial: 1 }),
+  "md-take-along-sorting-barn": ageOnly2("Melissa & Doug", "https://www.melissaanddoug.com/products/take-along-sorting-barn", "Take-Along Sorting Barn (30149)", "Official page identifies item 30149 as a 2\u20135 years set with ten chunky animal pieces for fine motor, matching, sorting and pretend play. It does not establish an earlier-use window.", { fineMotor: 2, matching: 2, sorting: 2, pretendPlay: 1 }),
+  "smartgames-three-little-piggies-deluxe": hard2("SmartGames", "https://smartgames.eu/uk/one-player-games/three-little-piggies-deluxe-0", "Three Little Piggies Deluxe (SG 023)", "Official page identifies the exact 3\u20136 years game and gives a Small parts warning. The 36-month hard floor is distinct from its 3\u20136 years developmental recommendation.", { visualSpatial: 3, problemSolving: 3, attentionPersistence: 3 }),
+  "smartgames-smart-farmer": hard2("SmartGames", "https://www.smartgames.eu/uk/one-player-games/smart-farmer", "Smart Farmer", "Official page identifies the exact 4+ preschool game and gives a Small parts warning. The 36-month hard floor is distinct from its 4+ developmental recommendation.", { visualSpatial: 3, problemSolving: 3, attentionPersistence: 3 }),
+  "hape-country-critters-play-cube": insufficient("Hape", "https://toys.hape.com/products/country-critters-play-cube", "Country Critters Wooden Activity Cube (E1810)", "Official page identifies E1810 as 12 months+ and says that unassembled it contains potentially hazardous points and small parts and requires adult assembly.", { fineMotor: 1, matching: 1, sorting: 1, problemSolving: 1 }, "The official source does not distinguish an in-use child safety gate from the assembly warning, and does not support an earlier-use recommendation. Keep fail-closed pending clearer product-specific safety evidence."),
+  "plantoys-nuts-bolts": ageOnly2("PlanToys", "https://www.plantoys.com/products/nuts-bolts", "Nuts & Bolts (5455)", "Official page identifies SKU 5455, age 2+, and twisting/sorting construction play supporting fine motor skill and concentration. It does not establish an earlier-use window.", { fineMotor: 2, toolUse: 2, visualSpatial: 1, attentionPersistence: 1 }),
+  "plantoys-sort-count-cups": insufficient("PlanToys", "https://www.plantoys.com/products/sort-count-cups", "Sort & Count Cups (5360)", "Official page identifies Sort & Count Cups SKU 5360, age 18M+, with five cups and 25 tokens for sorting/counting.", { fineMotor: 1, sorting: 1, matching: 1, earlyMath: 1 }, "The generic Catalog canonical has no SKU and official PlanToys pages also identify a distinct Orchard variant, SKU 5475. Do not apply SKU 5360 evidence to the unspecific canonical until variant identity is resolved."),
+  "plantoys-40-unit-blocks": insufficient("PlanToys", "https://www.plantoys.com/products/40-unit-blocks-pastel-series", "40 Unit Blocks \u2013 Pastel Series (5507)", "Official page identifies the pastel 40 Unit Blocks SKU 5507, age 18M+, with 40 blocks in six shapes for open-ended play.", { fineMotor: 1, visualSpatial: 1, attentionPersistence: 1 }, "The generic Catalog canonical has no SKU; official PlanToys records distinguish Pastel 5507, Natural 5512 and Colorful 5513 variants. Do not apply one variant\u2019s evidence to the unspecific canonical until variant identity is resolved."),
+  "lr-learning-avocados": ageOnly2("Learning Resources", "https://www.learningresources.com/item-learn-a-lot-avocados", "Learn-A-Lot Avocados (LER6806)", "Official page identifies LER6806, ages 18 months+, and its pop-apart avocados for fine motor, colour matching and social-emotional play. It does not establish an earlier-use window.", { fineMotor: 1, matching: 1, sorting: 1 }),
+  "lr-spike-rainbow-hedgehog": ageOnly2("Learning Resources", "https://www.learningresources.com/item-spike-rainbow-stackers", "Spike the Fine Motor Hedgehog Rainbow Stacker (LER9105)", "Official page identifies LER9105, ages 18 months+, six pieces, and toddler fine-motor, sensory, shape, colour and number play. It does not establish an earlier-use window.", { fineMotor: 1, matching: 1, sorting: 1 }),
+  "brio-magnetic-blocks": ageOnly2("BRIO", "https://www.brio.de/de-AT/produkte/baby-und-vorschule/lernspielzeug/magnetische-holzbausteine-63043500", "Magnetic Wooden Blocks (30435)", "Official BRIO page identifies product 30435, age 12 months+, ten pieces and integrated magnets for stacking, sorting and matching. It does not establish an earlier-use window.", { fineMotor: 1, matching: 1, visualSpatial: 1 }),
+  "hape-rainbow-pounder": ageOnly2("Hape", "https://toys.hape.com/products/rainbow-pounder", "Rainbow Pounder (E0506)", "Official Hape page identifies E0506, suitable 12M+, with a bench, eight pegs and hammer for fine motor, colour and number play. It does not establish an earlier-use window.", { fineMotor: 1, causeEffect: 1, matching: 1 }),
+  "hape-baby-drum": ageOnly2("Hape", "https://toys.hape.com/products/baby-drum", "Baby Drum (E0333)", "Official Hape page identifies E0333, suitable 6M+, and its music, light and movement play for hand-eye and ear-to-hand coordination. It does not establish an earlier-use window.", { fineMotor: 1, causeEffect: 1 }),
+  "hape-beaded-raindrops": ageOnly2("Hape", "https://toys.hape.com/products/beaded-raindrops-blue", "Beaded Raindrops (E0328B)", "Official Hape page identifies E0328B, suitable 0M+, with round edges stated safe for newborns and sensory/grasp play. It does not establish a developmental early-use window.", { fineMotor: 1, causeEffect: 1 }),
+  "melissa-doug-farm-chunky-puzzle": ageOnly2("Melissa & Doug", "https://www.melissaanddoug.com/products/farm-chunky-puzzle-8-pieces", "Farm Animals Chunky Puzzle \u2013 8 Pieces (3723)", "Official page identifies item 3723, age 2+, with eight easy-grasp wooden farm pieces for matching, fine motor and imaginative play. It does not establish an earlier-use window.", { fineMotor: 1, matching: 1, visualSpatial: 1, pretendPlay: 1 }),
+  "melissa-doug-pound-roll-tower": ageOnly2("Melissa & Doug", "https://www.melissaanddoug.com/products/pound-roll-tower", "Pound & Roll Tower", "Official page identifies the exact 2\u20135 years Pound & Roll Tower with four balls and wooden hammer for colour, size and shape play. It does not establish an earlier-use window.", { fineMotor: 2, causeEffect: 1, matching: 1 }),
+  "melissa-doug-wooden-doorbell-house": ageOnly2("Melissa & Doug", "https://www.melissaanddoug.com/products/wooden-doorbell-house", "Wooden Doorbell House (12505)", "Official page identifies item 12505, age 3+, with four locks, keys, doorbells and play people for fine motor and pretend play. It does not establish an earlier-use window.", { fineMotor: 2, problemSolving: 2, pretendPlay: 1 }),
+  "lego-duplo-wild-animals-africa": ageOnly2("LEGO", "https://www.lego.com/en-us/product/wild-animals-of-africa-10971", "Wild Animals of Africa (DUPLO 10971)", "Official page identifies DUPLO 10971, age 2+, with toddler-friendly elephant and giraffe figures for fine motor, communication and role play. It does not establish an earlier-use window.", { fineMotor: 2, language: 1, pretendPlay: 1 }),
+  "lego-duplo-disney-mickey-minnie-birthday": ageOnly2("LEGO", "https://www.lego.com/en-us/product/mickey-minnie-birthday-train-10941", "Mickey & Minnie Birthday Train (DUPLO 10941)", "Official page identifies DUPLO Disney 10941, age 2+, 22 pieces and number-brick/fine-motor/social role play. It does not establish an earlier-use window.", { fineMotor: 2, earlyMath: 1, pretendPlay: 1 }),
+  "hape-green-thumbs-activity-cube": ageOnly2("Hape", "https://toys.hape.com/products/hape-green-thumbs-activity-cube", "Green Thumbs Activity Cube (E0527)", "Official Hape page identifies E0527, suitable 12M+, with bead maze, gears, shape sorter, doors and sensory carrots for fine motor, matching, sorting and cause-effect play. It does not establish an earlier-use window.", { fineMotor: 1, matching: 1, sorting: 1, causeEffect: 1 }),
+  "lego-duplo-town-bus-ride": ageOnly2("LEGO", "https://www.lego.com/en-us/product/the-bus-ride-10988", "The Bus Ride (DUPLO 10988)", "Official LEGO page identifies DUPLO 10988, ages 2+, as a school-bus role-play set that supports fine-motor and social skills. It does not establish an earlier-use window.", { fineMotor: 2, pretendPlay: 1, language: 1 }),
+  "lego-duplo-town-family-house": ageOnly2("LEGO", "https://www.lego.com/en-us/product/3in1-family-house-10994", "3in1 Family House (DUPLO 10994)", "Official LEGO page identifies DUPLO 10994, ages 2+, seven figures, and family role-play/building activities. It does not establish an earlier-use window.", { fineMotor: 2, pretendPlay: 2, language: 1, problemSolving: 1 }),
+  "lego-duplo-organic-garden": ageOnly2("LEGO", "https://www.lego.com/en-us/product/organic-garden-10984", "My First Organic Garden (DUPLO 10984)", "Official LEGO page identifies DUPLO 10984, ages 18 months+, 43 pieces, and fine-motor, nature and imaginative play. It does not establish an earlier-use window.", { fineMotor: 1, pretendPlay: 1, language: 1, matching: 1 }),
+  "lego-duplo-heart-box": ageOnly2("LEGO", "https://www.lego.com/en-us/product/heart-box-10909", "DUPLO Classic Heart Box (10909)", "Official LEGO page identifies DUPLO 10909, ages 18 months+, 80 toddler-friendly bricks and open-ended creative building. It does not establish an earlier-use window.", { fineMotor: 1, visualSpatial: 1, pretendPlay: 1 }),
+  "md-jumbo-wooden-stacking-train": ageOnly2("Melissa & Doug", "https://www.melissaanddoug.com/products/jumbo-wooden-stacking-train-classic", "Jumbo Wooden Stacking Train \u2013 Classic (30544)", "Official Melissa & Doug page identifies item 30544, ages 2\u20135, with 14 stackable blocks on three linked rolling train cars for stacking, sorting, building and counting. It does not establish an earlier-use window.", { fineMotor: 2, visualSpatial: 2, sorting: 1, earlyMath: 1 }),
+  "md-jumbo-knob-farm": ageOnly2("Melissa & Doug", "https://www.melissaanddoug.com/products/large-farm-jumbo-knob-puzzle-8-pieces", "Farm Friends Jumbo Peg Puzzle \u2013 8 Pieces (3391)", "Official Melissa & Doug page identifies item 3391, ages 12 months\u20132 years, with extra-thick wooden farm pieces and jumbo knobs for matching and fine-motor play. It does not establish an earlier-use window.", { fineMotor: 1, matching: 1, visualSpatial: 1 }),
+  "md-counting-shape-stacker": ageOnly2("Melissa & Doug", "https://www.melissaanddoug.com/products/counting-shape-stacker", "Counting Shape Stacker (9275)", "Official Melissa & Doug page identifies item 9275, ages 2+, with 55 shape pieces and 10 number tiles for stacking, sorting, number and shape recognition. It does not establish an earlier-use window.", { fineMotor: 2, matching: 2, sorting: 2, earlyMath: 2, visualSpatial: 1 }),
+  "md-monster-bowling": ageOnly2("Melissa & Doug", "https://www.melissaanddoug.com/products/monster-bowling", "Monster Bowling (2210)", "Official Melissa & Doug page identifies item 2210, ages 2+, as an eight-piece soft bowling set with six weighted plush pins and a soft ball. It does not establish an earlier-use window.", { grossMotor: 1, causeEffect: 1, attentionPersistence: 1 })
+});
+function earlyRotationEvidenceBatch2For(canonicalKey2) {
+  return EARLY_ROTATION_EVIDENCE_BATCH_2[String(canonicalKey2 || "")] || null;
+}
+
 // src/domain/early-rotation-baseline.js
 var EARLY_ROTATION_ELIGIBILITY = Object.freeze(["EARLY_ROTATION_ALLOWED", "AGE_RECOMMENDED_ONLY", "HARD_SAFETY_GATE", "INSUFFICIENT_EVIDENCE"]);
 var HARD = /* @__PURE__ */ new Set(["SMALL_PARTS_GATE", "GROSS_MOTOR_GATE", "OTHER_HARD_GATE"]);
@@ -3304,7 +3413,7 @@ function withEarlyRotationBaseline(toy = {}) {
   const mechanisms = (toy.playMechanics || []).filter(Boolean);
   const mechanism = mechanisms[0] || fallbackMechanism(toy);
   const safetyStatus = catalogSafetyStatus(toy);
-  const overlay = earlyRotationEvidenceFor(toy.canonicalKey);
+  const overlay = earlyRotationEvidenceBatch2For(toy.canonicalKey) || earlyRotationEvidenceFor(toy.canonicalKey);
   const existing = { ...toy.userMetadata?.developmentFit || {}, ...overlay || {} };
   const evidenceInfo = evidence(toy);
   const inferred = HARD.has(safetyStatus) ? "HARD_SAFETY_GATE" : safetyStatus === "VERIFIED_NO_EXTRA_GATE" ? "EARLY_ROTATION_ALLOWED" : safetyStatus === "NO_DOCUMENTED_HARD_GATE" ? "AGE_RECOMMENDED_ONLY" : "INSUFFICIENT_EVIDENCE";
