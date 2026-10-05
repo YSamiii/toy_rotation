@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import { challengeLabelKey } from '../src/domain/development-presentation.js';
+import { DICTIONARY } from '../src/ui/i18n.js';
+
+let checks=0; const equal=(actual,expected,message)=>{assert.equal(actual,expected,message);checks++}; const ok=(value,message)=>{assert.ok(value,message);checks++};
+equal(challengeLabelKey({challengeLevel:1}),'developmentChallenge.1','level 1 has a simple label key');
+equal(challengeLabelKey({challengeLevel:2}),'developmentChallenge.2','level 2 has a simple label key');
+equal(challengeLabelKey({challengeLevel:3}),'developmentChallenge.3','level 3 has a simple label key');
+equal(challengeLabelKey({challengeLevel:4}),'developmentChallenge.4','level 4 has a simple label key');
+equal(challengeLabelKey({challengeLevel:5}),'developmentChallenge.5','level 5 has a simple label key');
+equal(DICTIONARY.en.developmentChallenge[3],'Moderate','English challenge label is readable');
+equal(DICTIONARY.zh.developmentChallenge[4],'进阶','Chinese challenge label is readable');
+ok(DICTIONARY.en.mechanic.shape_sorting.includes('Shape'),'inferred mechanism has a readable English label');
+ok(DICTIONARY.zh.mechanic.track_vehicle.includes('车辆'),'inferred mechanism has a readable Chinese label');
+const main=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../src/main.js',import.meta.url),'utf8'));
+const css=await import('node:fs/promises').then(fs=>fs.readFile(new URL('../src/ui/app.css',import.meta.url),'utf8'));
+ok(main.includes('developmentMechanics(toy).slice(0,2)'),'fallback and explicit mechanisms share compact card presentation');
+ok(main.includes("t(challengeLabelKey(toy))") && !main.slice(main.indexOf('function renderCatalogCard'),main.indexOf('function catalogFilterLabel')).includes('challengeLevel}'),'cards show labels rather than numeric internal challenge levels');
+ok(css.includes('.card { grid-template-columns: 70px minmax(0, 1fr); }') && css.includes('.chips,\r\n.actions') || css.includes('.chips,\n.actions'),'compact cards retain mobile wrapping behavior');
+console.log(`catalog development display v0.11.6: PASS (${checks} assertions)`);

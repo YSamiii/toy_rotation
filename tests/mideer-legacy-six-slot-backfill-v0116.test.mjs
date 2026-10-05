@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import { normalizeCatalogToy, normalizeToy } from '../src/data/schema.js';
+import { backfillKnownMideerLegacySixSlot, reconcileSplitSetChildren } from '../src/domain/set-service.js';
+
+let checks=0; const equal=(actual,expected,message)=>{assert.equal(actual,expected,message);checks++}; const ok=(value,message)=>{assert.ok(value,message);checks++};
+const definition=normalizeCatalogToy({id:'mideer-my-first-puzzle',canonicalKey:'mideer-my-first-puzzle',brand:'Mideer',productName:'My First Puzzle Set',categoryCode:'puzzles_matching',skillCodes:['fine_motor'],isSet:true,rotationRule:'split',childCount:6});
+const definitions=new Map([[definition.canonicalKey,definition]]);
+const parent=normalizeToy({id:'parent',canonicalKey:'mideer-my-first-puzzle',brand:'Mideer',productName:'My First Puzzle Set',categoryCode:'puzzles_matching',skillCodes:['fine_motor'],set:{kind:'whole',childIds:['legacy-child']}});
+const child=normalizeToy({id:'legacy-child',canonicalKey:'mideer-my-first-puzzle:part-1',brand:'Mideer',productName:'Old first puzzle',categoryCode:'puzzles_matching',skillCodes:['fine_motor'],set:{kind:'child',parentId:'parent',parentCanonicalKey:'mideer-my-first-puzzle',partIndex:1}});
+const state={toys:[parent,child]};
+const promoted=backfillKnownMideerLegacySixSlot(state,definitions);
+equal(promoted.promoted,1,'only the evidenced fixed legacy parent is promoted');
+equal(parent.set.rotationMode,'split','legacy parent becomes a split parent');
+const result=reconcileSplitSetChildren(state,definitions);
+equal(result.added,5,'only the five missing puzzle slots are added');
+equal(state.toys.filter(toy=>toy.set?.parentId==='parent').length,6,'result has exactly six children');
+equal(state.toys.find(toy=>toy.id==='legacy-child').id,'legacy-child','existing first child is retained rather than replaced');
+ok(state.toys.filter(toy=>toy.set?.parentId==='parent').every(toy=>toy.set.parentCanonicalKey==='mideer-my-first-puzzle'),'every child stays linked to the exact Mideer parent');
+const noEvidenceParent=normalizeToy({id:'no-evidence',canonicalKey:'mideer-my-first-puzzle',brand:'Mideer',productName:'My First Puzzle Set',categoryCode:'puzzles_matching',skillCodes:['fine_motor'],set:{kind:'whole'}});
+const noEvidenceState={toys:[noEvidenceParent]};
+equal(backfillKnownMideerLegacySixSlot(noEvidenceState,definitions).promoted,0,'catalog data alone never creates a user ownership split');
+equal(noEvidenceState.toys.length,1,'non-evidenced whole set remains untouched');
+console.log(`mideer legacy six-slot backfill v0.11.6: PASS (${checks} assertions)`);

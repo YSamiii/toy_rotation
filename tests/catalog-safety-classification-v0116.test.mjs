@@ -1,0 +1,42 @@
+import { strict as assert } from 'node:assert';
+import { catalogSafetyStatus, withCatalogSafety } from '../src/domain/catalog-safety.js';
+import { buildCatalogSafetyAudit } from '../src/features/catalog-safety-audit.js';
+import { hardSafetyEligible, selectRotation } from '../src/domain/rotation-engine.js';
+
+const evidence = { safetySource:'https://example.org/official/product', safetyVerifiedAt:'2026-09-23', evidenceNote:'Official product warning reviewed.' };
+const row = (key, safety = {}) => ({ id:key, canonicalKey:key, brand:'Example', productName:key, minAgeMonths:36, userMetadata:{ safety } });
+const noExtra = row('verified-safe', { ...evidence, ageSafetyStatus:'VERIFIED_NO_EXTRA_GATE', smallParts:false, requiresStandingStability:false });
+const smallParts = row('small-parts', { ...evidence, ageSafetyStatus:'SMALL_PARTS_GATE', smallParts:true, hardMinAgeMonths:36 });
+const balance = row('balance', { ...evidence, ageSafetyStatus:'GROSS_MOTOR_GATE', requiresStandingStability:true, requiredGrossMotorLevel:3 });
+const unknown = row('unknown');
+
+assert.equal(hardSafetyEligible(noExtra,24,{ balance:{currentLevel:4} }),true,'A: verified developmental age may stretch');
+assert.equal(hardSafetyEligible(smallParts,24,{ balance:{currentLevel:5} }),false,'B: small parts hard gate');
+assert.equal(hardSafetyEligible(balance,24,{ balance:{currentLevel:2} }),false,'C: gross motor hard gate');
+assert.equal(hardSafetyEligible(balance,24,{ balance:{currentLevel:3} }),true,'C: required stability satisfied');
+assert.equal(hardSafetyEligible(unknown,24),false,'D: unknown below recommended age remains blocked');
+assert.equal(hardSafetyEligible(unknown,36),true,'E: unknown at recommended age is not newly blocked');
+const pick = (toy, age, profile = {}) => selectRotation({ toys:[{ ...toy, id:toy.canonicalKey, status:'stored', playMechanics:['shape_sorting'], challengeLevel:3 }], childAgeMonths:age, childDevelopmentProfile:profile, size:1 }).selected.length;
+assert.equal(pick(noExtra,24,{ shape_sorting:{currentLevel:3} }),1,'A: verified toy reaches rotation selection');
+assert.equal(pick(smallParts,24,{ shape_sorting:{currentLevel:5} }),0,'B: unsafe toy cannot reach rotation');
+assert.equal(pick(unknown,24,{ shape_sorting:{currentLevel:5} }),0,'D: unknown below guidance cannot reach rotation');
+assert.equal(pick(unknown,36,{ shape_sorting:{currentLevel:3} }),1,'E: unknown at guidance can reach rotation');
+assert.equal(catalogSafetyStatus(row('bad-source',{ ageSafetyStatus:'VERIFIED_NO_EXTRA_GATE', safetyVerifiedAt:'2026-09-23' })), 'UNKNOWN','incomplete evidence cannot verify');
+
+const owned = { id:'private-owned-id', canonicalKey:'verified-safe', brand:'Private', productName:'Private name', notes:'private note', imageRef:{kind:'personal',data:'private photo'}, userMetadata:{ customProductName:true } };
+const wish = { id:'private-wish-id', canonicalKey:'small-parts', notes:'private wish note' };
+const state = { toys:[owned], wishlist:[wish] };
+const catalog = { active:[noExtra,smallParts,balance,unknown], resolve:ref => [noExtra,smallParts,balance,unknown].find(item => item.canonicalKey === ref.canonicalKey) };
+const projected = withCatalogSafety(owned, noExtra);
+assert.notEqual(projected,owned,'catalog safety projection is a new object');
+assert.equal(projected.userMetadata.customProductName,true,'F: user metadata preserved');
+assert.equal(owned.userMetadata.safety,undefined,'F: persisted owner data unchanged');
+const audit = buildCatalogSafetyAudit({ state,catalog,build:{buildId:'test'} });
+assert.equal(audit.owned.mappedToCatalog,1,'F: owned mapping retained');
+assert.equal(audit.wishlist.mappedToCatalog,1,'F: wishlist mapping retained');
+assert.equal(audit.owned.items[0].ageSafetyStatus,'VERIFIED_NO_EXTRA_GATE','G: audit shows safety status');
+assert.equal(audit.wishlist.items[0].ageSafetyStatus,'SMALL_PARTS_GATE','G: wishlist status shown');
+assert.equal(audit.rotationCandidates.mappedToCatalog,1,'rotation inventory included');
+const text = JSON.stringify(audit);
+for (const secret of ['private-owned-id','private-wish-id','private note','private photo','private wish note']) assert.equal(text.includes(secret),false,`no private field ${secret}`);
+console.log('catalog safety classification v0.11.6: PASS');

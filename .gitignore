@@ -1,0 +1,34 @@
+# Dependencies and local build output
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+
+# QA artifacts, staging, reports, and local diagnostics
+reports/
+_verification/
+verification/
+*-Staging/
+*-Extracted*/
+*.zip
+*.log
+
+# Local/browser state and private owner exports
+.env
+.env.*
+!.env.example
+*.local
+localStorage*/
+browser-profile*/
+*owner*audit*.json
+*image-audit*.json
+*safety-audit*.json
+*diagnostic*.json
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

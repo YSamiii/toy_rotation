@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { imageCoverage } from '../src/domain/catalog-image-usability.js';
+let checks=0; const equal=(actual,expected,message)=>{assert.equal(actual,expected,message);checks++};
+const packaged={kind:'packaged',path:'catalog-assets/cherrypick.jpg',verificationStatus:'verified_real',assetState:'verified_packaged',mimeType:'image/jpeg',contentHash:'sha256:abc'};
+const remote={kind:'remote',url:'https://cdn.example.test/10473.jpg',verificationStatus:'verified_real'};
+const catalog=[{key:'playwall',canonicalKey:'playwall',brand:'Cherry-Pick',variantId:'44481003192508',imageRef:packaged},{key:'firetruck',canonicalKey:'firetruck',brand:'LEGO / DUPLO',setNumber:'10473',imageRef:remote},{key:'placeholder',canonicalKey:'placeholder',brand:'Learning Resources',imageRef:{kind:'generated',label:'Missing'}}];
+const wishlist=[{canonicalKey:'playwall',catalogSnapshot:{canonicalKey:'playwall',imageRef:{kind:'generated'}}},{canonicalKey:'firetruck',catalogSnapshot:{canonicalKey:'firetruck'}},{canonicalKey:'placeholder',catalogSnapshot:{canonicalKey:'placeholder'}}];
+const coverage=imageCoverage(wishlist,catalog);
+equal(coverage.total,3,'exact wishlist catalog mappings form the denominator'); equal(coverage.usable,2,'current packaged and remote catalog images inherit into wishlist'); equal(coverage.placeholder,1,'placeholder snapshot remains non-usable'); equal(coverage.coverage,2/3,'wishlist coverage is based on usable current catalog images');
+equal(catalog[0].imageRef.path,'catalog-assets/cherrypick.jpg','variant-safe packaged ref remains attached to exact canonical item');
+const afterRemoval=imageCoverage(wishlist.slice(1),catalog); equal(afterRemoval.total,2,'wishlist removal changes only wishlist denominator'); equal(catalog[0].imageRef.kind,'packaged','wishlist removal does not delete catalog image');
+console.log(`catalog wishlist image coverage v0.11.6: PASS (${checks} assertions)`);

@@ -1,5 +1,7 @@
 import { assess } from './substitution-engine.js';
 import { developmentFit } from './development-fit.js';
+import { catalogSafetyStatus, validCrossAgeApproval } from './catalog-safety.js';
+import { prerequisitesSatisfied } from './early-rotation-baseline.js';
 
 const GENERIC_MECHANICS = new Set(['fine_motor_general', 'construction_general', 'pretend_play_general', 'sensory_general']);
 
@@ -12,7 +14,7 @@ export function generateRotation(input) {
 
 export function selectRotation({ toys = [], history = [], childAgeMonths, size = 6, now = Date.now(), childDevelopmentProfile = {}, developmentFeedbackHistory = [] }) {
   const requestedRotationCount = Math.max(1, Number(size) || 6);
-  const classified = classifyCandidates(toys, childAgeMonths);
+  const classified = classifyCandidates(toys, childAgeMonths, childDevelopmentProfile);
   const candidates = classified.eligible
     .map((toy, index) => ({ toy, ...baseScore(toy, childAgeMonths, now, history, childDevelopmentProfile, developmentFeedbackHistory), index }))
     .sort((a, b) => b.score - a.score || a.toy.productName.localeCompare(b.toy.productName));
@@ -20,12 +22,20 @@ export function selectRotation({ toys = [], history = [], childAgeMonths, size =
   const selectedCandidateScores = [];
   const relations = new Map();
   const diversity = { brandPenaltyApplied:0, groupPenaltyApplied:0, recencyPenaltyApplied:0 };
+  const stretchTarget = requestedRotationCount >= 3 ? Math.max(1, Math.round(requestedRotationCount * 0.25)) : 0;
+  const stretchCap = Math.max(1, Math.ceil(requestedRotationCount * 0.30));
 
   while (selected.length < requestedRotationCount && candidates.length) {
-    const next = candidates
-      .map((entry, candidateIndex) => {
+    const stretchCount = selectedCandidateScores.filter(item => item.developmentKind === 'good_challenge').length;
+    const remaining = requestedRotationCount - selected.length;
+    const availableStretch = candidates.filter(entry => entry.development.kind === 'good_challenge');
+    const availableOther = candidates.filter(entry => entry.development.kind !== 'good_challenge');
+    const forceStretch = stretchCount < stretchTarget && remaining <= stretchTarget - stretchCount && availableStretch.length;
+    const allowed = forceStretch ? availableStretch : stretchCount >= stretchCap && availableOther.length ? availableOther : candidates;
+    const next = allowed
+      .map(entry => {
         const adjustment = diversityAdjustment(entry.toy, selected, history, relations);
-        return { entry, candidateIndex, adjustment, adjusted: entry.score + adjustment.value };
+        return { entry, candidateIndex:candidates.indexOf(entry), adjustment, adjusted: entry.score + adjustment.value };
       })
       .sort((a, b) => b.adjusted - a.adjusted || a.entry.toy.productName.localeCompare(b.entry.toy.productName))[0];
     selected.push(next.entry.toy);
@@ -38,6 +48,7 @@ export function selectRotation({ toys = [], history = [], childAgeMonths, size =
       groupPenalty:next.adjustment.groupPenalty,
       recencyPenalty:next.entry.recencyPenalty,
       developmentFit:next.entry.development.score,
+      developmentKind:next.entry.development.kind,
       challengeLevel:next.entry.development.challengeLevel,
       progressionLevel:next.entry.development.progressionLevel,
       finalScore:next.adjusted
@@ -71,6 +82,8 @@ export function selectRotation({ toys = [], history = [], childAgeMonths, size =
       groupDiversityPenaltyApplied:diversity.groupPenaltyApplied,
       recencyPenaltyApplied:diversity.recencyPenaltyApplied,
       selectedCandidateScores,
+      stretchTarget,
+      selectedStretchCount:selectedCandidateScores.filter(item => item.developmentKind === 'good_challenge').length,
       // Backwards-compatible aliases for older Admin diagnostics and backups.
       requestedCount:requestedRotationCount,
       selectedCount:selectedRotationCount,
@@ -262,7 +275,7 @@ function refreshLatestDiagnostics(state, childAgeMonths) {
 
 function buildCurrentDiagnostics(state, selectedRotationCount, childAgeMonths) {
   const requestedRotationCount = Math.max(1, Number(state.settings?.rotationSize) || 6);
-  const classified = classifyCandidates(state.toys || [], childAgeMonths);
+  const classified = classifyCandidates(state.toys || [], childAgeMonths, state.profile?.developmentProfile || {});
   const permanentCount = classified.customPermanent.length;
   const manualCount = currentShelfCollections(state).manual.length;
   const ordinaryRotationCount = selectedRotationCount + manualCount;
@@ -288,35 +301,83 @@ function rotationIdentityKeys(toy = {}) {
   return [toy.canonicalKey && `canonical:${toy.canonicalKey}`, toy.catalogId && `catalog:${toy.catalogId}`, toy.sku && `sku:${String(toy.sku).toLowerCase()}`].filter(Boolean);
 }
 
-function classifyCandidates(toys, age) {
+function classifyCandidates(toys, age, profile = {}) {
   const result = { eligible:[], customPermanent:[], hiddenOrArchived:0, parentContainers:0, ageRule:0 };
   for (const toy of toys) {
     if (toy.hidden || toy.archived || isRotationPaused(toy)) { result.hiddenOrArchived++; continue; }
     if (toy.set?.kind === 'parent') { result.parentContainers++; continue; }
     if (isUserCustomPermanent(toy)) { result.customPermanent.push(toy); continue; }
     if (toy.manualShelfMode) { result.manualOverride = (result.manualOverride || 0) + 1; continue; }
-    if (toy.minAgeMonths != null && age < toy.minAgeMonths - 3) { result.ageRule++; continue; }
+    if (!hardSafetyEligible(toy, age, profile)) { result.ageRule++; continue; }
     result.eligible.push(toy);
   }
   return result;
 }
 
-function isEligible(toy, age) {
+function isEligible(toy, age, profile = {}) {
   return !toy.hidden && !toy.archived && !isRotationPaused(toy) && toy.set?.kind !== 'parent' && !isUserCustomPermanent(toy)
-    && (toy.minAgeMonths == null || age >= toy.minAgeMonths - 3);
+    && hardSafetyEligible(toy, age, profile);
+}
+
+// Only explicitly documented safety metadata can exclude a toy. Manufacturer
+// recommended min/max ages remain guidance, never a proxy for a choking rule.
+export function rotationAgeEligibility(toy, age, profile = {}) {
+  const safety = toy.userMetadata?.safety || toy.safety || {};
+  const status = catalogSafetyStatus(toy);
+  const result = (eligible, reason) => ({ eligible, reason });
+  if (age == null) {
+    const eligible = !safety.requiresAgeConfirmation && !safety.chokingSmallParts && !safety.smallParts
+      && !safety.requiresStandingStability && safety.minAgeMonths == null
+      && safety.safetyMinAgeMonths == null && safety.hardMinAgeMonths == null
+      && safety.requiredGrossMotorLevel == null && status !== 'GROSS_MOTOR_GATE';
+    return result(eligible, eligible ? 'NORMAL_AGE_ELIGIBLE' : 'UNKNOWN_AGE_BLOCK');
+  }
+  const minimum = Number(safety.hardMinAgeMonths ?? safety.minAgeMonths ?? safety.safetyMinAgeMonths);
+  if (Number.isFinite(minimum) && minimum > 0 && age < minimum) return result(false, 'HARD_SAFETY_BLOCK');
+  if ((safety.chokingSmallParts === true || safety.smallParts === true || status === 'SMALL_PARTS_GATE') && age < 36) return result(false, 'HARD_SAFETY_BLOCK');
+  const requiredBalance = Number(status === 'GROSS_MOTOR_GATE' || safety.requiresStandingStability === true ? safety.requiredGrossMotorLevel ?? 2 : safety.requiredGrossMotorLevel);
+  if (Number.isFinite(requiredBalance) && requiredBalance > 0 && (profile.balance?.manualLevel ?? profile.balance?.currentLevel ?? 1) < requiredBalance) return result(false, 'HARD_SAFETY_BLOCK');
+  if (safety.requiresAgeConfirmation === true) return result(false, 'HARD_SAFETY_BLOCK');
+  if (toy.minAgeMonths != null && age < toy.minAgeMonths) {
+    const policyOrigin=toy.eligibilityPolicyOrigin??toy.userMetadata?.developmentFit?.eligibilityPolicyOrigin;
+    // A Catalog safety review with no documented hard gate is the only parent
+    // challenge path. Explicit official AGE_ONLY evidence remains fail-closed.
+    if (status === 'NO_DOCUMENTED_HARD_GATE' && policyOrigin !== 'OFFICIAL_EVIDENCE') return validCrossAgeApproval(toy, toy.crossAgeApproval)
+      ? result(true, 'PARENT_APPROVED_CROSS_AGE') : result(false, 'PARENT_APPROVAL_REQUIRED');
+    if (toy.earlyRotationEligibility === 'INSUFFICIENT_EVIDENCE') return result(false, 'INSUFFICIENT_EVIDENCE_BLOCK');
+    if (toy.earlyRotationEligibility === 'AGE_RECOMMENDED_ONLY') return result(false, 'AGE_RECOMMENDED_ONLY_BLOCK');
+    if (toy.earlyRotationEligibility === 'EARLY_ROTATION_ALLOWED') {
+      const maximumEarlyMonths=Number(toy.maximumEarlyMonths ?? toy.userMetadata?.developmentFit?.maximumEarlyMonths);
+      if (Number.isFinite(maximumEarlyMonths) && maximumEarlyMonths > 0 && toy.minAgeMonths-age>maximumEarlyMonths) return result(false, 'MAXIMUM_EARLY_WINDOW_BLOCK');
+      return prerequisitesSatisfied(toy,profile)
+      ? result(true, 'EARLY_ROTATION_ALLOWED') : result(false, 'PREREQUISITES_NOT_MET');
+    }
+    if (toy.earlyRotationEligibility === 'HARD_SAFETY_GATE') return result(false, 'HARD_SAFETY_BLOCK');
+    if (status === 'VERIFIED_NO_EXTRA_GATE') return result(true, 'VERIFIED_CROSS_AGE_ALLOWED');
+    if (['SMALL_PARTS_GATE','GROSS_MOTOR_GATE','OTHER_HARD_GATE'].includes(status)) return result(true, 'VERIFIED_CROSS_AGE_ALLOWED');
+    if (status === 'NO_DOCUMENTED_HARD_GATE') return validCrossAgeApproval(toy, toy.crossAgeApproval)
+      ? result(true, 'PARENT_APPROVED_CROSS_AGE') : result(false, 'PARENT_APPROVAL_REQUIRED');
+    return result(false, 'UNKNOWN_AGE_BLOCK');
+  }
+  return result(true, 'NORMAL_AGE_ELIGIBLE');
+}
+
+export function hardSafetyEligible(toy, age, profile = {}) {
+  return rotationAgeEligibility(toy, age, profile).eligible;
 }
 
 function isShelfVisible(toy) { return !toy.hidden && !toy.archived && toy.set?.kind !== 'parent'; }
 
 function baseScore(toy, age, now, history, childDevelopmentProfile, developmentFeedbackHistory) {
-  const ageFit = toy.maxAgeMonths == null || age <= toy.maxAgeMonths + 12 ? 40 : 16;
+  const monthsAhead = age == null || toy.minAgeMonths == null ? 0 : Math.max(0, toy.minAgeMonths - age);
+  const ageGuidance = -Math.min(4, monthsAhead / 6);
   const lastActivated = new Date(toy.lastActivatedAt || 0).getTime();
   const freshness = Math.min(30, Math.max(0, (now - lastActivated) / 86400000 / 3));
   const interest = toy.interest === 'like' ? 12 : toy.interest === 'neutral' ? 4 : toy.interest === 'dislike' ? -18 : 0;
   const rotationValue = toy.rotationValue === 'high' ? 12 : toy.rotationValue === 'low' ? -5 : 0;
   const recency = rotationRecencyAdjustment(toy, history);
   const development = developmentFit(toy, childDevelopmentProfile, developmentFeedbackHistory);
-  return { score:ageFit + freshness + interest + rotationValue + recency.value + development.score, recencyPenalty:recency.penalty, development };
+  return { score:ageGuidance + freshness + interest + rotationValue + recency.value + development.score * 2, recencyPenalty:recency.penalty, development };
 }
 
 function diversityAdjustment(candidate, selected, history, relations) {

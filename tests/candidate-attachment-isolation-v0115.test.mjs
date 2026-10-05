@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import { webcrypto, createHash } from 'node:crypto';
+
+Object.defineProperty(globalThis,'crypto',{value:webcrypto,configurable:true});
+const records=new Map();
+function request(result){const value={result,error:null,onsuccess:null,onerror:null};queueMicrotask(()=>value.onsuccess?.({target:value}));return value;}
+const database={objectStoreNames:{contains:name=>name==='photos'},transaction(){const tx={oncomplete:null,onerror:null,error:null,objectStore(){return {get:key=>request(records.get(key)),put:(value,key)=>{records.set(key,value);queueMicrotask(()=>tx.oncomplete?.());return request(undefined);},delete:key=>{records.delete(key);queueMicrotask(()=>tx.oncomplete?.());return request(undefined);},getAllKeys:()=>request([...records.keys()]),getAll:()=>request([...records.values()])};}};return tx;}};
+Object.defineProperty(globalThis,'indexedDB',{value:{open(){const open={result:database,error:null,onupgradeneeded:null,onsuccess:null,onerror:null};queueMicrotask(()=>open.onsuccess?.({target:open}));return open;}},configurable:true});
+const { ImageRepository }=await import('../src/data/image-repository.js');
+const { upsertLocalCandidate }=await import('../src/features/local-candidate-queue.js');
+const { createCatalogReport }=await import('../src/features/catalog-report-store.js');
+const sha=value=>createHash('sha256').update(value).digest('hex');
+let checks=0;const equal=(actual,expected,message)=>{assert.equal(actual,expected,message);checks++};const ok=(value,message)=>{assert.ok(value,message);checks++};
+const repo=new ImageRepository();const [a,b,c,d]=await Promise.all(['A','B','C','D'].map(value=>repo.savePersonal(`data:image/png;base64,${value}`)));
+ok(new Set([a.id,b.id,c.id,d.id]).size===4,'A/B/C/D refs are unique');
+const state={catalogState:{syncMetadata:{}}};const mutableA={...a};upsertLocalCandidate(state,{candidateId:'candidate-a',imageConsent:true,reviewAttachmentRef:mutableA});upsertLocalCandidate(state,{candidateId:'candidate-b',imageConsent:true,reviewAttachmentRef:b});createCatalogReport(state,{id:'report-c',canonicalKey:'c',attachmentRef:c});state.toys=[{id:'toy-d',imageRef:d}];mutableA.id=b.id;
+const candidateA=state.catalogState.syncMetadata.localCandidates.find(candidate=>candidate.candidateId==='candidate-a');
+const candidateB=state.catalogState.syncMetadata.localCandidates.find(candidate=>candidate.candidateId==='candidate-b');
+equal(candidateA.reviewAttachmentRef.id,a.id,'Candidate A snapshots its ref');
+equal(await repo.resolve(candidateA.reviewAttachmentRef),`data:image/png;base64,A`,'Candidate A resolves A');
+equal(await repo.resolve(candidateB.reviewAttachmentRef),`data:image/png;base64,B`,'Candidate B resolves B');
+equal(await repo.resolve(state.catalogState.catalogReports[0].attachmentRef),`data:image/png;base64,C`,'Report C resolves C');
+equal(await repo.resolve(state.toys[0].imageRef),`data:image/png;base64,D`,'Personal D resolves D');
+const reloaded=new ImageRepository();for(const [ref,value] of [[a,'A'],[b,'B'],[c,'C'],[d,'D']])equal(sha(await reloaded.resolve(ref)),sha(`data:image/png;base64,${value}`),`reload hash ${value}`);
+await repo.removePersonal(d);const afterDelete=new ImageRepository();equal(await afterDelete.resolve(a),`data:image/png;base64,A`,'deleting D does not affect A');equal(await afterDelete.resolve(b),`data:image/png;base64,B`,'deleting D does not affect B');equal(await afterDelete.resolve(c),`data:image/png;base64,C`,'deleting D does not affect C');equal(await afterDelete.resolve(d),null,'missing ref has no nearest/latest fallback');
+const rapid=await Promise.all(Array.from({length:50},(_,index)=>repo.savePersonal(`data:image/png;base64,R${index}`)));ok(new Set(rapid.map(ref=>ref.id)).size===50,'50 rapid saves have unique refs');
+for(const index of [0,17,49])equal(await reloaded.resolve(rapid[index]),`data:image/png;base64,R${index}`,`rapid exact ${index}`);
+equal(records.size,53,'IndexedDB keys stay unique after delete and rapid saves');
+ok(!JSON.stringify(state).includes('data:image/'),'canonical state stores refs, not raw base64');
+assert.equal(checks,20);
+console.log(`candidate attachment isolation v0.11.5: PASS (${checks} assertions)`);

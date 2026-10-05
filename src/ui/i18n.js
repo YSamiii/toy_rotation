@@ -1,4 +1,5 @@
 export const PLAY_MECHANISM_LABELS = Object.freeze({
+  counting_quantity:{en:'Counting / quantities',zh:'计数 / 数量'}, color_pattern:{en:'Colors / patterns',zh:'颜色 / 规律'},
   jigsaw:{en:'Jigsaw puzzle',zh:'拼图'}, matching_sorting:{en:'Matching / sorting',zh:'配对 / 分类'}, maze_logic:{en:'Maze / logic',zh:'迷宫 / 逻辑'}, magnetic_build:{en:'Magnetic construction',zh:'磁力建构'}, blocks_build:{en:'Block construction',zh:'积木建构'}, marble_track:{en:'Marble / track',zh:'滚珠 / 轨道'}, screw_bolt_tool:{en:'Screw / tool play',zh:'螺丝 / 工具操作'}, threading_lacing:{en:'Threading / lacing',zh:'穿线 / 串珠'}, stack_balance:{en:'Stacking / balance',zh:'堆叠 / 平衡'}, drawing_art:{en:'Drawing / art',zh:'绘画 / 美术'}, music_play:{en:'Music play',zh:'音乐操作'}, pretend_role:{en:'Pretend role play',zh:'情境角色扮演'}, care_doll:{en:'Doll care',zh:'娃娃照护'}, cleaning:{en:'Cleaning play',zh:'清洁家务'}, cooking_serving:{en:'Cooking / serving',zh:'烹饪 / 招待'}, medical_care:{en:'Medical care',zh:'医疗照护'}, shop_service:{en:'Shop / service',zh:'商店服务'}, repair_build_role:{en:'Repair / tool role play',zh:'维修 / 工具角色扮演'}, ride_balance:{en:'Ride / balance',zh:'骑乘 / 平衡'}, pull_push_walk:{en:'Pull / push / walk',zh:'推拉 / 学步'}, throw_catch_ball:{en:'Throw / catch',zh:'投掷 / 接球'}, fine_motor_general:{en:'General fine-motor play',zh:'通用精细动作'}, construction_general:{en:'General construction play',zh:'通用建构玩法'}, pretend_play_general:{en:'General pretend play',zh:'通用角色扮演'}, sensory_general:{en:'General sensory play',zh:'通用感官探索'}, magnetic_fishing:{en:'Magnetic fishing',zh:'磁力钓鱼'}, 'activity cube':{en:'Activity cube',zh:'多功能操作盒'}, 'board turntaking':{en:'Board turn-taking',zh:'轮流操作'}, 'cause effect':{en:'Cause and effect',zh:'因果操作'}, 'interlocking blocks':{en:'Interlocking blocks',zh:'拼接积木'}, 'key lock':{en:'Key and lock',zh:'钥匙开锁'}, 'logic puzzle':{en:'Logic puzzle',zh:'逻辑益智'}, matching:{en:'Matching',zh:'配对'}, 'other general':{en:'Other general play',zh:'其他通用玩法'}, 'pretend foodserve':{en:'Food-service pretend play',zh:'餐饮角色扮演'}, 'pretend general':{en:'General pretend play',zh:'综合角色扮演'}, 'pretend repair':{en:'Repair pretend play',zh:'维修工具角色扮演'}
 });
 export function mechanismRegistryKey(value) { return String(value || '').normalize('NFKC').trim().toLowerCase().replace(/[\s_-]+/g, ' '); }
@@ -56,6 +57,8 @@ export const DICTIONARY = {
 };
 Object.assign(DICTIONARY.en, {
   dataAudit:'Data Audit', exportToyImageAudit:'Export Toy Image Audit', exportToyImageAuditHint:'Read-only image status for mapped Toy Library and Wishlist items. No images or private notes are exported.',
+  exportCatalogSafetyAudit:'Export Catalog Safety Audit', exportCatalogSafetyAuditHint:'Read-only Catalog safety review list for your Toy Library, Wishlist, and rotation candidates. No private notes or photos are exported.',
+  exportRawIdentityReferenceAudit:'Export Raw Identity Reference Audit', exportRawIdentityReferenceAuditHint:'Read-only identity reference inventory. No photos, notes, or passwords are exported.',
   developmentFeedbackTitle:'How did this go?', developmentFeedbackPrompt:'How did this go?', developmentFeedback:{too_easy:'Too Easy',just_right:'Just Right',good_challenge:'Good Challenge',too_hard:'Too Hard',not_interested:'Not Interested'},
   recommendationReason:{progression:'A good next challenge for current play.',developmentFit:'Fits current play well.',diversity:'Adds variety to the current shelf.',recency:'A less recent option for this rotation.',familiar:'A familiar option for the current shelf.'},
   developmentChallenge:{1:'Intro',2:'Basic',3:'Moderate',4:'Advanced',5:'Higher Challenge'}, challengeFilter:'Difficulty', ageFilter:'Age', ageCurrent:'Current age', ageLater:'For later', fitCurrentChild:'Fit Current Child', noCatalogResults:'No catalog toys match these filters.', mechanicsReference:'Play mechanism reference',
@@ -63,6 +66,8 @@ Object.assign(DICTIONARY.en, {
 });
 Object.assign(DICTIONARY.zh, {
   dataAudit:'数据审计', exportToyImageAudit:'导出玩具图片审计', exportToyImageAuditHint:'只读导出已映射玩具库和心愿单的图片状态，不导出图片或私密备注。',
+  exportCatalogSafetyAudit:'导出标准库安全审计', exportCatalogSafetyAuditHint:'只读导出玩具库、心愿单及轮换候选的标准库安全核验清单，不包含私人备注或照片。',
+  exportRawIdentityReferenceAudit:'导出原始身份引用审计', exportRawIdentityReferenceAuditHint:'只读导出身份引用结构，不包含照片、备注正文或密码。',
   developmentFeedbackTitle:'这次玩得怎么样？', developmentFeedbackPrompt:'这次玩得怎么样？', developmentFeedback:{too_easy:'太简单',just_right:'刚刚好',good_challenge:'有一点挑战，正合适',too_hard:'太难',not_interested:'没兴趣'},
   recommendationReason:{progression:'适合当前玩法的下一步挑战。',developmentFit:'适合孩子当前的玩法。',diversity:'为当前玩具架增加一些变化。',recency:'这轮优先安排较久没玩的玩具。',familiar:'适合当前玩具架的熟悉选择。'},
   developmentChallenge:{1:'入门',2:'基础',3:'适中',4:'进阶',5:'较高挑战'}, challengeFilter:'难度', ageFilter:'月龄', ageCurrent:'当前适龄', ageLater:'以后再玩', fitCurrentChild:'适合当前孩子', noCatalogResults:'没有符合这些筛选条件的标准玩具。', mechanicsReference:'玩法机制参考',
@@ -77,6 +82,50 @@ Object.assign(DICTIONARY.zh, {
   catalogReportTitle:'报告问题', catalogReportType:'问题类型', catalogReportDescription:'说明', catalogReportAttachment:'可选截图', catalogReportSubmit:'提交报告', catalogReportSubmitted:'报告已提交。', catalogReportAttachmentTooLarge:'附件不能超过 700 KB。', catalogReportFailed:'无法保存报告。',
   catalogReportType:{image_wrong:'图片不正确',duplicate:'重复产品',name_wrong:'名称不正确',brand_wrong:'品牌不正确',sku_wrong:'SKU / 型号不正确',age_wrong:'建议月龄不正确',category_wrong:'玩具类型不正确',skills_wrong:'能力标签不正确',mechanism_wrong:'核心玩法机制不正确',parent_child_wrong:'套装 / 子玩具关系不正确',retired:'已停产或不存在',other:'其他'},
   exportCatalogCountDiagnostic:'导出标准库数量诊断', exportCatalogCountDiagnosticHint:'只读导出标准库来源、合并、可见性与数量状态。'
+});
+Object.assign(DICTIONARY.en, { abilityProfile:{
+  title:'Ability profile', hint:'Set each play skill separately, or leave it on automatic learning.', auto:'Automatic',
+  group:{thinking:'Puzzles and thinking',hands:'Hands and building',exploration:'Play and movement'},
+  level:{intro:'Just starting',basic:'Getting it',fluent:'Confident',challenge:'Ready for a challenge'},
+  mechanism:{puzzle:'Puzzles',matching_sorting:'Matching',shape_sorting:'Shape sorting',counting_quantity:'Counting and quantities',color_pattern:'Colors and patterns',blocks_build:'Blocks and spatial building',screw_bolt_tool:'Screws and tools',threading_lacing:'Threading and lacing',lock_key:'Locks and mechanisms',magnetic_build:'Magnetic play',fine_motor_general:'Grasping and tweezers',cause_effect:'Pounding, tracks and cause-effect',pretend_role:'Pretend play',music_play:'Music interaction',balance:'Balance and movement'}
+}});
+Object.assign(DICTIONARY.zh, { abilityProfile:{
+  title:'能力档案', hint:'每种玩法可单独设置，也可保持自动判断。', auto:'自动判断',
+  group:{thinking:'拼图与思考',hands:'动手与建构',exploration:'情境与运动'},
+  level:{intro:'刚接触',basic:'基本会',fluent:'熟练',challenge:'需要挑战'},
+  mechanism:{puzzle:'拼图',matching_sorting:'配对',shape_sorting:'形状分类',counting_quantity:'计数与数量',color_pattern:'颜色与规律',blocks_build:'积木与空间建构',screw_bolt_tool:'螺丝与工具',threading_lacing:'穿线与串珠',lock_key:'开锁与机关',magnetic_build:'磁力操作',fine_motor_general:'抓握与镊子',cause_effect:'敲击、轨道与因果',pretend_role:'情境扮演',music_play:'音乐互动',balance:'平衡与大运动'}
+}});
+Object.assign(DICTIONARY.en, {
+  crossAgeApprovalExplanation:'Allowing this toy only makes it eligible for a challenge rotation. Ability fit and all other recommendation rules still apply.',
+  crossAgeAllow:'Allow early in rotation', crossAgeDecline:'Not now',
+  crossAgeApproved:'You allowed this toy to participate across the suggested age range.',
+  crossAgeRevoke:'Revoke allowance',
+  challengeEntryTitle:'Challenge toys', challengeSettingsTitle:'Challenge toy settings',
+  challengeEntrySummary:'{count} toys can be considered early · {pending} to decide · {approved} allowed',
+  challengeOpenSettings:'Manage challenge toys',
+  challengeSettingsIntro:'Decide separately for each toy. Allowing one does not guarantee it will be recommended.',
+  challengeAges:'Manufacturer guidance: {recommended} months+ · Child: {current} months',
+  challengeSafetyNote:'No specific hard safety warning was documented in the product information reviewed. This does not mean the manufacturer confirms use at a younger age.',
+  challengeStatusPending:'Can decide', challengeStatusAllowed:'Allowed early in rotation', challengeStatusDeclined:'Not allowed early',
+  challengeBadgeAvailable:'Early challenge available', challengeBadgeAllowed:'Challenge allowed',
+  challengeHardBlocked:'This toy has a documented hard safety restriction and cannot be added early to a challenge rotation.',
+  challengeUnknownBlocked:'There is not enough safety information to support early participation in rotation.'
+});
+Object.assign(DICTIONARY.zh, {
+  crossAgeApprovalExplanation:'开启后，这件玩具只会获得参与挑战型轮换的资格，仍会继续经过能力匹配和其他推荐规则。',
+  crossAgeAllow:'允许提前参与轮换', crossAgeDecline:'暂不允许',
+  crossAgeApproved:'已允许这件玩具跨建议月龄参与轮换。',
+  crossAgeRevoke:'撤销允许',
+  challengeEntryTitle:'挑战玩具', challengeSettingsTitle:'挑战玩具设置',
+  challengeEntrySummary:'{count} 个玩具可由家长决定是否提前参与 · 待决定 {pending} · 已允许 {approved}',
+  challengeOpenSettings:'管理挑战玩具',
+  challengeSettingsIntro:'请逐件决定。允许提前参与并不保证该玩具一定被推荐。',
+  challengeAges:'厂家建议：{recommended} 个月+ · 当前月龄：{current} 个月',
+  challengeSafetyNote:'已查阅的产品资料中未记录明确的硬性安全警告，但这不代表厂家确认更低月龄使用安全。',
+  challengeStatusPending:'可决定', challengeStatusAllowed:'已允许提前参与', challengeStatusDeclined:'暂不允许',
+  challengeBadgeAvailable:'可提前挑战', challengeBadgeAllowed:'已允许挑战',
+  challengeHardBlocked:'此玩具有明确的硬性安全限制，不能提前加入挑战轮换。',
+  challengeUnknownBlocked:'目前没有足够安全信息支持提前参与轮换。'
 });
 export function createI18n(store) {
   const language = () => store.state.settings.language === 'system' ? (navigator.language.startsWith('zh') ? 'zh' : 'en') : store.state.settings.language;

@@ -1,4 +1,5 @@
 import { canonicalKey, normalizeToy } from '../data/schema.js';
+import { isMD1460IdentityMigrationApplied } from './md1460-identity-migration.js';
 import { mergePersonalToyPair, parentIdentityTokens } from './identity-service.js';
 import { auditIdentityRelationships, findDuplicates } from './duplicate-engine.js';
 
@@ -41,17 +42,18 @@ function knownMultiPuzzleChildren(parent, definition) {
   const text = [parent.brand, parent.productName, parent.names?.en, parent.names?.zh, definition.productName, definition.name, definition.nameZh].filter(Boolean).join(' ');
   if (!/mideer/i.test(text) || !/puzzle|拼图/i.test(text)) return [];
   if (/busy\s*vehicles|忙碌车辆|车辆拼图|交通工具拼图/i.test(text)) {
-    return [['汽车拼图','Car puzzle'],['警车拼图','Police car puzzle'],['冰淇淋车拼图','Ice cream truck puzzle'],['垃圾车拼图','Garbage truck puzzle'],['运输车拼图','Dump truck puzzle'],['校车拼图','School bus puzzle']].map((names,index)=>childDefinition(parent,names,index));
+    return [['汽车','Car',['Car Puzzle']],['警车','Police Car',['Police Car Puzzle']],['冰淇淋车','Ice Cream Truck',['Ice Cream Truck Puzzle']],['垃圾车','Garbage Truck',['Garbage Truck Puzzle']],['运输车','Delivery Truck',['Delivery Truck Puzzle','Dump Truck','Dump Truck Puzzle']],['校车','School Bus',['School Bus Puzzle']]].map((names,index)=>childDefinition(parent,names,index));
   }
   if (/my\s*first\s*puzzle|第一套拼图/i.test(text)) {
     const dinosaur = /dinosaur|恐龙/i.test(text);
-    return Array.from({length:6},(_,index)=>childDefinition(parent,[`${dinosaur?'恐龙拼图':'小拼图'} ${index+1}`,`${dinosaur?'Dinosaur puzzle':'Small puzzle'} ${index+1}`],index));
+    const dinosaurNames=[['翼龙','Pterosaur'],['副栉龙','Parasaurolophus'],['剑龙','Stegosaurus'],['三角龙','Triceratops'],['霸王龙','Tyrannosaurus rex'],['蛇','Snake']];
+    return Array.from({length:6},(_,index)=>childDefinition(parent,dinosaur ? [...dinosaurNames[index],[`Dinosaur Puzzle ${index+1}`]] : [`小拼图 ${index+1}`,`Small puzzle ${index+1}`],index));
   }
   return [];
 }
 
-function childDefinition(parent, [nameZh, nameEn], index) {
-  const child = { canonicalKey:`${parent.canonicalKey}:puzzle-${index+1}`, productName:nameEn, names:{en:nameEn,zh:nameZh}, brand:parent.brand, categoryCode:'puzzles_matching', skillCodes:['fine_motor','hand_eye','matching','visual_spatial'], playMechanics:['jigsaw'], minAgeMonths:parent.minAgeMonths, maxAgeMonths:parent.maxAgeMonths };
+function childDefinition(parent, [nameZh, nameEn, aliases=[]], index) {
+  const child = { canonicalKey:`${parent.canonicalKey}:puzzle-${index+1}`, productName:nameEn, names:{en:nameEn,zh:nameZh}, aliases, brand:parent.brand, categoryCode:'puzzles_matching', skillCodes:['fine_motor','hand_eye','matching','visual_spatial'], playMechanics:['jigsaw'], minAgeMonths:parent.minAgeMonths, maxAgeMonths:parent.maxAgeMonths };
   return { ...child, imageRef:childImageRef(parent, child, index) };
 }
 
@@ -134,6 +136,66 @@ export function backfillKnownMideerLegacySixSlot(state, definitionsByKey) {
     parentIds.push(parent.id);
   }
   return { promoted:parentIds.length, parentIds };
+}
+
+// QA6 received one historical MD1460 parent from the base catalog and a second,
+// split parent from the remote catalog.  This repair is a narrow identity
+// migration, not a display rule: every durable reference moves to the sole
+// surviving MD1460 canonical before split-child reconciliation runs.
+export function repairQa6MideerCanonicalState(state, definitionsByKey) {
+  // A future, explicitly authorised MD1460 transaction owns this identity
+  // after it writes its version marker.  QA6 must then remain a compatibility
+  // reader and must never rewrite deletion/redirect provenance again.
+  if (isMD1460IdentityMigrationApplied(state)) return { applied:false, skipped:'superseded_by_md1460_identity_migration_v1', migratedParents:0, migratedChildren:0, mergedParents:0 };
+  const target='mideer-my-first-puzzle-dinosaurs-6in1-md1460';
+  const legacy=new Set(['mideer-my-first-puzzle-dinosaurs-6in1','mideer-first-artist-cute-dinosaurs']);
+  if (!definitionsByKey.get(target)) return { applied:false, migratedParents:0, migratedChildren:0, mergedParents:0 };
+  let migratedParents=0, migratedChildren=0, mergedParents=0;
+  for (const toy of state.toys || []) {
+    const original=canonicalKey(toy.canonicalKey);
+    const parentKey=canonicalKey(toy.set?.parentCanonicalKey);
+    if (legacy.has(original)) {
+      toy.canonicalKey=target;
+      toy.legacyCanonicalKeys=uniqueCanonicalKeys([...(toy.legacyCanonicalKeys || []),original]);
+      migratedParents++;
+    }
+    if (legacy.has(parentKey)) {
+      toy.set={ ...(toy.set || {}), parentCanonicalKey:target };
+      const part=Number(toy.set.partIndex || partIndexFromKey(toy.canonicalKey));
+      if (toy.set.kind === 'child' && part > 0) {
+        toy.legacyCanonicalKeys=uniqueCanonicalKeys([...(toy.legacyCanonicalKeys || []),toy.canonicalKey]);
+        toy.canonicalKey=`${target}:puzzle-${part}`;
+        migratedChildren++;
+      }
+    }
+  }
+  const parents=(state.toys || []).filter(toy=>canonicalKey(toy.canonicalKey)===target && toy.set?.kind==='parent');
+  if (parents.length > 1) {
+    const primary=parents.sort((a,b)=>(b.set?.childIds?.length||0)-(a.set?.childIds?.length||0))[0];
+    for (const duplicate of parents.filter(parent=>parent!==primary)) {
+      const childIds=[...(primary.set?.childIds || []),...(duplicate.set?.childIds || [])];
+      const result=mergePersonalToyPair(state,primary.id,duplicate.id);
+      if (result.merged) { primary.set={ ...(primary.set || {}), kind:'parent', rotationMode:'split', childIds:[...new Set(childIds)] }; mergedParents++; }
+    }
+  }
+  const catalog=state.catalogState ||= {};
+  catalog.tombstones ||= {}; catalog.adminEdits ||= {}; catalog.imageRefsByKey ||= {}; catalog.imageRefsByIdentity ||= {};
+  for (const from of legacy) {
+    if (catalog.adminEdits[from]) { catalog.adminEdits[target]={ ...(catalog.adminEdits[from] || {}), ...(catalog.adminEdits[target] || {}), legacyCanonicalKeys:uniqueCanonicalKeys([...(catalog.adminEdits[target]?.legacyCanonicalKeys || []),from]) }; delete catalog.adminEdits[from]; }
+    if (catalog.imageRefsByKey[from] && !catalog.imageRefsByKey[target]) catalog.imageRefsByKey[target]=catalog.imageRefsByKey[from];
+    delete catalog.imageRefsByKey[from];
+    catalog.tombstones[from]={ ...(catalog.tombstones[from] || {}), mergedInto:target, repairedBy:'qa6-md1460-canonical-v1' };
+  }
+  delete catalog.tombstones[target];
+  for (const item of state.wishlist || []) {
+    if (legacy.has(canonicalKey(item.canonicalKey))) { item.canonicalKey=target; item.catalogId=target; if(item.catalogSnapshot){item.catalogSnapshot.canonicalKey=target; item.catalogSnapshot.legacyCanonicalKeys=uniqueCanonicalKeys([...(item.catalogSnapshot.legacyCanonicalKeys || []),...legacy]);} }
+  }
+  for (const round of state.rotationHistory || []) {
+    if (legacy.has(canonicalKey(round.canonicalKey))) round.canonicalKey=target;
+    if (legacy.has(canonicalKey(round.catalogKey))) round.catalogKey=target;
+  }
+  catalog.syncMetadata ||= {}; catalog.syncMetadata.qa6MideerCanonicalRepairV1={ repairedAt:new Date().toISOString(), target, migratedParents, migratedChildren, mergedParents };
+  return { applied:true, target, migratedParents, migratedChildren, mergedParents };
 }
 
 // Repairs a *previously split* ownership set that an older migration removed.
@@ -358,6 +420,7 @@ export function reconcileSplitSetChildren(state, definitionsByKey) {
       primary.legacyCanonicalKeys = uniqueCanonicalKeys([...(primary.legacyCanonicalKeys || []), primaryOldKey, child.canonicalKey]);
       primary.set = childSetLink(primary.set, parent, child);
       primary.imageRef = prefersChildImage(primary, child, parent) ? primary.imageRef : child.imageRef;
+      enrichStandardChildMetadata(primary, child);
       for (const duplicate of matches) {
         if (duplicate.id === primary.id) continue;
         // A stale copied kit cover is not a child photo.  Do not let the generic
@@ -402,6 +465,25 @@ export function reconcileSplitSetChildren(state, definitionsByKey) {
     unresolved:audit.unresolved,
     issues:audit.issues
   };
+}
+
+function enrichStandardChildMetadata(existing, standard) {
+  const customName = existing.userMetadata?.customProductName === true;
+  if (!customName) {
+    const legacyName = existing.productName;
+    existing.productName = standard.productName;
+    existing.names = { ...existing.names, ...standard.names, en:standard.names?.en || standard.productName };
+    existing.aliases = uniqueDisplayStrings([...(existing.aliases || []), ...(standard.aliases || []), legacyName].filter(name => name && name !== standard.productName));
+  }
+}
+
+function uniqueDisplayStrings(values) {
+  const seen = new Set();
+  return values.filter(value => {
+    const text=String(value || '').trim(); const key=text.toLocaleLowerCase();
+    if (!text || seen.has(key)) return false;
+    seen.add(key); return true;
+  });
 }
 
 // Catalog structure must never itself create ownership.  This repair only

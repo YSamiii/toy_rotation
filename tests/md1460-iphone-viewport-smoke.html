@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>MD1460 QA16 isolated viewport smoke</title>
+<style>body{margin:0;background:#222;color:#fff;font:14px system-ui}#device{width:390px;height:844px;margin:8px;border:2px solid #888;border-radius:24px;overflow:hidden;background:white}iframe{width:390px;height:844px;border:0}pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:900px}</style>
+<div id="device"><iframe id="app" title="iPhone-sized QA16 artifact"></iframe></div><pre id="result">RUNNING</pre>
+<script>
+const output=document.querySelector('#result'),frame=document.querySelector('#app');
+const parent='mideer-my-first-puzzle-dinosaurs-6in1-md1460';
+const fixture={schemaVersion:12,settings:{language:'en',rotationSize:6,rotationDays:7,onboardingDone:true},profile:{childName:'SMOKE',childBirthDate:'2024-01-01',developmentProfile:{}},toys:[{id:'md-parent',canonicalKey:parent,brand:'Mideer',productName:'Dinosaurs',sku:'MD1460',skillCodes:[],playMechanics:[],set:{kind:'parent',rotationMode:'split',childIds:[]}}],wishlist:[],rotationHistory:[],catalogState:{tombstones:{},adminEdits:{},imageRefsByKey:{},imageRefsByIdentity:{},learnedEntries:[],remoteEntries:[],syncMetadata:{}}};
+localStorage.setItem('toyRotation.cleanBaseline',JSON.stringify(fixture));
+const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function openFrame(){return new Promise(resolve=>{frame.onload=resolve;frame.src='/index.html?md1460-viewport-smoke='+Date.now()})}
+async function until(check,tries=80){for(let i=0;i<tries;i++){const x=await check();if(x)return x;await delay(100)}throw Error('condition timeout')}
+async function run(){
+  const checks={};
+  await openFrame();
+  let win=frame.contentWindow,doc=frame.contentDocument;
+  await until(()=>doc.querySelector('button[data-view="library"]')&&JSON.parse(win.localStorage.getItem('toyRotation.startupDiagnostic')||'null')?.phase==='hydrate-complete',160);
+  checks.clickErrors=[];
+  win.addEventListener('error',event=>{checks.clickErrors.push(String(event.message||event.error));output.textContent='RUNTIME ERROR\n'+JSON.stringify(checks.clickErrors,null,2)});
+  win.addEventListener('unhandledrejection',event=>{checks.clickErrors.push(String(event.reason));output.textContent='RUNTIME ERROR\n'+JSON.stringify(checks.clickErrors,null,2)});
+  checks.viewport={innerWidth:win.innerWidth,innerHeight:win.innerHeight};
+  checks.viewportPass=win.innerWidth===390&&win.innerHeight===844;
+  checks.buildId=win.TOY_ROTATION_CONFIG?.buildId||win.TOY_ROTATION_CONFIG?.build?.buildId||null;
+  checks.startup=JSON.parse(win.localStorage.getItem('toyRotation.startupDiagnostic')||'null');
+  checks.manifest=!!doc.querySelector('link[rel="manifest"]');
+  checks.safeArea=await fetch('/src/ui/app.css').then(r=>r.text()).then(s=>s.includes('safe-area-inset-bottom'));
+  checks.doubleTapLock=await fetch('/src/ui/theme.css').then(r=>r.text()).then(s=>s.includes('touch-action:manipulation'));
+  await win.navigator.serviceWorker.ready;
+  await new Promise(resolve=>{frame.onload=resolve;frame.src='/index.html?md1460-controlled-reload=1'});
+  win=frame.contentWindow;doc=frame.contentDocument;
+  await until(()=>doc.querySelector('button[data-view="library"]')&&JSON.parse(win.localStorage.getItem('toyRotation.startupDiagnostic')||'null')?.phase==='hydrate-complete',160);
+  await until(()=>win.caches.keys().then(keys=>keys.includes('toy-rotation-v0.11.6-helping-hands-identity-qa16-20260925')),80);
+  checks.swControlled=!!win.navigator.serviceWorker.controller;
+  checks.cacheKeys=(await win.caches.keys()).filter(key=>/toy-rotation/.test(key));
+  checks.cacheCorrect=checks.cacheKeys.some(key=>key==='toy-rotation-v0.11.6-helping-hands-identity-qa16-20260925');
+  checks.cacheOld=checks.cacheKeys.filter(key=>/qa7|qa8|qa9|qa1[0-5]/i.test(key));
+  const image=await win.fetch('/catalog-assets/mideer-dinosaurs-md1460-puzzle-1.jpg');
+  checks.packagedImage={status:image.status,mime:image.headers.get('content-type')};
+  checks.sourceRequests=win.performance.getEntriesByType('resource').map(e=>e.name).filter(url=>/\/src\/(?:main|domain|features|data)\/.*\.js/.test(url));
+  checks.startupAfter=JSON.parse(win.localStorage.getItem('toyRotation.startupDiagnostic')||'null');
+  const pass=checks.viewportPass&&checks.swControlled&&checks.cacheCorrect&&!checks.cacheOld.length&&checks.manifest&&checks.safeArea&&checks.doubleTapLock&&checks.packagedImage.status===200&&!checks.sourceRequests.length&&!checks.startupAfter?.failed;
+  output.textContent=(pass?'PASS':'FAIL')+'\n'+JSON.stringify(checks,null,2);
+}
+run().catch(error=>output.textContent='FAIL\n'+String(error?.stack||error));
+</script></html>

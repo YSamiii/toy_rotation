@@ -1,9 +1,13 @@
 import { canonicalKey, normalizeCatalogToy } from '../data/schema.js';
-import { reconcileSplitSetChildren, restoreMissingSplitSetChildren, establishParentChildOwnership, repairChildImageProvenance, repairLegacyChildImageBindings, reconcileOrphanedSplitOwnership, backfillKnownMideerLegacySixSlot } from './set-service.js';
+import { redirectCrossAgeApproval } from './catalog-safety.js';
+import { reconcileSplitSetChildren, restoreMissingSplitSetChildren, establishParentChildOwnership, repairChildImageProvenance, repairLegacyChildImageBindings, reconcileOrphanedSplitOwnership, backfillKnownMideerLegacySixSlot, repairQa6MideerCanonicalState } from './set-service.js';
+import { withEarlyRotationBaseline } from './early-rotation-baseline.js';
 import { catalogImageRef, deriveCatalogMechanics } from './catalog-presentation.js';
 import { resolveCatalogReference, sameCatalogIdentity } from './identity-service.js';
 import { compare, exactProductIdentityKey } from './duplicate-engine.js';
 import { catalogImageAsset } from '../data/catalog-image-assets.js';
+import { P0_ZERO_REF_REDIRECTS } from '../data/catalog-p0-zero-ref-redirects.js';
+import { P0_OWNER_REF_REDIRECTS } from '../data/catalog-p0-owner-ref-redirects.js';
 import { validateChildImageProvenance } from './set-service.js';
 import { catalogReviewMetadata, isPublicCatalogVisible } from '../data/hape-final-resolution-review.js';
 
@@ -122,7 +126,8 @@ export class CatalogRepository {
   }
   search({ query = '', brand = '', categoryCode = '', skillCode = '', playMechanic = '', includeReview = true } = {}) {
     const text = String(query).trim().toLowerCase();
-    return this.#active.filter(toy => (includeReview || isPublicCatalogVisible(toy)) && (!brand || toy.brand === brand) && (!categoryCode || toy.categoryCode === categoryCode) && (!skillCode || toy.skillCodes.includes(skillCode)) && (!playMechanic || toy.playMechanics.includes(playMechanic)) && (!text || [toy.brand, toy.productName, ...toy.aliases].join(' ').toLowerCase().includes(text)));
+    const rows=text ? this.#active.flatMap(parent => [parent, ...(parent.children || []).map((child,index) => catalogChildPresentation(parent,child,index))]) : this.#active;
+    return rows.filter(toy => (includeReview || isPublicCatalogVisible(toy)) && (!brand || toy.brand === brand) && (!categoryCode || toy.categoryCode === categoryCode) && (!skillCode || toy.skillCodes.includes(skillCode)) && (!playMechanic || toy.playMechanics.includes(playMechanic)) && (!text || [toy.brand, toy.productName, ...toy.aliases].join(' ').toLowerCase().includes(text)));
   }
   getPublicVisibleCatalogCount() { return this.#active.filter(isPublicCatalogVisible).length; }
   catalogCountSnapshot() {
@@ -160,6 +165,7 @@ export class CatalogRepository {
     const from = canonicalKey(key), to = canonicalKey(targetKey); if (!from || !to || from === to) return;
     const source = this.#byKey.get(from), target = this.#byKey.get(to);
     this.#store.update(state => {
+      redirectCrossAgeApproval(state, from, to);
       for (const toy of state.toys || []) if (canonicalKey(toy.canonicalKey) === from) { toy.canonicalKey = to; toy.legacyCanonicalKeys=[...new Set([...(toy.legacyCanonicalKeys || []),from])]; }
       for (const item of state.wishlist || []) if (canonicalKey(item.canonicalKey) === from) { item.canonicalKey = to; item.catalogId = to; if (item.catalogSnapshot) { item.catalogSnapshot.canonicalKey=to; item.catalogSnapshot.legacyCanonicalKeys=[...new Set([...(item.catalogSnapshot.legacyCanonicalKeys || []),from])]; } }
       for (const round of state.rotationHistory || []) if (canonicalKey(round.canonicalKey || round.catalogKey) === from) { round.canonicalKey=to; round.catalogKey=to; }
@@ -178,6 +184,7 @@ export class CatalogRepository {
     const definitions = new Map(this.#active.map(toy => [toy.canonicalKey, toy]));
     this.#store.update(state => {
       state.toys ||= [];
+      const qa6CanonicalRepair = repairQa6MideerCanonicalState(state, definitions);
       const knownMideerLegacyBackfill = backfillKnownMideerLegacySixSlot(state, definitions);
       const orphanLifecycle = reconcileOrphanedSplitOwnership(state, definitions);
       // Repair only when the legacy store or stale child IDs proves a previous
@@ -193,7 +200,7 @@ export class CatalogRepository {
       const pending = (result.residualDuplicateChildren || 0) > 0;
       state.catalogState.syncMetadata.parentChildReconciliationV12 = { reconciledAt:new Date().toISOString(), pending, executionRequired:pending, ...result, remainingCandidates:result.residualDuplicateChildren || 0 };
       state.catalogState.syncMetadata.parentChildDataRepair = { repairedAt:new Date().toISOString(), ...repair };
-      state.catalogState.syncMetadata.parentChildIntegrityV12 = { repairedAt:new Date().toISOString(), ...ownership, ...imageProvenance, orphanLifecycle, legacyChildImageBindings, knownMideerLegacyBackfill };
+      state.catalogState.syncMetadata.parentChildIntegrityV12 = { repairedAt:new Date().toISOString(), ...ownership, ...imageProvenance, orphanLifecycle, legacyChildImageBindings, knownMideerLegacyBackfill, qa6CanonicalRepair };
     }, 'set-child-migration');
   }
   repairSetStructure() { this.ensureSetChildren(); return this.#store.state.catalogState?.syncMetadata?.parentChildReconciliationV12 || null; }
@@ -201,10 +208,11 @@ export class CatalogRepository {
     const { tombstones = {}, adminEdits = {}, imageRefsByKey = {}, imageRefsByIdentity = {}, learnedEntries = [], remoteEntries = [] } = this.#store.state.catalogState;
     const merged = new Map();
     const allRows=[...this.#base, ...this.#remote, ...entries(learnedEntries), ...entries(remoteEntries)];
-    const tombstonedIdentities = new Set(allRows.map(normalizeCatalogToy).filter(toy => { const record=tombstones[canonicalKey(toy.canonicalKey)]; return record && !record.mergedInto; }).map(exactProductIdentityKey).filter(Boolean));
+    const tombstonedIdentities = new Set(allRows.map(normalizeCatalogToy).filter(toy => { const key=qa6CatalogCanonical(canonicalKey(toy.canonicalKey)); const record=tombstones[key]; return record && !record.mergedInto && !qa6ResurrectionWins(key,toy,{},record); }).map(exactProductIdentityKey).filter(Boolean));
     for (const raw of allRows) {
-      const toy = normalizeCatalogToy(raw); const key = canonicalKey(toy.canonicalKey); const previous = merged.get(key); const combined = previous ? normalizeCatalogToy({ ...previous, ...toy, aliases:[...(previous.aliases || []), ...(toy.aliases || [])], legacyCanonicalKeys:[...(previous.legacyCanonicalKeys || []), ...(toy.legacyCanonicalKeys || [])], names:{ ...previous.names, ...toy.names }, children:toy.children?.length ? toy.children : previous.children }) : toy; const serverEdit = this.#serverEdits[key] || {};
-      if (!key || tombstones[key] || serverEdit.hidden === true || serverEdit.deleted === true) continue;
+      const toy=normalizeCatalogToy(raw); const originalKey=canonicalKey(toy.canonicalKey); const key = qa6CatalogCanonical(originalKey); if ((P0_ZERO_REF_REDIRECTS.has(originalKey) || P0_OWNER_REF_REDIRECTS.has(originalKey)) && merged.has(key)) continue; const previous = merged.get(key); const redirected=key !== originalKey; const combined = previous ? normalizeCatalogToy({ ...previous, ...toy, canonicalKey:key, aliases:[...(previous.aliases || []), ...(toy.aliases || [])], legacyCanonicalKeys:[...(previous.legacyCanonicalKeys || []), ...(toy.legacyCanonicalKeys || []), ...(redirected ? [originalKey] : [])], names:{ ...previous.names, ...toy.names }, children:toy.children?.length ? toy.children : previous.children, userMetadata:{ ...previous.userMetadata, ...toy.userMetadata, safety:toy.userMetadata?.safety?.ageSafetyStatus ? toy.userMetadata.safety : previous.userMetadata?.safety } }) : normalizeCatalogToy({ ...toy, canonicalKey:key, legacyCanonicalKeys:[...(toy.legacyCanonicalKeys || []), ...(redirected ? [originalKey] : [])] }); const serverEdit = this.#serverEdits[key] || {};
+      const resurrected=qa6ResurrectionWins(key,combined,serverEdit,tombstones[key]);
+      if (!key || (tombstones[key] && !tombstones[key].mergedInto && !resurrected) || ((serverEdit.hidden === true || serverEdit.deleted === true) && !resurrected)) continue;
       const serverToy = normalizeCatalogToy({ ...combined, ...serverEdit, productName:serverEdit.productName || serverEdit.name || combined.productName, names:{ ...combined.names, en:serverEdit.nameEn || serverEdit.name || combined.names?.en, zh:serverEdit.nameZh || combined.names?.zh } });
       const legacyImage = imageRefsByKey[key] || imageRefsByIdentity[catalogIdentity(serverToy)];
       // One resolver supplies Catalog, Wishlist and Catalog→Library. User and
@@ -212,7 +220,7 @@ export class CatalogRepository {
       // personal Toy Library refs never enter this pipeline.
       const asset = catalogImageAsset(key);
       const edited = normalizeCatalogToy({ ...serverToy, ...(asset ? { imageRef:asset } : {}), ...(legacyImage ? { imageRef:legacyImage } : {}), ...(adminEdits[key] || {}) });
-      merged.set(key, { ...edited, playMechanics:deriveCatalogMechanics(edited), imageRef:catalogImageRef(edited) });
+      merged.set(key, withEarlyRotationBaseline({ ...edited, playMechanics:deriveCatalogMechanics(edited), imageRef:catalogImageRef(edited) }));
     }
     // Existing administrator merges are durable redirects. The source stays
     // tombstoned while the target advertises the old canonical key for every
@@ -287,6 +295,24 @@ async function fetchJson(url, { timeoutMs = 4500 } = {}) {
   finally { if (timeout) clearTimeout(timeout); }
 }
 function entries(value) { return Array.isArray(value) ? value : Array.isArray(value?.entries) ? value.entries : Array.isArray(value?.catalog) ? value.catalog : Array.isArray(value?.items) ? value.items : []; }
+const QA6_MIDEER_DINOSAUR_PARENT = 'mideer-my-first-puzzle-dinosaurs-6in1-md1460';
+const QA6_MIDEER_CANONICAL_REDIRECTS = new Map([
+  ['mideer-my-first-puzzle-dinosaurs-6in1', QA6_MIDEER_DINOSAUR_PARENT],
+  ['mideer-first-artist-cute-dinosaurs', QA6_MIDEER_DINOSAUR_PARENT]
+]);
+const QA6_RESURRECTED_CATALOG_KEYS = new Set([
+  'mideer-level1-home-sweet-home-puzzle',
+  'mideer-animal-toys-set-15pcs'
+]);
+function qa6CatalogCanonical(key) { return P0_OWNER_REF_REDIRECTS.get(key) || P0_ZERO_REF_REDIRECTS.get(key) || QA6_MIDEER_CANONICAL_REDIRECTS.get(key) || key; }
+function qa6ResurrectedCatalogKey(key) { return QA6_RESURRECTED_CATALOG_KEYS.has(key); }
+function qa6ResurrectionWins(key, base, remote = {}, tombstone = null) {
+  if (!qa6ResurrectedCatalogKey(key) || base?.resurrectionVersion !== 'qa6-catalog-resurrection-v1') return false;
+  const remoteAt=Date.parse(remote.updatedAt || remote.deletedAt || 0) || 0;
+  const tombstoneAt=Date.parse(tombstone?.deletedAt || tombstone?.updatedAt || 0) || 0;
+  const repairAt=Date.parse('2026-09-17T00:00:00.000Z');
+  return Math.max(remoteAt,tombstoneAt) < repairAt;
+}
 function catalogIdentity(toy) { return `${String(toy.brand === 'other_unspecified' ? '' : toy.brand || '').trim().toLowerCase()}|${String(toy.productName || toy.names?.en || '').normalize('NFKC').trim().toLowerCase()}`; }
 function catalogSort(a,b) { const brand=a.brand.localeCompare(b.brand); if(brand)return brand; if(a.brand==='Lovevery')return Number(a.catalogSortOrder||999999)-Number(b.catalogSortOrder||999999)||Number(a.minAgeMonths||0)-Number(b.minAgeMonths||0)||a.productName.localeCompare(b.productName); return a.productName.localeCompare(b.productName); }
 function consolidateCatalog(rows) {

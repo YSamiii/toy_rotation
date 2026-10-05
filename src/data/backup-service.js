@@ -1,7 +1,9 @@
 import { canonicalKey, normalizeToy, normalizeWishlistItem } from './schema.js';
+import { reconcileCrossAgeApprovals, redirectCrossAgeApproval } from '../domain/catalog-safety.js';
 import { repairFakePersonalPlaceholderBindings, runMigrations } from './store.js';
 import { findDuplicates } from '../domain/duplicate-engine.js';
 import { reconcileSplitSetChildren, reconcileOrphanedSplitOwnership, repairLegacyChildImageBindings, validateSetGraph } from '../domain/set-service.js';
+import { runMD1460IdentityMigration } from '../domain/md1460-identity-migration.js';
 
 export async function exportBackup(store, imageRepository) {
   const state = structuredClone(store.state);
@@ -28,7 +30,7 @@ export async function restoreBackup(payload, store, imageRepository, { catalog =
     // Everything below operates on a detached staging graph. No store mutation
     // or durable state write is allowed before reconciliation and validation.
     stage('detached_staging_start', { phase:'start' });
-    const staged = prepareRestoreState(payload.state, catalog, stage);
+    const staged = prepareRestoreState(payload.state, catalog, stage, { migrationShadow:state=>runMD1460IdentityMigration(state,{context:'import',mode:'shadow'}) });
     stage('detached_staging_end', { phase:'end', toyCount:staged.state.toys.length });
 
     // Imports are local IndexedDB writes only. They are batched so iPhone Safari
@@ -76,7 +78,7 @@ export async function restoreBackup(payload, store, imageRepository, { catalog =
   }
 }
 
-export function prepareRestoreState(input, catalog = null, onStage = () => {}) {
+export function prepareRestoreState(input, catalog = null, onStage = () => {}, { migrationShadow = null } = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('invalidBackupState');
   // Preserve legacy identity provenance only for historical-event repair. It
   // cannot create a new ownership record.
@@ -92,6 +94,11 @@ export function prepareRestoreState(input, catalog = null, onStage = () => {}) {
   state.catalogState.tombstones ||= {};
   state.catalogState.adminEdits ||= {};
   state.catalogState.syncMetadata ||= {};
+
+  // This is intentionally before redirect/reconciliation and before any
+  // possible commit. It has no write channel: it is a detached preview only.
+  const md1460Shadow=typeof migrationShadow==='function' ? migrationShadow(structuredClone(state)) : runMD1460IdentityMigration(state,{context:'restore',mode:'shadow'});
+  onStage('md1460_identity_migration_shadow', { phase:'end', status:md1460Shadow.status, changed:md1460Shadow.diff.changed, invariantOk:md1460Shadow.invariants.ok });
 
   // A user-confirmed administrator merge is a durable canonical redirect.
   // Apply only exact repository redirects during staging; this never invokes
@@ -121,6 +128,7 @@ export function prepareRestoreState(input, catalog = null, onStage = () => {}) {
     state,
     summary:{
       inputToyCount:before,
+      md1460Shadow:{ status:md1460Shadow.status, changed:md1460Shadow.diff.changed, invariantOk:md1460Shadow.invariants.ok },
       outputToyCount:state.toys.length,
       repairedDuplicates:Math.max(0, before - state.toys.length),
       remappedIdentities:reconciliation.remapped || 0,
@@ -140,6 +148,7 @@ function applyCatalogRedirects(state, catalog) {
   for (const toy of state.toys || []) {
     const target=catalog.getByKey(toy.canonicalKey);
     if (!target || canonicalKey(target.canonicalKey) === canonicalKey(toy.canonicalKey)) continue;
+    redirectCrossAgeApproval(state, canonicalKey(toy.canonicalKey), canonicalKey(target.canonicalKey));
     toy.legacyCanonicalKeys=[...new Set([...(toy.legacyCanonicalKeys || []),canonicalKey(toy.canonicalKey)])];
     toy.canonicalKey=target.canonicalKey;
     remappedToys++;
@@ -156,6 +165,7 @@ function applyCatalogRedirects(state, catalog) {
     }
     remappedWishlist++;
   }
+  reconcileCrossAgeApprovals(state,key=>catalog.getByKey(key));
   return { remappedToys, remappedWishlist };
 }
 

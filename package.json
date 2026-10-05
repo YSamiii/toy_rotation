@@ -12,7 +12,8 @@
     "generate:runtime-manifest": "node scripts/generate-runtime-js-manifest.mjs",
     "scan:sensitive": "node scripts/sensitive-staging-scan.mjs .",
     "verify:runtime-manifest": "node scripts/verify-runtime-js-manifest.mjs .",
-    "gate:safari16": "node scripts/run-safari16-gate.mjs"
+    "gate:safari16": "node scripts/run-safari16-gate.mjs",
+    "gate:owner-equivalent-rotation": "node tests/qa3-owner-equivalent-rotation-acceptance-v0117.test.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

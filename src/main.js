@@ -1,7 +1,7 @@
 import { createRestoreTrace, exportBackup, restoreBackup } from './data/backup-service.js';
 import { ImageRepository } from './data/image-repository.js';
 import { CATEGORY_CODES, SKILL_CODES, canonicalKey, normalizeToy, normalizeWishlistItem } from './data/schema.js';
-import { applyDetectedLegacyRecovery, auditStandardCatalogImages, auditToyLibraryImages, bootStore, persistStateWithQuotaRecovery, recoverLegacyPersonalImages, repairFakePersonalPlaceholderBindings, startFreshStore } from './data/store.js';
+import { applyDetectedLegacyRecovery, auditStandardCatalogImages, auditToyLibraryImages, bootStore, persistStateWithQuotaRecovery, recoverLegacyPersonalImages, repairFakePersonalPlaceholderBindings, startFreshStore, STORE_SHADOW_KEY, STORE_SNAPSHOT_KEYS } from './data/store.js';
 import { CatalogRepository } from './domain/catalog-repository.js';
 import { resolvedLibraryImageRef } from './domain/catalog-presentation.js';
 import { findDuplicates, auditIdentityRelationships, isActionableDuplicate } from './domain/duplicate-engine.js';
@@ -9,8 +9,8 @@ import { addCatalogToy, deleteToyOwnership, parentDeleteImpact, setToyInterest }
 import { findOwnedToy, findWishlistItem, mergePersonalToyPair } from './domain/identity-service.js';
 import { auditSetIntegrity, classifyStructureMigrationDamage, repairStructureMigrationDamage } from './domain/set-service.js';
 import { childAgeMonths as calculateChildAgeMonths, reassessmentState, saveProfileAndRotationSettings } from './domain/profile-service.js';
-import { clearManualShelfOverrides, currentShelfCollections, isRotationPaused, isUserCustomPermanent, normalizeCurrentShelf, persistRotationSelection, selectRotation, setCustomPermanent, setManualShelfState, setRotationParticipation } from './domain/rotation-engine.js';
-import { developmentMechanics, recordDevelopmentFeedback } from './domain/development-fit.js';
+import { clearManualShelfOverrides, currentShelfCollections, isRotationPaused, isUserCustomPermanent, normalizeCurrentShelf, persistRotationSelection, rotationAgeEligibility, selectRotation, setCustomPermanent, setManualShelfState, setRotationParticipation } from './domain/rotation-engine.js';
+import { DEVELOPMENT_ABILITY_GROUPS, developmentMechanics, recordDevelopmentFeedback } from './domain/development-fit.js';
 import { challengeLabelKey, filterCatalogDevelopment, recommendationReason } from './domain/development-presentation.js';
 import { SubstitutionEngine } from './domain/substitution-engine.js';
 import { AdminService } from './features/admin-service.js';
@@ -28,6 +28,13 @@ import { AdminCatalogSaveDiagnostic, adminCatalogSaveErrorType } from './feature
 import { buildStorageUsageDiagnostic } from './features/storage-usage-diagnostic.js';
 import { buildCatalogCountDiagnostic } from './features/catalog-count-diagnostic.js';
 import { buildToyImageAudit } from './features/real-device-owned-wishlist-image-audit.js';
+import { buildCatalogSafetyAudit } from './features/catalog-safety-audit.js';
+import { buildRawIdentityReferenceAudit } from './features/raw-identity-reference-audit.js';
+import { buildMd1460MigrationAudit } from './features/md1460-migration-audit.js';
+import { runMD1460IdentityMigration } from './domain/md1460-identity-migration.js';
+import { executeMD1460MarkerOnly } from './domain/md1460-execution-service.js';
+import { catalogSafetyStatus, crossAgeApprovalFor, declineCrossAgeApproval, reconcileCrossAgeApprovals, setCrossAgeApproval, withCatalogSafety } from './domain/catalog-safety.js';
+import { challengeDecision, parentApprovableChallenge, parentApprovableChallenges } from './features/cross-age-challenges.js';
 import { beginStartupTrace, completeStartupWatchdog, installStartupWatchdog, markStartupError, markStartupStage, renderStartupShell } from './features/startup-trace.js';
 import { createI18n, localizePlayMechanism } from './ui/i18n.js';
 import { ModalManager } from './ui/modal-manager.js';
@@ -144,6 +151,10 @@ async function bootstrapBackground() {
     recordStartupPhase('hydrate-start');
     runtimeImageDiagnostics.mark('catalog_hydration_start', { activeCatalogCount:catalog.active.length });
     await catalog.hydrate({ onStage:(stage, details) => { markStartupStage(startupTrace, stage, details); runtimeImageDiagnostics.mark(stage, details); } });
+    if (store.canPersist && Object.keys(store.state.crossAgeApprovals || {}).some(key => {
+      const row=catalog.getByKey(key); return row && row.canonicalKey !== key;
+    }))
+      store.update(state=>reconcileCrossAgeApprovals(state,key=>catalog.getByKey(key)),'cross-age-approval-canonical-reconcile');
     diagnosticLifecycle.push(diagnosticLifecycleSnapshot(store.state, 'hydration_complete', 'catalog.hydrate'));
     markStartupStage(startupTrace, 'catalog_local_load_end');
     recordStartupPhase('hydrate-complete');
@@ -214,8 +225,10 @@ function render() {
     <header><img src="./icons/header-logo.png" alt=""><div><h1>${t('appName')}</h1><p>${t(view)}</p><small class="build-marker">${escape(buildIdentityLabel())}</small></div><button data-action="settings" aria-label="${t('settings')}">⚙</button></header>
     <nav>${navButton('home', 'home')}${navButton('library', 'library')}${navButton('rotation', 'rotation')}${navButton('wishlist', 'wishlist')}</nav>
     <main>${renderPersistenceWarning()}${renderView()}</main>`;
+  renderChallengeEntry();
   root.querySelectorAll('[data-view]').forEach(button => { button.onclick = () => { view = button.dataset.view; render(); }; });
   root.querySelectorAll('[data-action]').forEach(button => { button.onclick = () => action(button.dataset.action, button.dataset); });
+  renderChallengeBadges();
   root.querySelectorAll('[data-draft-edit]').forEach(button => { button.onclick = () => openRecognitionReview(button.dataset.draftEdit); });
   root.querySelectorAll('[data-draft-confirm]').forEach(button => { button.onclick = async () => { const buttons=[...root.querySelectorAll(`[data-draft-confirm="${button.dataset.draftConfirm}"]`)];buttons.forEach(control=>control.disabled=true);try{const result=await getRecognition().confirm(button.dataset.draftConfirm,{destination:button.dataset.destination||'library'});if(result)render();}finally{buttons.forEach(control=>control.disabled=false);} }; });
   root.querySelectorAll('[data-draft-image-consent]').forEach(input => { input.onchange=()=>store.update(state=>{const draft=state.drafts.find(item=>item.id===input.dataset.draftImageConsent);if(draft)draft.imageConsent=input.checked;},'candidate-image-consent'); });
@@ -289,6 +302,24 @@ function renderToyCard(toy, { showDevelopment = false } = {}) {
   const runtimeImageRef = libraryImageRef(toy, 'toy_library_card_render');
   const development = showDevelopment ? renderDevelopmentFeedback(toy) : '';
   return `<article class="card" data-toy-id="${escape(toy.id)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes||[]).join('|'))}" data-mechanics="${escape((toy.playMechanics||[]).join('|'))}" data-status="${toy.archived?'archived':toy.hidden?'hidden':paused?'paused':customPermanent?'permanent':onShelf?'active':'stored'}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t('permanentBadge')}</span>` : ''}</h3><p>${escape(brandLabel(toy.brand))} · ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map(code => `<span>${t(`skill.${code}`)}</span>`).join('')}</div><p>${toy.minAgeMonths ?? '?'}–${toy.maxAgeMonths ?? '?'} ${ageUnit} · ${t(paused ? 'paused' : customPermanent ? 'customPermanent' : onShelf ? 'onShelf' : 'stored')}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === 'like' ? 'selected' : ''}">${t('liked')}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === 'neutral' ? 'selected' : ''}">${t('neutral')}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === 'dislike' ? 'selected' : ''}">${t('disliked')}</button>${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t('edit')}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t('remove')}</button></div></div></article>`;
+}
+
+function currentChallengeRows() {
+  return parentApprovableChallenges(store.state, catalog, childAgeMonths(), store.state.profile?.developmentProfile || {});
+}
+
+function renderChallengeBadges() {
+  if (view !== 'library') return;
+  const byId = new Map(currentChallengeRows().map(row => [row.toy.id, row]));
+  root.querySelectorAll('#library-list [data-toy-id]').forEach(card => {
+    const row = byId.get(card.dataset.toyId);
+    if (!row) return;
+    const badge = document.createElement('span');
+    badge.className = 'challenge-chip';
+    badge.dataset.challengeChoice = row.choice;
+    badge.textContent = t(row.choice === 'allowed' ? 'challengeBadgeAllowed' : 'challengeBadgeAvailable');
+    card.querySelector('h3')?.append(' ', badge);
+  });
 }
 
 function renderDevelopmentFeedback(toy) {
@@ -376,6 +407,17 @@ function renderRotation() {
   return `<section class="head"><h2>${t('rotation')}</h2><button class="primary" data-action="generate">${t('generate')}</button></section><section class="panel shelf-total"><b>${t('currentShelfTotal',{count:shelf.totalShelfCount})}</b><p>${t('thisRotation')} ${shelf.rotation.length} · ${t('customPermanent')} ${shelf.permanent.length} · ${t('paused')} ${pausedCount}</p><p>${t('permanentTargetHint')}</p></section>${shortage}<section class="rotation-section"><h3>${t('customPermanent')} · ${shelf.permanent.length} <button data-action="toggle-permanent-collapse" aria-expanded="${!collapsed}">${collapsed?'▸':'▾'}</button></h3>${collapsed?'':`<div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join('') : `<p class="panel">${t('noCustomPermanent')}</p>`}</div>`}</section>${manual}<section class="rotation-section"><h3>${t('thisRotation')} · ${shelf.rotation.length}</h3><div class="list">${shelf.rotation.length ? shelf.rotation.map(toy => renderToyCard(toy, { showDevelopment:true })).join('') : renderEmpty()}</div></section>`;
 }
 
+function renderChallengeEntry() {
+  if (view !== 'rotation') return;
+  const rows = currentChallengeRows();
+  if (!rows.length) return;
+  const approved = rows.filter(row => row.choice === 'allowed').length;
+  const entry = document.createElement('section');
+  entry.className = 'panel challenge-entry';
+  entry.innerHTML = `<div><h3>${t('challengeEntryTitle')}</h3><p>${t('challengeEntrySummary', { count:rows.length, pending:rows.filter(row => row.choice === 'pending').length, approved })}</p></div><button type="button" data-action="challenge-settings">${t('challengeOpenSettings')}</button>`;
+  root.querySelector('.shelf-total')?.before(entry);
+}
+
 function renderWishlist() {
   const age = childAgeMonths();
   const unresolved = [];
@@ -434,6 +476,7 @@ async function action(name, data) {
   if (name === 'clear-wishlist-filters') { Object.assign(wishlistFilters,{query:'',brand:'',categoryCode:'',skillCode:'',playMechanic:'',priority:'',status:'',ageFit:'',sort:'priority'}); return render(); }
   if (name === 'library-duplicates') return openLibraryDuplicateScan();
   if (name === 'settings') return openSettings();
+  if (name === 'challenge-settings') return openChallengeSettings();
   if (name === 'persistence-diagnostic') return exportPersistenceDiagnostic();
   if (name === 'persistence-recovery') return applyPersistenceRecovery();
   if (name === 'persistence-quota-retry') return retryQuotaStorageRecovery();
@@ -595,10 +638,72 @@ function installScrollTopButton(scroller, modal=false) {
   const update=()=>button.classList.toggle('hidden',scroller.scrollTop<320); scroller.addEventListener('scroll',update,{passive:true}); update();
 }
 
+function updateChallengeChoice(projected, choice) {
+  store.update(state => {
+    if (choice === 'declined') declineCrossAgeApproval(state, projected);
+    else setCrossAgeApproval(state, projected, choice === 'allowed');
+  }, 'cross-age-choice');
+}
+
+function openChallengeSettings() {
+  const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${t('challengeSettingsTitle')}</h2><button type="button" data-close>×</button></header><p>${t('challengeSettingsIntro')}</p><p data-challenge-summary></p><div class="challenge-list" data-challenge-list></div></section>`);
+  const redraw = () => {
+    const rows = currentChallengeRows();
+    dialog.querySelector('[data-challenge-summary]').textContent = t('challengeEntrySummary', {
+      count:rows.length, pending:rows.filter(row => row.choice === 'pending').length,
+      approved:rows.filter(row => row.choice === 'allowed').length
+    });
+    const list = dialog.querySelector('[data-challenge-list]');
+    list.innerHTML = rows.map(({ toy, row, projected, choice }) => `<article class="challenge-item" data-challenge-key="${escape(row.canonicalKey)}" data-challenge-choice="${choice}"><img data-image='${escapedJson(libraryImageRef(toy, 'challenge_settings'))}' alt=""><div><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${t('challengeAges', { recommended:row.minAgeMonths, current:childAgeMonths() })}</p><p class="challenge-status">${t(choice === 'allowed' ? 'challengeStatusAllowed' : choice === 'declined' ? 'challengeStatusDeclined' : 'challengeStatusPending')}</p><div class="actions">${choice === 'allowed' ? `<button type="button" data-challenge-action="revoke">${t('crossAgeRevoke')}</button>` : `<button type="button" class="primary" data-challenge-action="allow">${t('crossAgeAllow')}</button>${choice === 'pending' ? `<button type="button" data-challenge-action="decline">${t('crossAgeDecline')}</button>` : ''}`}</div></div></article>`).join('');
+    list.querySelectorAll('[data-challenge-action]').forEach(button => {
+      button.onclick = () => {
+        const parent = button.closest('[data-challenge-key]');
+        const selected = rows.find(item => item.row.canonicalKey === parent?.dataset.challengeKey);
+        if (!selected) return;
+        updateChallengeChoice(selected.projected, button.dataset.challengeAction === 'allow' ? 'allowed' : button.dataset.challengeAction === 'decline' ? 'declined' : 'revoked');
+        redraw();
+      };
+    });
+    bindImages(list);
+  };
+  redraw();
+}
+
+function attachCrossAgeApprovalControl(form, toy) {
+  const host=document.createElement('section');
+  host.className='panel cross-age-approval';
+  form.querySelector('.form-error').before(host);
+  const redraw=() => {
+    const age=childAgeMonths();
+    const review=challengeDecision(store.state,catalog,toy,age,store.state.profile?.developmentProfile || {});
+    if (!review || review.row.minAgeMonths==null || age>=review.row.minAgeMonths) { host.remove(); return; }
+    const approvable=parentApprovableChallenge(store.state,catalog,toy,age,store.state.profile?.developmentProfile || {});
+    const blocked=review.decision.reason === 'HARD_SAFETY_BLOCK' ? 'challengeHardBlocked'
+      : review.decision.reason === 'UNKNOWN_AGE_BLOCK' ? 'challengeUnknownBlocked' : null;
+    if (!approvable && !blocked) { host.remove(); return; }
+    const choice=approvable?.choice || 'pending';
+    host.hidden=false;
+    host.innerHTML=`<h3>${t('challengeSettingsTitle')}</h3><p>${t('challengeAges',{recommended:review.row.minAgeMonths,current:age})}</p>${blocked
+      ? `<p>${t(blocked)}</p>`
+      : `<p>${t('challengeSafetyNote')}</p><p>${t('crossAgeApprovalExplanation',{months:review.row.minAgeMonths})}</p><p class="challenge-status">${t(choice === 'allowed' ? 'challengeStatusAllowed' : choice === 'declined' ? 'challengeStatusDeclined' : 'challengeStatusPending')}</p><div class="actions">${choice === 'allowed' ? `<button type="button" data-cross-age-revoke>${t('crossAgeRevoke')}</button>` : `<button type="button" class="primary" data-cross-age-allow>${t('crossAgeAllow')}</button>${choice === 'pending' ? `<button type="button" data-cross-age-decline>${t('crossAgeDecline')}</button>` : ''}`}</div>`}`;
+    host.querySelector('[data-cross-age-allow]')?.addEventListener('click',()=>{
+      updateChallengeChoice(review.projected,'allowed'); redraw();
+    });
+    host.querySelector('[data-cross-age-revoke]')?.addEventListener('click',()=>{
+      updateChallengeChoice(review.projected,'revoked'); redraw();
+    });
+    host.querySelector('[data-cross-age-decline]')?.addEventListener('click',()=>{
+      updateChallengeChoice(review.projected,'declined'); redraw();
+    });
+  };
+  redraw();
+}
+
 function editToy(id) {
   const toy = store.state.toys.find(item => item.id === id) || normalizeToy({});
   const dialog = openModal(`<form class="form"><header><h2>${t(id ? 'edit' : 'addToy')}</h2><button type="button" data-close>×</button></header><label>${t('brand')}<input name="brand" value="${escape(toy.brand === 'other_unspecified' ? '' : toy.brand)}"></label><label>${t('name')}<input name="productName" required value="${escape(toy.productName)}"></label><label>${t('allCategories')}<select name="categoryCode">${CATEGORY_CODES.map(code => `<option value="${code}" ${toy.categoryCode === code ? 'selected' : ''}>${t(`category.${code}`)}</option>`).join('')}</select></label><label>${t('skills')}<select name="skillCodes" multiple size="7">${SKILL_CODES.map(code => `<option value="${code}" ${toy.skillCodes.includes(code) ? 'selected' : ''}>${t(`skill.${code}`)}</option>`).join('')}</select></label><label>${t('minimumAge')}<input name="minAgeMonths" type="number" value="${toy.minAgeMonths ?? ''}"></label><label>${t('maximumAge')}<input name="maxAgeMonths" type="number" value="${toy.maxAgeMonths ?? ''}"></label><label>${t('image')}<input name="image" type="file" accept="image/*"></label><div data-personal-image-editor-host></div><p class="form-error" aria-live="polite"></p><button class="primary">${t('save')}</button></form>`);
   const toyForm=dialog.querySelector('form');
+  if (id) attachCrossAgeApprovalControl(toyForm, toy);
   const personalInput=toyForm.elements.image;
   let editedImageData=null;
   personalInput.addEventListener('change',()=>{ editedImageData=null; });
@@ -609,7 +714,8 @@ function editToy(id) {
     const file = form.get('image');
     if (file?.size && !editedImageData) { toyForm.querySelector('.form-error').textContent=t('finishImageEditing'); return; }
     const imageRef = editedImageData ? await images.savePersonal(editedImageData) : toy.imageRef;
-    const next = normalizeToy({ ...toy, brand: form.get('brand'), productName: form.get('productName'), categoryCode: form.get('categoryCode'), skillCodes: form.getAll('skillCodes'), minAgeMonths: form.get('minAgeMonths'), maxAgeMonths: form.get('maxAgeMonths'), imageRef });
+    const editedName=String(form.get('productName') || '').trim();
+    const next = normalizeToy({ ...toy, brand: form.get('brand'), productName: editedName, userMetadata:{ ...(toy.userMetadata || {}), ...(toy.set?.kind === 'child' && editedName !== toy.productName ? { customProductName:true } : {}) }, categoryCode: form.get('categoryCode'), skillCodes: form.getAll('skillCodes'), minAgeMonths: form.get('minAgeMonths'), maxAgeMonths: form.get('maxAgeMonths'), imageRef });
     store.update(state => { const index = state.toys.findIndex(item => item.id === next.id); if (index < 0) state.toys.push(next); else state.toys[index] = next; }, 'toy-save');
     dialog.close();
   };
@@ -684,6 +790,11 @@ function chooseParentDeleteMode(parent) {
 function generateNewRotation() {
   const planning = structuredClone(store.state);
   clearManualShelfOverrides(planning);
+  planning.toys = planning.toys.map(toy => {
+    const row=catalog.resolve(toy);
+    const projected = { ...withCatalogSafety(toy, row), minAgeMonths:row?.minAgeMonths ?? toy.minAgeMonths };
+    return { ...projected, crossAgeApproval:crossAgeApprovalFor(planning, projected) };
+  });
   const result = selectRotation({ toys: planning.toys, history: planning.rotationHistory, childAgeMonths: childAgeMonths(), size: planning.settings.rotationSize, childDevelopmentProfile:planning.profile?.developmentProfile || {}, developmentFeedbackHistory:planning.developmentFeedbackHistory || [] });
   store.update(state => {
     persistRotationSelection(state, { selected:result.selected, diagnostics:result.diagnostics });
@@ -807,8 +918,8 @@ function catalogSourceKey(source) { return ({ base:'catalogSourceBase', remote:'
 
 function openSettings() {
   const recoveryNotice=!store.canPersist ? `<p class="danger">${t('persistenceRecoverySettingsNotice')}</p>` : '';
-  const adminControls=admin.enabled ? `<button type="button" id="restore-diagnostic-export">${t('exportRestoreDiagnostic')}</button><section class="panel"><h3>Recognition Device Diagnostics</h3><p id="recognition-trace-status">Stopped · 0 events</p><button type="button" id="recognition-trace-start">Start Recognition Trace</button><button type="button" id="recognition-trace-stop">Stop Trace</button><button type="button" id="recognition-trace-clear">Clear Trace</button><button type="button" id="recognition-trace-export">Export Recognition Trace JSON</button></section><section class="panel"><h3>Admin Catalog Save Diagnostic</h3><p id="admin-catalog-save-trace-status">Stopped · 0 events</p><button type="button" id="admin-catalog-save-trace-start">Start Trace</button><button type="button" id="admin-catalog-save-trace-stop">Stop Trace</button><button type="button" id="admin-catalog-save-trace-clear">Clear Trace</button><button type="button" id="admin-catalog-save-trace-export">Export Trace JSON</button></section><section class="panel"><h3>Storage Usage</h3><p id="storage-usage-status">Loading…</p><button type="button" id="storage-audit-export">Export Storage Audit JSON</button></section><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>` : `<button type="button" id="admin-open">${t('adminMode')}</button>`;
-  const dialog = openModal(`<form class="form"><header><h2>${t('settings')}</h2><button type="button" data-close>×</button></header>${recoveryNotice}<label>${t('language')}<select name="language"><option value="system">${t('system')}</option><option value="en">${t('languageEnglish')}</option><option value="zh">${t('languageChinese')}</option></select></label><label>${t('theme')}<select name="theme"><option value="system">${t('system')}</option><option value="light">${t('light')}</option><option value="dark">${t('dark')}</option></select></label><hr>${profileSettingsFields()}<button class="primary" ${store.canPersist?'':'disabled'}>${t('save')}</button><button type="button" id="backup-export" ${store.canPersist?'':'disabled'}>${t('exportBackup')}</button><button type="button" id="persistence-diagnostic-export">${t('exportPersistenceDiagnostic')}</button><label>${t('restoreBackup')}<input id="backup-import" type="file" accept="application/json" ${store.canPersist?'':'disabled'}></label><p id="backup-restore-status" role="status" aria-live="polite"></p><section class="panel"><h3>${t('dataAudit')}</h3><p>${t('exportToyImageAuditHint')}</p><button type="button" id="toy-image-audit-export">${t('exportToyImageAudit')}</button></section><section id="admin-settings">${adminControls}</section></form>`);
+  const adminControls=admin.enabled ? `<button type="button" id="md1460-migration-audit-export">Export MD1460 Migration Audit</button><button type="button" id="md1460-migration-preview">Preview MD1460 Migration</button><p id="md1460-migration-audit-status" role="status"></p><pre id="md1460-migration-preview-result" hidden></pre><button type="button" id="restore-diagnostic-export">${t('exportRestoreDiagnostic')}</button><section class="panel"><h3>Recognition Device Diagnostics</h3><p id="recognition-trace-status">Stopped · 0 events</p><button type="button" id="recognition-trace-start">Start Recognition Trace</button><button type="button" id="recognition-trace-stop">Stop Trace</button><button type="button" id="recognition-trace-clear">Clear Trace</button><button type="button" id="recognition-trace-export">Export Recognition Trace JSON</button></section><section class="panel"><h3>Admin Catalog Save Diagnostic</h3><p id="admin-catalog-save-trace-status">Stopped · 0 events</p><button type="button" id="admin-catalog-save-trace-start">Start Trace</button><button type="button" id="admin-catalog-save-trace-stop">Stop Trace</button><button type="button" id="admin-catalog-save-trace-clear">Clear Trace</button><button type="button" id="admin-catalog-save-trace-export">Export Trace JSON</button></section><section class="panel"><h3>Storage Usage</h3><p id="storage-usage-status">Loading…</p><button type="button" id="storage-audit-export">Export Storage Audit JSON</button></section><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge" data-admin-pending-badge>${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>` : `<button type="button" id="admin-open">${t('adminMode')}</button>`;
+  const dialog = openModal(`<form class="form"><header><h2>${t('settings')}</h2><button type="button" data-close>×</button></header>${recoveryNotice}<label>${t('language')}<select name="language"><option value="system">${t('system')}</option><option value="en">${t('languageEnglish')}</option><option value="zh">${t('languageChinese')}</option></select></label><label>${t('theme')}<select name="theme"><option value="system">${t('system')}</option><option value="light">${t('light')}</option><option value="dark">${t('dark')}</option></select></label><hr>${profileSettingsFields()}<button class="primary" ${store.canPersist?'':'disabled'}>${t('save')}</button><button type="button" id="backup-export" ${store.canPersist?'':'disabled'}>${t('exportBackup')}</button><button type="button" id="persistence-diagnostic-export">${t('exportPersistenceDiagnostic')}</button><label>${t('restoreBackup')}<input id="backup-import" type="file" accept="application/json" ${store.canPersist?'':'disabled'}></label><p id="backup-restore-status" role="status" aria-live="polite"></p><section class="panel"><h3>${t('dataAudit')}</h3><p>${t('exportToyImageAuditHint')}</p><button type="button" id="toy-image-audit-export">${t('exportToyImageAudit')}</button><p>${t('exportCatalogSafetyAuditHint')}</p><button type="button" id="catalog-safety-audit-export">${t('exportCatalogSafetyAudit')}</button><p>${t('exportRawIdentityReferenceAuditHint')}</p><button type="button" id="raw-identity-reference-audit-export">${t('exportRawIdentityReferenceAudit')}</button></section><section id="admin-settings">${adminControls}</section></form>`);
   const form = dialog.querySelector('form'); form.language.value = store.state.settings.language; form.theme.value = store.state.settings.theme;
   if (!store.canPersist) form.querySelectorAll('input, select, textarea').forEach(control => { if (control.id !== 'persistence-diagnostic-export') control.disabled = true; });
   const applyPreview = () => {
@@ -822,6 +933,8 @@ function openSettings() {
   form.onsubmit = event => { event.preventDefault(); store.update(state => Object.assign(state.settings, { language: form.language.value, theme: form.theme.value }), 'settings'); saveProfileSettingsFromForm(form); dialog.close(); };
   dialog.querySelector('#backup-export').onclick = async () => downloadJson(await exportBackup(store, images), 'toy-rotation-backup.json');
   dialog.querySelector('#toy-image-audit-export')?.addEventListener('click', () => downloadJson(buildToyImageAudit({ state:store.state, catalog, build:window.TOY_ROTATION_CONFIG }), `toy-image-audit-v0116-${auditFilenameStamp()}.json`));
+  dialog.querySelector('#catalog-safety-audit-export')?.addEventListener('click', () => downloadJson(buildCatalogSafetyAudit({ state:store.state, catalog, build:window.TOY_ROTATION_CONFIG }), `toy-safety-audit-v0116-${auditFilenameStamp()}.json`));
+  dialog.querySelector('#raw-identity-reference-audit-export')?.addEventListener('click', () => downloadJson(buildRawIdentityReferenceAudit({ catalog, build:window.TOY_ROTATION_CONFIG }), `toy-raw-identity-audit-v0116-${auditFilenameStamp()}.json`));
   dialog.querySelector('#backup-import').onchange = async event => {
     const file = event.target.files?.[0]; if (!file) return;
     const input = event.currentTarget; const status = dialog.querySelector('#backup-restore-status');
@@ -855,6 +968,7 @@ function openSettings() {
     }
   };
   dialog.querySelector('#restore-diagnostic-export')?.addEventListener('click', exportRestoreDiagnostic);
+  bindMd1460AuditExport(dialog); bindMd1460MigrationPreview(dialog); closeCompletedMd1460Controls(dialog);
   const updateRecognitionTraceStatus=()=>{const active=recognitionDeviceDiagnostic.sessions.at(-1);const status=dialog.querySelector('#recognition-trace-status');if(status)status.textContent=`${recognitionDeviceDiagnostic.recording?'Recording':'Stopped'} · ${active?.events.length||0} events · ${active?.sessionId||'no session'}`;};
   dialog.querySelector('#recognition-trace-start')?.addEventListener('click',()=>{recognitionDeviceDiagnostic.start();updateRecognitionTraceStatus();});
   dialog.querySelector('#recognition-trace-stop')?.addEventListener('click',()=>{recognitionDeviceDiagnostic.stop();updateRecognitionTraceStatus();});
@@ -900,7 +1014,12 @@ function profileSettingsFields() {
   const profile = store.state.profile;
   const days = Number(store.state.settings.rotationDays) || 7;
   const preset = [7, 10, 14].includes(days) ? String(days) : 'custom';
-  return `<h3>${t('childProfile')}</h3><label>${t('childName')}<input name="childName" value="${escape(profile.childName || '')}"></label><label>${t('birthDate')}<input name="childBirthDate" type="date" value="${escape(profile.childBirthDate || '')}" required></label><h3>${t('rotationSettings')}</h3><label>${t('targetShelfCount')}<input name="rotationSize" type="number" min="1" max="50" value="${store.state.settings.rotationSize}"></label><label>${t('rotationInterval')}<select name="rotationDays"><option value="7">7 ${t('dayUnit')}</option><option value="10">10 ${t('dayUnit')}</option><option value="14">14 ${t('dayUnit')}</option><option value="custom">${t('custom')}</option></select></label><label class="rotation-custom ${preset === 'custom' ? '' : 'hidden'}">${t('customRotationDays')}<input name="rotationDaysCustom" type="number" min="1" max="90" value="${preset === 'custom' ? days : ''}"></label>`;
+  const abilities = DEVELOPMENT_ABILITY_GROUPS.map(group => `<details class="panel"><summary>${t(`abilityProfile.group.${group.key}`)}</summary>${group.mechanisms.map(mechanic => {
+    const manual = profile.developmentProfile?.[mechanic]?.manualLevel;
+    const options = [['',t('abilityProfile.auto')],['1',t('abilityProfile.level.intro')],['2',t('abilityProfile.level.basic')],['3',t('abilityProfile.level.fluent')],['5',t('abilityProfile.level.challenge')]];
+    return `<label>${t(`abilityProfile.mechanism.${mechanic}`)}<select data-ability-mechanic="${mechanic}">${options.map(([value,label]) => `<option value="${value}" ${String(manual ?? '') === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>`;
+  }).join('')}</details>`).join('');
+  return `<h3>${t('childProfile')}</h3><label>${t('childName')}<input name="childName" value="${escape(profile.childName || '')}"></label><label>${t('birthDate')}<input name="childBirthDate" type="date" value="${escape(profile.childBirthDate || '')}" required></label><details class="panel"><summary>${t('abilityProfile.title')}</summary><p>${t('abilityProfile.hint')}</p>${abilities}</details><h3>${t('rotationSettings')}</h3><label>${t('targetShelfCount')}<input name="rotationSize" type="number" min="1" max="50" value="${store.state.settings.rotationSize}"></label><label>${t('rotationInterval')}<select name="rotationDays"><option value="7">7 ${t('dayUnit')}</option><option value="10">10 ${t('dayUnit')}</option><option value="14">14 ${t('dayUnit')}</option><option value="custom">${t('custom')}</option></select></label><label class="rotation-custom ${preset === 'custom' ? '' : 'hidden'}">${t('customRotationDays')}<input name="rotationDaysCustom" type="number" min="1" max="90" value="${preset === 'custom' ? days : ''}"></label>`;
 }
 function wireProfileSettingsForm(dialog, { onboarding = false } = {}) {
   const form = dialog.querySelector('form');
@@ -911,7 +1030,8 @@ function wireProfileSettingsForm(dialog, { onboarding = false } = {}) {
 }
 function saveProfileSettingsFromForm(form) {
   const selectedDays = form.rotationDays.value === 'custom' ? form.rotationDaysCustom.value : form.rotationDays.value;
-  saveProfileAndRotationSettings(store, { childName:form.childName.value, childBirthDate:form.childBirthDate.value, rotationSize:form.rotationSize.value, rotationDays:selectedDays });
+  const edits = [...form.querySelectorAll('[data-ability-mechanic]')].map(select => [select.dataset.abilityMechanic, select.value]).filter(([mechanic,value]) => String(store.state.profile.developmentProfile?.[mechanic]?.manualLevel ?? '') !== value);
+  saveProfileAndRotationSettings(store, { childName:form.childName.value, childBirthDate:form.childBirthDate.value, rotationSize:form.rotationSize.value, rotationDays:selectedDays, manualAbilities:edits });
 }
 async function openManagerDashboard({ repairMessage = '', returnToSettings = false } = {}) {
   if (!admin.enabled) return;
@@ -1133,8 +1253,36 @@ function openAdmin() {
 function openAdminInSettings(dialog) {
   const host=dialog.querySelector('#admin-settings'); if(!host) return;
   host.innerHTML=`<label>${t('adminPassword')}<input id="admin-password" type="password" autocomplete="current-password"></label><button type="button" id="admin-sign-in" class="primary">${t('signIn')}</button><p id="admin-error"></p>`;
-  host.querySelector('#admin-sign-in').onclick=async()=>{try{await admin.signIn(host.querySelector('#admin-password').value);host.innerHTML=`<p role="status">${t('adminMode')}</p><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge">${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>`;host.querySelector('#manager-open').onclick=()=>openAdminWorkspaceInSettings(dialog);host.querySelector('#admin-open').onclick=()=>{admin.signOut();openSettings();};}catch(error){host.querySelector('#admin-error').textContent=messageFor(error.message);}};
+  host.querySelector('#admin-sign-in').onclick=async()=>{try{await admin.signIn(host.querySelector('#admin-password').value);host.innerHTML=`<p role="status">${t('adminMode')}</p><button type="button" id="md1460-migration-audit-export">Export MD1460 Migration Audit</button><button type="button" id="md1460-migration-preview">Preview MD1460 Migration</button><p id="md1460-migration-audit-status" role="status"></p><pre id="md1460-migration-preview-result" hidden></pre><button type="button" id="manager-open">${t('managerDashboard')} <span class="badge">${pendingCandidateCount(store.state)}</span></button><button type="button" id="admin-open">${t('signOut')}</button>`;bindMd1460AuditExport(dialog);bindMd1460MigrationPreview(dialog);closeCompletedMd1460Controls(dialog);host.querySelector('#manager-open').onclick=()=>openAdminWorkspaceInSettings(dialog);host.querySelector('#admin-open').onclick=()=>{admin.signOut();openSettings();};}catch(error){host.querySelector('#admin-error').textContent=messageFor(error.message);}};
 }
+function bindMd1460AuditExport(dialog) {
+  dialog.querySelector('#md1460-migration-audit-export')?.addEventListener('click', async () => {
+    if (!admin.enabled) return;
+    const status=dialog.querySelector('#md1460-migration-audit-status');
+    try {
+      const audit=await buildMd1460MigrationAudit({state:store.state,storage:localStorage,catalog,build:window.TOY_ROTATION_CONFIG});
+      downloadJson(audit,`toy-rotation-md1460-owner-audit-${auditFilenameStamp()}.json`);
+      if(status)status.textContent='MD1460 audit downloaded; no toy data changed.';
+    } catch(error) { if(status)status.textContent='MD1460 audit could not be exported. No toy data changed.'; }
+  });
+}
+function bindMd1460MigrationPreview(dialog) {
+  dialog.querySelector('#md1460-migration-preview')?.addEventListener('click', () => {
+    if (!admin.enabled) return;
+    const preview=runMD1460IdentityMigration(store.state,{context:'admin_preview',mode:'preview',snapshots:md1460PreviewSnapshots()});
+    const status=dialog.querySelector('#md1460-migration-audit-status'); const result=dialog.querySelector('#md1460-migration-preview-result');
+    if(status)status.textContent=preview.status==='BLOCKED' ? `MD1460 preview blocked: ${preview.invariants.issues.join(', ')}. No toy data was written.` : `MD1460 Migration Preview — ${preview.status}. Owner data: ${preview.diff.ownerDataChanged?'planned changes':'No changes required'}. Parent: ${preview.invariants.parentCount}; Children: ${preview.invariants.childCount}; Historical removals preserved: ${preview.invariants.removedOwnershipCount}; Snapshot evidence: ${preview.invariants.snapshotEvidence?'PASS':'FAIL'}; Migration marker: ${preview.diff.markerChanged?'Not written':'Already written'}; NO DATA WRITTEN.`;
+    // The concise status is the owner-facing preview. Raw diagnostics remain
+    // intentionally hidden; the separate audit export is available to admins.
+    if(result){result.hidden=true;result.textContent=JSON.stringify({status:preview.status,inputHash:preview.inputHash,proposedHash:preview.proposedHash,diff:preview.diff,invariants:preview.invariants,plannedMarker:preview.plannedMarker},null,2);}
+    dialog.__md1460Preview=preview;let execute=dialog.querySelector('#md1460-migration-execute');
+    if(preview.status==='READY'&&!execute){execute=document.createElement('button');execute.type='button';execute.id='md1460-migration-execute';execute.textContent='Execute MD1460 Migration';status?.after(execute);execute.addEventListener('click',()=>executeMd1460Migration(dialog));}
+    if(execute)execute.hidden=preview.status!=='READY';
+  });
+}
+function executeMd1460Migration(dialog){const preview=dialog.__md1460Preview;if(!preview||!confirm('MD1460 Migration\n\nNo toy data changes are planned. This writes only the migration marker and retires the legacy QA6 mutation path for the current live state.'))return;const result=executeMD1460MarkerOnly({storage:localStorage,previewFingerprint:preview.inputHash,buildId:window.TOY_ROTATION_CONFIG?.buildId});const status=dialog.querySelector('#md1460-migration-audit-status');if(result.status==='COMPLETED'){status.textContent=`MD1460 Migration Complete. Owner data changed: No. Parent: ${result.preview.invariants.parentCount}; Children: ${result.preview.invariants.childCount}; Historical removals preserved: ${result.preview.invariants.removedOwnershipCount}; Migration marker: Written. Post-commit validation: PASS.`;dialog.querySelector('#md1460-migration-execute')?.setAttribute('hidden','');}else if(result.status==='STALE_PREVIEW')status.textContent='Migration not executed. State changed since Preview. Run Preview again.';else if(result.status==='ROLLED_BACK')status.textContent='Migration failed. No owner data changes were retained. Migration marker rolled back.';else if(result.status==='ROLLBACK_FAILED')status.textContent='ROLLBACK FAILED. Do not continue any MD1460 mutation.';else status.textContent=`Migration not executed: ${result.reason||result.status}.`;}
+function md1460PreviewSnapshots(){return [STORE_SHADOW_KEY,...STORE_SNAPSHOT_KEYS].flatMap(key=>{try{const value=JSON.parse(localStorage.getItem(key)||'null');return value&&typeof value==='object'?[{key,value:value.state||value}]:[];}catch{return [];}});}
+function closeCompletedMd1460Controls(dialog){if(store.state?.catalogState?.syncMetadata?.md1460IdentityMigrationV1?.status!=='applied')return;dialog.querySelector('#md1460-migration-audit-export')?.remove();dialog.querySelector('#md1460-migration-preview')?.remove();dialog.querySelector('#md1460-migration-execute')?.remove();const status=dialog.querySelector('#md1460-migration-audit-status');if(status)status.textContent='MD1460 Migration Status: Complete';}
 function traceAdminWorkspace(stage, detail = {}) { const trace=window.__TOY_ROTATION_ADMIN_WORKSPACE_TRACE__ ||= []; trace.push({stage,detail,at:new Date().toISOString()}); if(trace.length>40)trace.splice(0,trace.length-40); }
 function adminNeedsReviewCount(){return getNeedsReviewCount(store.state);}
 function renderAdminWorkspaceBody(dialog,{onBack,onClose}) {

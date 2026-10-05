@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+const [main,css]=await Promise.all([readFile(new URL('../src/main.js',import.meta.url),'utf8'),readFile(new URL('../src/ui/app.css',import.meta.url),'utf8')]);
+const renderer=main.slice(main.indexOf('function renderLocalCandidateQueue'),main.indexOf('function renderCandidateReviewDetail'));
+let checks=0;const ok=(value,message)=>{assert.ok(value,message);checks++};
+for(const marker of ['candidate-review-list','candidate-review-card','candidate-review-thumbnail','candidate-review-summary','candidate-review-name','candidate-review-meta','candidate-review-help','data-local-open'])ok(renderer.includes(marker),marker);
+ok(renderer.includes('candidateReviewSummaryTime(row.createdAt)'),'list uses short display time rather than raw ISO');
+ok(renderer.includes("row.reviewStatus==='pending'?'Start Review':row.reviewStatus==='reviewing'?'Continue Review':'View Result'"),'all summary statuses retain their action');
+for(const rule of [/\.candidate-review-thumbnail[^}]*flex:0 0 104px[^}]*width:104px[^}]*height:104px[^}]*object-fit:contain/s,/\.candidate-review-summary[^}]*min-width:0/s,/\.candidate-review-name[^}]*-webkit-line-clamp:2/s,/\.candidate-review-help[^}]*overflow-wrap:anywhere/s,/\.candidate-review-list[^}]*overflow-x:hidden/s,/@media\s*\(max-width:\s*520px\)[\s\S]*candidate-review-thumbnail[^}]*width:96px/s])ok(rule.test(css),'mobile geometry contract');
+ok(!renderer.includes('row.aliases')&&!renderer.includes('row.skillCodes')&&!renderer.includes('row.playMechanics'),'summary omits expanded metadata');
+assert.equal(checks,17);console.log(`candidate review list mobile v0.11.5: PASS (${checks} assertions)`);

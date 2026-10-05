@@ -1,5 +1,6 @@
 import { SCHEMA_VERSION, canonicalKey, emptyState, normalizeToy, normalizeWishlistItem } from './schema.js';
 import { reconcilePersonalDuplicates, sameCatalogIdentity } from '../domain/identity-service.js';
+import { runMD1460IdentityMigration } from '../domain/md1460-identity-migration.js';
 
 const LEGACY_KEYS = ['toyRotationV04','toyRotationV032','toyRotationV03','toyRotationV02'];
 export const STORE_KEY = 'toyRotation.cleanBaseline';
@@ -151,7 +152,7 @@ export class AppStore {
   }
 }
 
-export function bootStore({ onStage = () => {}, diagnosticMode = globalThis.window?.TOY_ROTATION_CONFIG?.PERSISTENCE_DIAGNOSTIC_MODE === true } = {}) {
+export function bootStore({ onStage = () => {}, diagnosticMode = globalThis.window?.TOY_ROTATION_CONFIG?.PERSISTENCE_DIAGNOSTIC_MODE === true, migrationShadow = null } = {}) {
   onStage('store_persistence_read_start');
   const current = readStoredJson(STORE_KEY);
   const legacyRecords = LEGACY_KEYS.map(key => readStoredJson(key));
@@ -197,6 +198,12 @@ export function bootStore({ onStage = () => {}, diagnosticMode = globalThis.wind
     return new AppStore(state, { writable:false, status:'safe_hydration_loss', diagnostic, recovery:null });
   }
   onStage('migrations_end', { schemaVersion:state.schemaVersion });
+  // Deliberately evaluate a clone before the normal startup persistence point.
+  // The result remains diagnostic-only: neither state nor storage is changed.
+  const md1460Snapshots=[readStoredJson(STORE_SHADOW_KEY),...STORE_SNAPSHOT_KEYS.map(key=>readStoredJson(key))]
+    .filter(record=>record.status==='valid'&&usableState(record.value)).map(record=>({key:record.key,value:record.value}));
+  const md1460Shadow=(typeof migrationShadow==='function' ? migrationShadow : candidate=>runMD1460IdentityMigration(candidate,{context:'startup',mode:'shadow',snapshots:md1460Snapshots}))(structuredClone(state));
+  onStage('md1460_identity_migration_shadow', { status:md1460Shadow?.status || 'UNAVAILABLE', changed:!!md1460Shadow?.diff?.changed, invariantOk:!!md1460Shadow?.invariants?.ok });
   if (diagnosticMode) {
     const diagnostic=buildPersistenceSnapshot({ current, legacyRecords, mode:recovery ? 'diagnostic_staged_recovery' : 'diagnostic_read_only', hydratedState:state, recovery });
     onStage('store_persistence_diagnostic_mode', diagnostic);

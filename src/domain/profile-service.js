@@ -1,3 +1,5 @@
+import { setManualAbility } from './development-fit.js';
+
 const MONTH_MS = 2629800000;
 const DAY_MS = 86400000;
 
@@ -16,12 +18,14 @@ export function reassessmentState({ lastRotationAt, rotationHistory = [], rotati
   return { due:daysRemaining === 0, daysRemaining, days, nextAt:nextAt.toISOString() };
 }
 
-export function saveProfileAndRotationSettings(store, { childName, childBirthDate, rotationSize, rotationDays, onboardingDone = true }) {
+export function saveProfileAndRotationSettings(store, { childName, childBirthDate, rotationSize, rotationDays, manualAbilities = [], onboardingDone = true }) {
   store.update(state => {
     state.profile.childName = String(childName || '').trim();
     state.profile.childBirthDate = childBirthDate || '';
     state.settings.rotationSize = Math.max(1, Math.min(50, Number(rotationSize) || 6));
     state.settings.rotationDays = Math.max(1, Math.min(90, Number(rotationDays) || 7));
+    state.profile.developmentProfile ||= {};
+    for (const [mechanic,level] of manualAbilities) setManualAbility(state.profile.developmentProfile, mechanic, level);
     if (onboardingDone) state.settings.onboardingDone = true;
   }, 'profile-and-rotation-settings');
 }

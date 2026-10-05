@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {upsertLocalCandidate,setLocalCandidateStatus,pendingCandidateCount,localCandidates} from '../src/features/local-candidate-queue.js';
+
+const source=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
+let n=0,ok=(v,m)=>{assert.ok(v,m);n++};
+for(const value of ['data-local-open','Start Review','Continue Review','View Result','renderCandidateReviewDetail','data-candidate-detail','Potential Existing Matches','data-candidate-action="approved"','data-candidate-action="link"','data-candidate-action="rejected"','reviewAttachmentRef','slice(0,5)','button.disabled'])ok(source.includes(value),value);
+ok(!source.includes('data-local-action="reviewing"'),'no summary direct review action');
+const state={catalogState:{syncMetadata:{}},toys:[],wishlist:[],rotationHistory:[]};
+upsertLocalCandidate(state,{candidateId:'pending',brand:'VTech',productName:'Alpha',reviewAttachmentRef:null});
+upsertLocalCandidate(state,{candidateId:'sku',brand:'VTech',productName:'Alpha',sku:'different'});
+ok(pendingCandidateCount(state)===2,'pending count');
+setLocalCandidateStatus(state,'pending','reviewing');
+ok(localCandidates(state).find(x=>x.candidateId==='pending').reviewStatus==='reviewing','start review');
+ok(pendingCandidateCount(state)===2,'reviewing needs review');
+setLocalCandidateStatus(state,'pending','approved');
+ok(pendingCandidateCount(state)===1,'approved exits');
+setLocalCandidateStatus(state,'sku','linked');
+ok(pendingCandidateCount(state)===0,'explicit linked exits');
+ok(JSON.stringify({toys:state.toys,wishlist:state.wishlist,rotationHistory:state.rotationHistory})==='{"toys":[],"wishlist":[],"rotationHistory":[]}','ownership isolated');
+const reload=structuredClone(state);
+ok(localCandidates(reload).every(x=>['approved','linked'].includes(x.reviewStatus)),'reload statuses');
+for(let i=0;i<8;i++)ok(source.includes("event.target.closest('[data-candidate-action]')"),'delegated detail action');
+assert.equal(n,29);
+console.log(`admin candidate review: PASS (${n} assertions)`);

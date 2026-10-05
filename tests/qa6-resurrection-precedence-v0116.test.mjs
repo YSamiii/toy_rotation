@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { CatalogRepository } from '../src/domain/catalog-repository.js';
+const make=(tombstones={})=>{const state={toys:[],wishlist:[],catalogState:{tombstones,adminEdits:{},imageRefsByKey:{},imageRefsByIdentity:{},learnedEntries:[],remoteEntries:{},syncMetadata:{}}};return {state,get state(){return state},update(fn){fn(state)}}};
+const home={key:'mideer-level1-home-sweet-home-puzzle',brand:'Mideer',name:'Home Sweet Home',sku:'MD1673',resurrectionVersion:'qa6-catalog-resurrection-v1'};
+const animal={key:'mideer-animal-toys-set-15pcs',brand:'Mideer',name:'Animal Toys Set 15pcs',sku:'MD1382',resurrectionVersion:'qa6-catalog-resurrection-v1'};
+const other={key:'unrelated-hidden',brand:'Mideer',name:'Unrelated'};
+const store=make();const c=new CatalogRepository(store);c.applyBase([home,animal,other]);c.applyServerEdits({[home.key]:{hidden:true,updatedAt:'2026-08-18T00:00:00Z'},[animal.key]:{deleted:true,updatedAt:'2026-08-19T00:00:00Z'},[other.key]:{hidden:true,updatedAt:'2026-08-19T00:00:00Z'}});
+assert.ok(c.getByKey(home.key));assert.ok(c.getByKey(animal.key));assert.equal(c.getByKey(other.key),null);
+store.state.catalogState.tombstones[home.key]={deletedAt:'2026-09-18T00:00:00Z'};c.refresh();assert.equal(c.getByKey(home.key),null,'new intentional tombstone wins');
+console.log('qa6 resurrection precedence v0.11.6: PASS (4 assertions)');

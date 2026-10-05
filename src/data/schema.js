@@ -141,7 +141,7 @@ export function normalizeToy(source = {}) {
 
 export function normalizeCatalogToy(source = {}) {
   const toy = normalizeToy(source);
-  return { id: source.id || source.key || toy.canonicalKey, ...toy, aliases: unique(source.aliases || []), legacyCanonicalKeys:unique([...(toy.legacyCanonicalKeys || []), ...(source.legacyCanonicalKeys || [])]), children:Array.isArray(source.children) ? source.children : [], childCount:source.childCount || source.puzzleCount || null, catalogGroup:source.catalogGroup || '', catalogSortOrder:Number(source.catalogSortOrder ?? 999999), source: source.source || source.catalogSource || 'base', provenance: source.provenance || source.sourceUrl || '', reviewStatus:source.reviewStatus || (source.source === 'learned' ? 'pending' : 'approved'), candidateImageRef:source.candidateImageRef || null, createdAt:source.createdAt || toy.createdAt, deleted: false };
+  return { id: source.id || source.key || toy.canonicalKey, ...toy, aliases: unique(source.aliases || []), legacyCanonicalKeys:unique([...(toy.legacyCanonicalKeys || []), ...(source.legacyCanonicalKeys || [])]), children:Array.isArray(source.children) ? source.children : [], childCount:source.childCount || source.puzzleCount || null, catalogGroup:source.catalogGroup || '', catalogSortOrder:Number(source.catalogSortOrder ?? 999999), source: source.source || source.catalogSource || 'base', provenance: source.provenance || source.sourceUrl || '', reviewStatus:source.reviewStatus || (source.source === 'learned' ? 'pending' : 'approved'), candidateImageRef:source.candidateImageRef || null, resurrectionVersion:source.resurrectionVersion || null, createdAt:source.createdAt || toy.createdAt, deleted: false };
 }
 
 export function normalizeWishlistItem(source = {}) {
@@ -153,7 +153,7 @@ export function normalizeWishlistItem(source = {}) {
 }
 
 export function emptyState() {
-  return { schemaVersion: SCHEMA_VERSION, settings: { language: 'system', theme: 'system', rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: '', childBirthDate: '', developmentProfile:{} }, developmentFeedbackHistory:[], toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
+  return { schemaVersion: SCHEMA_VERSION, settings: { language: 'system', theme: 'system', rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: '', childBirthDate: '', developmentProfile:{} }, developmentFeedbackHistory:[], crossAgeApprovals:{}, toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
 }
 
 function numeric(value) { return value === '' || value == null || Number.isNaN(Number(value)) ? null : Number(value); }

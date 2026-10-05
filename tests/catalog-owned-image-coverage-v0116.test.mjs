@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { IMAGE_USABILITY, classifyCatalogImage, imageCoverage, priorityBrandCoverage } from '../src/domain/catalog-image-usability.js';
+let checks=0; const equal=(actual,expected,message)=>{assert.equal(actual,expected,message);checks++};
+const packaged={kind:'packaged',path:'catalog-assets/exact.webp',verificationStatus:'verified_real',assetState:'verified_packaged',mimeType:'image/webp',contentHash:'sha256:abc'};
+const remote={kind:'remote',url:'https://cdn.example.test/exact.webp',verificationStatus:'verified_real'};
+const placeholder={kind:'generated',label:'Missing'};
+const catalog=[{key:'owned-packaged',canonicalKey:'owned-packaged',brand:'Mideer',imageRef:packaged},{key:'owned-remote',canonicalKey:'owned-remote',brand:'LEGO / DUPLO',imageRef:remote},{key:'owned-placeholder',canonicalKey:'owned-placeholder',brand:'Learning Resources',imageRef:placeholder},{key:'owned-unverified',canonicalKey:'owned-unverified',brand:'Cherry-Pick',imageRef:{kind:'remote',url:'https://candidate.example.test/a.jpg'}},{key:'owned-missing',canonicalKey:'owned-missing',brand:'Mideer',imageRef:null}];
+equal(classifyCatalogImage(packaged),IMAGE_USABILITY.VERIFIED_PACKAGED_IMAGE,'hashed packaged image is usable');
+equal(classifyCatalogImage(remote),IMAGE_USABILITY.VERIFIED_REMOTE_IMAGE,'verified remote image is usable');
+equal(classifyCatalogImage(placeholder),IMAGE_USABILITY.PLACEHOLDER_ONLY,'generated card art is never usable');
+equal(classifyCatalogImage({kind:'remote',url:'https://candidate.example.test/a.jpg'}),IMAGE_USABILITY.IMAGE_SOURCE_UNVERIFIED,'unverified remote is not usable');
+const owned=imageCoverage([{canonicalKey:'owned-packaged'},{canonicalKey:'owned-remote'},{canonicalKey:'owned-placeholder'},{canonicalKey:'owned-unverified'},{canonicalKey:'owned-missing'},{canonicalKey:'not-in-catalog'}],catalog);
+equal(owned.total,5,'only owned rows mapped to a catalog canonical key are counted'); equal(owned.usable,2,'packaged and verified remote images count'); equal(owned.placeholder,1,'placeholder is reported separately'); equal(owned.missing,1,'missing image is reported separately'); equal(owned.unverified,1,'candidate image is not promoted'); equal(owned.coverage,0.4,'owned coverage uses mapped rows as denominator');
+const personal=imageCoverage([{canonicalKey:'owned-placeholder',imageRef:{kind:'personal',id:'personal:photo'}}],catalog); equal(personal.usable,1,'personal photo has precedence over catalog placeholder');
+const brands=priorityBrandCoverage([{canonicalKey:'owned-packaged'},{canonicalKey:'owned-remote'},{canonicalKey:'owned-placeholder'},{canonicalKey:'owned-unverified'}],catalog); equal(brands.Mideer.usable,1,'priority brand uses the same usable definition'); equal(brands['Learning Resources'].coverage,0,'placeholder does not inflate brand coverage');
+console.log(`catalog owned image coverage v0.11.6: PASS (${checks} assertions)`);

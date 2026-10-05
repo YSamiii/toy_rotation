@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {realOwnerStructure} from './md1460-real-owner-state-fixture-v0116.mjs';
+import {STORE_KEY,STORE_SHADOW_KEY,STORE_SNAPSHOT_KEYS} from '../src/data/store.js';
+import {MD1460_IDENTITY_MIGRATION_MARKER,buildMD1460OwnerFingerprint,runMD1460IdentityMigration} from '../src/domain/md1460-identity-migration.js';
+import {executeMD1460MarkerOnly} from '../src/domain/md1460-execution-service.js';
+const {state,snapshots}=realOwnerStructure();const values=new Map([[STORE_KEY,JSON.stringify(state)],[STORE_SHADOW_KEY,JSON.stringify(snapshots[0].value)],...STORE_SNAPSHOT_KEYS.map((key,index)=>[key,JSON.stringify(snapshots[index+1]?.value||snapshots[0].value)])]);
+const storage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,String(value))};const internal=[snapshots[0],...snapshots.slice(1,4)];
+const pre=runMD1460IdentityMigration(state,{snapshots:internal});assert.equal(pre.status,'READY');const beforeRaw=values.get(STORE_KEY),beforeSnapshots=STORE_SNAPSHOT_KEYS.map(key=>values.get(key));const before=buildMD1460OwnerFingerprint(state,{snapshots:internal});
+const result=executeMD1460MarkerOnly({storage,previewFingerprint:pre.inputHash,buildId:'test'});assert.equal(result.status,'COMPLETED');const persisted=JSON.parse(values.get(STORE_KEY));assert.equal(buildMD1460OwnerFingerprint(persisted,{snapshots:internal}),before);assert.equal(persisted.catalogState.syncMetadata[MD1460_IDENTITY_MIGRATION_MARKER].migrationMode,'marker-only');assert.deepEqual(STORE_SNAPSHOT_KEYS.map(key=>values.get(key)),beforeSnapshots,'snapshots untouched');assert.equal(runMD1460IdentityMigration(persisted,{snapshots:internal}).status,'ALREADY_MIGRATED');
+assert.equal(executeMD1460MarkerOnly({storage,previewFingerprint:pre.inputHash,buildId:'test'}).status,'ALREADY_MIGRATED','idempotent');values.set(STORE_KEY,beforeRaw);const stale=executeMD1460MarkerOnly({storage,previewFingerprint:'fnv1a-deadbeef',buildId:'test'});assert.equal(stale.status,'STALE_PREVIEW');
+console.log('MD1460 marker-only execution: revalidation, owner fingerprint, marker persistence, snapshot preservation, idempotency, stale-preview PASS');

@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createCatalogReport,getCatalogReports,getPendingCatalogReports,startCatalogReportReview,resolveCatalogReport,dismissCatalogReport} from '../src/features/catalog-report-store.js';
+
+const source=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
+let n=0,ok=(v,m)=>{assert.ok(v,m);n++};
+for(const value of ['getCatalogReports(store.state)','renderReportedIssuesQueue','renderReportReviewDetail','data-report-open','Start Review','Continue Review','View Result','Reported Catalog Item','attachmentRef','data-report-action="resolve"','data-report-action="dismiss"','Catalog item unavailable'])ok(source.includes(value),value);
+const state={catalogState:{syncMetadata:{governanceOutbox:[{kind:'report'}]}}};
+const a=createCatalogReport(state,{id:'a',canonicalKey:'vtech-alpha',reportType:'name_wrong',description:'Long note',attachmentRef:{kind:'personal',id:'p'}}),b=createCatalogReport(state,{id:'b',canonicalKey:'missing',reportType:'other'});
+ok(getCatalogReports(state).length===2,'local source');
+ok(getPendingCatalogReports(state).length===2,'outbox not queue');
+startCatalogReportReview(state,'a');
+ok(a.status==='reviewing','start review');
+resolveCatalogReport(state,'a',{reason:'fixed'});
+ok(a.status==='resolved'&&a.resolutionReason==='fixed','resolve');
+dismissCatalogReport(state,'b',{reason:'duplicate'});
+ok(b.status==='dismissed'&&b.resolutionReason==='duplicate','dismiss');
+ok(getPendingCatalogReports(state).length===0,'resolved leaves queue');
+ok(!JSON.stringify(state).includes('data:image/'),'no raw attachment');
+for(let i=0;i<8;i++)ok(source.includes("event.target.closest('[data-report-action]')"),'delegated action');
+assert.equal(n,27);
+console.log(`admin reported issues: PASS (${n} assertions)`);

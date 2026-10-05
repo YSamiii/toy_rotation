@@ -1,0 +1,85 @@
+import assert from 'node:assert/strict';
+import { SCHEMA_VERSION, emptyState, normalizeToy } from '../src/data/schema.js';
+import { DEVELOPMENT_ABILITY_GROUPS, recordDevelopmentFeedback, setManualAbility } from '../src/domain/development-fit.js';
+import { saveProfileAndRotationSettings } from '../src/domain/profile-service.js';
+import { hardSafetyEligible, selectRotation } from '../src/domain/rotation-engine.js';
+import { DICTIONARY } from '../src/ui/i18n.js';
+
+let checks=0;
+const ok=(value,message)=>{assert.ok(value,message);checks++};
+const equal=(actual,expected,message)=>{assert.equal(actual,expected,message);checks++};
+const toy=(id,level,mechanic='shape_sorting',extra={})=>({id,canonicalKey:id,productName:id,brand:`Brand ${id}`,minAgeMonths:12,maxAgeMonths:72,playMechanics:[mechanic],progressionLevel:level,challengeLevel:level,categoryCode:'cognitive',skillCodes:[],set:{kind:'none'},...extra});
+const rotate=(toys,profile,size=1,age=24,history=[])=>selectRotation({toys,childAgeMonths:age,size,childDevelopmentProfile:profile,developmentFeedbackHistory:history,now:Date.UTC(2026,8,23)});
+
+const ready=toy('older-guidance',4,'shape_sorting',{minAgeMonths:48,userMetadata:{safety:{ageSafetyStatus:'VERIFIED_NO_EXTRA_GATE',smallParts:false,requiresStandingStability:false,safetySource:'https://example.org/product',safetyVerifiedAt:'2026-09-24',evidenceNote:'Product-specific review.'}}});
+equal(rotate([ready],{shape_sorting:{currentLevel:4}},1,24).selected[0]?.id,ready.id,'ordinary recommended age above child age is guidance, not exclusion');
+equal(rotate([toy('unreviewed',4,'shape_sorting',{minAgeMonths:48})],{shape_sorting:{currentLevel:4}},1,24).selected.length,0,'unknown safety is not silently treated as safe');
+const ageUnsafe=toy('safety-age',4,'shape_sorting',{minAgeMonths:48,userMetadata:{safety:{minAgeMonths:48}}});
+const chokeUnsafe=toy('small-parts',4,'shape_sorting',{userMetadata:{safety:{chokingSmallParts:true}}});
+const balanceUnsafe=toy('balance-stability',4,'balance',{userMetadata:{safety:{requiredGrossMotorLevel:3}}});
+ok(!hardSafetyEligible(ageUnsafe,24,{shape_sorting:{currentLevel:5}}),'explicit safety age cannot be bypassed by high ability');
+ok(!hardSafetyEligible(chokeUnsafe,24,{shape_sorting:{currentLevel:5}}),'small parts cannot be bypassed by high ability');
+ok(!hardSafetyEligible(balanceUnsafe,30,{balance:{currentLevel:2}}),'gross-motor stability is an independent hard gate');
+ok(hardSafetyEligible(balanceUnsafe,30,{balance:{currentLevel:3}}),'documented gross-motor requirement can be met');
+equal(rotate([ageUnsafe,chokeUnsafe],{shape_sorting:{currentLevel:5}},2,24).selected.length,0,'stretch cannot bypass safety');
+ok(!hardSafetyEligible(chokeUnsafe,null,{}),'unknown age does not silently pass known choking risk');
+equal(normalizeToy(chokeUnsafe).userMetadata.safety.chokingSmallParts,true,'safety metadata survives existing schema container');
+
+const easy=toy('easy',2),stretch=toy('stretch',3);
+const before=rotate([easy,stretch],{shape_sorting:{currentLevel:2}});
+equal(before.selected[0].id,'easy','initial ability favors current level');
+const state={profile:{developmentProfile:{shape_sorting:{currentLevel:2,autoLevel:2},matching_sorting:{currentLevel:4,autoLevel:4}}},developmentFeedbackHistory:[]};
+recordDevelopmentFeedback(state,easy,{difficultyFeedback:'too_easy',rotationCycleId:'round-1'});
+equal(state.profile.developmentProfile.shape_sorting.currentLevel,2,'one Too Easy does not jump');
+recordDevelopmentFeedback(state,easy,{difficultyFeedback:'too_easy',rotationCycleId:'round-2'});
+equal(state.profile.developmentProfile.shape_sorting.currentLevel,3,'repeated Too Easy raises only this mechanism');
+equal(state.profile.developmentProfile.matching_sorting.currentLevel,4,'another mechanism is unaffected');
+equal(rotate([easy,stretch],state.profile.developmentProfile,1,24,state.developmentFeedbackHistory).selected[0].id,'stretch','repeated Too Easy changes subsequent selection');
+const hardState={profile:{developmentProfile:{shape_sorting:{currentLevel:4,autoLevel:4}}},developmentFeedbackHistory:[]};
+const hardToy=toy('hard',4);
+recordDevelopmentFeedback(hardState,hardToy,{difficultyFeedback:'too_hard',rotationCycleId:'round-1'});
+equal(hardState.profile.developmentProfile.shape_sorting.currentLevel,4,'one Too Hard does not jump');
+recordDevelopmentFeedback(hardState,hardToy,{difficultyFeedback:'too_hard',rotationCycleId:'round-2'});
+equal(hardState.profile.developmentProfile.shape_sorting.currentLevel,3,'repeated Too Hard lowers progression');
+equal(rotate([toy('right',3),hardToy],hardState.profile.developmentProfile,1,24,hardState.developmentFeedbackHistory).selected[0].id,'right','Too Hard changes subsequent selection');
+recordDevelopmentFeedback(hardState,toy('not-interested',3),{interestFeedback:'not_interested',rotationCycleId:'round-3'});
+equal(hardState.profile.developmentProfile.shape_sorting.currentLevel,3,'Not Interested does not lower ability');
+const challengeState={profile:{developmentProfile:{shape_sorting:{currentLevel:2,autoLevel:2}}},developmentFeedbackHistory:[]};
+recordDevelopmentFeedback(challengeState,toy('nearby',3),{difficultyFeedback:'good_challenge',rotationCycleId:'challenge-1'});
+equal(challengeState.profile.developmentProfile.shape_sorting.currentLevel,2,'one Good Challenge reinforces without jumping');
+recordDevelopmentFeedback(challengeState,toy('nearby',3),{difficultyFeedback:'good_challenge',rotationCycleId:'challenge-2'});
+equal(challengeState.profile.developmentProfile.shape_sorting.currentLevel,3,'repeated Good Challenge moves one nearby level');
+equal(rotate([toy('novice',1),toy('advanced',4)],{shape_sorting:{currentLevel:1}}).selected[0].id,'novice','same age novice profile');
+equal(rotate([toy('novice',1),toy('advanced',4)],{shape_sorting:{currentLevel:4}}).selected[0].id,'advanced','same age advanced profile');
+const domains=[toy('shape-task',4,'shape_sorting'),toy('puzzle-task',4,'puzzle')];
+equal(rotate(domains,{shape_sorting:{currentLevel:4},puzzle:{currentLevel:1}}).selected[0].id,'shape-task','independent shape skill drives selection');
+equal(rotate(domains,{shape_sorting:{currentLevel:1},puzzle:{currentLevel:4}}).selected[0].id,'puzzle-task','independent puzzle skill drives selection');
+
+const manual={shape_sorting:{currentLevel:2,autoLevel:2,confidence:0.7,evidenceCount:2}};
+setManualAbility(manual,'shape_sorting',5);
+equal(manual.shape_sorting.currentLevel,5,'manual value takes precedence');
+const manualState={profile:{developmentProfile:manual},developmentFeedbackHistory:[]};
+recordDevelopmentFeedback(manualState,easy,{difficultyFeedback:'too_easy',rotationCycleId:'manual-1'});
+recordDevelopmentFeedback(manualState,easy,{difficultyFeedback:'too_easy',rotationCycleId:'manual-2'});
+equal(manualState.profile.developmentProfile.shape_sorting.currentLevel,5,'automatic feedback does not overwrite manual');
+equal(manualState.profile.developmentProfile.shape_sorting.autoLevel,3,'automatic evidence remains available');
+setManualAbility(manualState.profile.developmentProfile,'shape_sorting',null);
+equal(manualState.profile.developmentProfile.shape_sorting.currentLevel,3,'restore automatic uses retained evidence');
+const persisted={state:emptyState(),update(change){change(this.state)}};
+saveProfileAndRotationSettings(persisted,{childName:'Child',childBirthDate:'2024-01-01',rotationSize:6,rotationDays:7,manualAbilities:[['puzzle','3'],['balance','5']]});
+equal(persisted.state.profile.developmentProfile.puzzle.manualLevel,3,'profile settings persist puzzle independently');
+equal(persisted.state.profile.developmentProfile.balance.manualLevel,5,'profile settings persist balance independently');
+saveProfileAndRotationSettings(persisted,{childName:'Child',childBirthDate:'2024-01-01',rotationSize:6,rotationDays:7,manualAbilities:[['puzzle','']]});
+equal(persisted.state.profile.developmentProfile.puzzle.manualLevel,null,'profile settings restore automatic without losing another manual ability');
+equal(persisted.state.profile.developmentProfile.balance.manualLevel,5,'unrelated manual ability is preserved');
+
+const pool=[...Array.from({length:7},(_,index)=>toy(`right-${index}`,3,index%2?'matching_sorting':'shape_sorting')),...Array.from({length:3},(_,index)=>toy(`stretch-${index}`,4,index%2?'matching_sorting':'shape_sorting'))];
+const round=rotate(pool,{shape_sorting:{currentLevel:3},matching_sorting:{currentLevel:3}},8);
+ok(round.diagnostics.selectedStretchCount>=1 && round.diagnostics.selectedStretchCount<=3,'stretch receives a bounded share');
+ok(round.diagnostics.selectedStretchCount<round.selected.length,'stretch never fills an available mixed round');
+equal(SCHEMA_VERSION,12,'schema version stays 12');
+equal(DEVELOPMENT_ABILITY_GROUPS.flatMap(group=>group.mechanisms).length,15,'ability UI covers fifteen independent mechanisms');
+for (const mechanic of DEVELOPMENT_ABILITY_GROUPS.flatMap(group=>group.mechanisms)) {
+  ok(DICTIONARY.en.abilityProfile.mechanism[mechanic] && DICTIONARY.zh.abilityProfile.mechanism[mechanic],`bilingual ability label: ${mechanic}`);
+}
+console.log(`rotation ability/safety v0.11.6: PASS (${checks} assertions)`);

@@ -65,7 +65,7 @@ export function resolvedLibraryImageRef(toy, catalog, parentImageRef = null) {
   return toy?.set?.kind === 'child' ? { kind:'placeholder' } : toy?.imageRef || { kind:'placeholder' };
 }
 
-function isChildCatalogImage(ref) { return Boolean(ref && ref.kind !== 'placeholder' && ref.kind !== 'generated' && (ref.catalogImageRef || ref.kind === 'catalog' || ref.kind === 'remote')); }
+function isChildCatalogImage(ref) { return Boolean(ref && ref.kind !== 'placeholder' && ref.kind !== 'generated' && (ref.catalogImageRef || ref.kind === 'catalog' || ref.kind === 'remote' || ref.kind === 'packaged')); }
 
 function isVerifiedOrStableCatalogImage(ref) {
   if (!isChildCatalogImage(ref) || isSearchOrTransientImage(ref)) return false;
