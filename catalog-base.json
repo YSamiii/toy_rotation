@@ -11849,9 +11849,14 @@
     },
     {
       "key": "smartmax-first-dinosaurs",
-      "brand": "SmartGames",
-      "name": "SmartMax My First Dinosaurs",
+      "brand": "SmartMax",
+      "name": "My First Dinosaurs",
       "nameZh": "SmartMax 我的第一套恐龙",
+      "exactTitle": "SmartMax My First Dinosaurs",
+      "sku": "SMX 223",
+      "identitySource": "https://gamesbysmart.com/en/my-first-dinosaurs",
+      "sourceUrl": "https://gamesbysmart.com/en/my-first-dinosaurs",
+      "aliases": ["SmartMax My First Dinosaurs", "SMX 223"],
       "ageMinMonths": 12,
       "ageMaxMonths": 60,
       "category": "积木/建构",
@@ -11863,9 +11868,14 @@
     },
     {
       "key": "smartmax-first-farm-animals",
-      "brand": "SmartGames",
-      "name": "SmartMax My First Farm Animals",
+      "brand": "SmartMax",
+      "name": "My First Farm Animals",
       "nameZh": "SmartMax 我的第一套农场动物",
+      "exactTitle": "SmartMax My First Farm Animals",
+      "sku": "SMX 221",
+      "identitySource": "https://gamesbysmart.com/en/my-first-farm-animals",
+      "sourceUrl": "https://gamesbysmart.com/en/my-first-farm-animals",
+      "aliases": ["SmartMax My First Farm Animals", "SMX 221"],
       "ageMinMonths": 12,
       "ageMaxMonths": 60,
       "category": "积木/建构",
@@ -11877,9 +11887,14 @@
     },
     {
       "key": "smartmax-first-safari-animals",
-      "brand": "SmartGames",
-      "name": "SmartMax My First Safari Animals",
+      "brand": "SmartMax",
+      "name": "My First Safari Animals",
       "nameZh": "SmartMax 我的第一套野生动物",
+      "exactTitle": "SmartMax My First Safari Animals",
+      "sku": "SMX 220",
+      "identitySource": "https://gamesbysmart.com/en/my-first-safari-animals",
+      "sourceUrl": "https://gamesbysmart.com/en/my-first-safari-animals",
+      "aliases": ["SmartMax My First Safari Animals", "SMX 220"],
       "ageMinMonths": 12,
       "ageMaxMonths": 60,
       "category": "积木/建构",
@@ -11891,9 +11906,14 @@
     },
     {
       "key": "smartmax-first-vehicles",
-      "brand": "SmartGames",
-      "name": "SmartMax My First Vehicles",
+      "brand": "SmartMax",
+      "name": "My First Vehicles",
       "nameZh": "SmartMax 我的第一套车辆",
+      "exactTitle": "SmartMax My First Vehicles",
+      "sku": "SMX 226",
+      "identitySource": "https://gamesbysmart.com/en/my-first-vehicles",
+      "sourceUrl": "https://gamesbysmart.com/en/my-first-vehicles",
+      "aliases": ["SmartMax My First Vehicles", "SMX 226"],
       "ageMinMonths": 12,
       "ageMaxMonths": 60,
       "category": "车辆/轨道",
@@ -13273,6 +13293,33 @@
     {
       "key":"tender-leaf-rocket-construction","brand":"Tender Leaf","name":"Rocket Construction","nameEn":"Rocket Construction","nameZh":"火箭建构套装","exactTitle":"Tender Leaf Rocket Construction","sku":"TL8335","identitySource":"https://www.tenderleaftoys.com/products/rocket-construction","sourceUrl":"https://www.tenderleaftoys.com/products/rocket-construction","aliases":["Tenderleaf Rocket Construction","Tender Leaf Toys Rocket Construction","TL8335"],"ageMinMonths":36,"ageMaxMonths":96,"category":"积木/建构","playMechanics":["fine_motor_general","matching_sorting"],"skills":["空间认知","精细动作","手眼协调","问题解决"]},
     {
-      "key":"tender-leaf-baby-blocks","brand":"Tender Leaf","name":"Baby Blocks","nameEn":"Baby Blocks","nameZh":"宝宝积木","exactTitle":"Tender Leaf Baby Blocks","sku":"TL8452","identitySource":"https://www.tenderleaftoys.com/products/baby-blocks","sourceUrl":"https://www.tenderleaftoys.com/products/baby-blocks","aliases":["Tenderleaf Baby Blocks","Tender Leaf Toys Baby Blocks","TL8452"],"ageMinMonths":18,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["fine_motor_general","matching_sorting"],"skills":["空间认知","精细动作","形状认知","创造力"]}
+      "key":"tender-leaf-baby-blocks","brand":"Tender Leaf","name":"Baby Blocks","nameEn":"Baby Blocks","nameZh":"宝宝积木","exactTitle":"Tender Leaf Baby Blocks","sku":"TL8452","identitySource":"https://www.tenderleaftoys.com/products/baby-blocks","sourceUrl":"https://www.tenderleaftoys.com/products/baby-blocks","aliases":["Tenderleaf Baby Blocks","Tender Leaf Toys Baby Blocks","TL8452"],"ageMinMonths":18,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["fine_motor_general","matching_sorting"],"skills":["空间认知","精细动作","形状认知","创造力"]},
+    {
+      "key":"smartmax-first-people","brand":"SmartMax","name":"My First People","nameEn":"My First People","nameZh":"我的第一套人物","exactTitle":"SmartMax My First People","sku":"SMX 235","identitySource":"https://gamesbysmart.com/en/my-first-people","sourceUrl":"https://gamesbysmart.com/en/my-first-people","aliases":["SmartMax My First People","SMX 235"],"ageMinMonths":12,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["magnetic_build","pretend_role"],"skills":["精细动作","空间认知","角色扮演","想象力"]},
+    {
+      "key":"smartmax-first-animal-train","brand":"SmartMax","name":"My First Animal Train","nameEn":"My First Animal Train","nameZh":"我的第一套动物火车","exactTitle":"SmartMax My First Animal Train","sku":"SMX 410","identitySource":"https://gamesbysmart.com/en/my-first-animal-train","sourceUrl":"https://gamesbysmart.com/en/my-first-animal-train","aliases":["SmartMax My First Animal Train","SMX 410"],"ageMinMonths":18,"ageMaxMonths":60,"category":"车辆/轨道","playMechanics":["magnetic_build","pretend_role"],"skills":["精细动作","空间认知","角色扮演","想象力"]},
+    {
+      "key":"smartmax-first-tractor-set","brand":"SmartMax","name":"My First Tractor Set","nameEn":"My First Tractor Set","nameZh":"我的第一套拖拉机","exactTitle":"SmartMax My First Tractor Set","sku":"SMX 222","identitySource":"https://gamesbysmart.com/nl/my-first-tractor-set","sourceUrl":"https://gamesbysmart.com/nl/my-first-tractor-set","aliases":["SmartMax My First Tractor Set","SMX 222"],"ageMinMonths":18,"ageMaxMonths":60,"category":"车辆/轨道","playMechanics":["magnetic_build","pretend_role"],"skills":["精细动作","空间认知","角色扮演","想象力"]},
+    {
+      "key":"smartmax-first-build-drive","brand":"SmartMax","name":"My First Build & Drive","nameEn":"My First Build & Drive","nameZh":"我的第一套建构与驾驶","exactTitle":"SmartMax My First Build & Drive","sku":"SMX 237","identitySource":"https://gamesbysmart.com/en/builddrive","sourceUrl":"https://gamesbysmart.com/en/builddrive","aliases":["SmartMax Build & Drive","SMX 237"],"ageMinMonths":18,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["magnetic_build","matching_sorting"],"skills":["精细动作","空间认知","认知配对","问题解决"]},
+    {
+      "key":"smartmax-first-totem","brand":"SmartMax","name":"My First Totem","nameEn":"My First Totem","nameZh":"我的第一套图腾","exactTitle":"SmartMax My First Totem","sku":"SMX 230","identitySource":"https://gamesbysmart.com/en/my-first-totem","sourceUrl":"https://gamesbysmart.com/en/my-first-totem","aliases":["SmartMax My First Totem","SMX 230"],"ageMinMonths":18,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["magnetic_build","matching_sorting"],"skills":["精细动作","空间认知","认知配对","创造力"]},
+    {
+      "key":"smartmax-first-wobbly-cars","brand":"SmartMax","name":"My First Wobbly Cars","nameEn":"My First Wobbly Cars","nameZh":"我的第一套摇摆小车","exactTitle":"SmartMax My First Wobbly Cars","sku":"SMX 233","identitySource":"https://gamesbysmart.com/en/my-first-wobbly-cars","sourceUrl":"https://gamesbysmart.com/en/my-first-wobbly-cars","aliases":["SmartMax My First Wobbly Cars","SMX 233"],"ageMinMonths":12,"ageMaxMonths":60,"category":"车辆/轨道","playMechanics":["magnetic_build","cause_effect"],"skills":["精细动作","手眼协调","空间认知","因果关系"]},
+    {
+      "key":"smartmax-first-hide-seek","brand":"SmartMax","name":"My First Hide & Seek","nameEn":"My First Hide & Seek","nameZh":"我的第一套躲猫猫","exactTitle":"SmartMax My First Hide & Seek","sku":"SMX 229","identitySource":"https://gamesbysmart.com/en/my-first-hide-seek","sourceUrl":"https://gamesbysmart.com/en/my-first-hide-seek","aliases":["SmartMax My First Hide and Seek","SMX 229"],"ageMinMonths":12,"ageMaxMonths":36,"category":"积木/建构","playMechanics":["magnetic_build","matching_sorting"],"skills":["精细动作","手眼协调","认知配对","空间认知"]},
+    {
+      "key":"smartmax-first-pirates","brand":"SmartMax","name":"My First Pirates","nameEn":"My First Pirates","nameZh":"我的第一套海盗","exactTitle":"SmartMax My First Pirates","sku":"SMX 236","identitySource":"https://gamesbysmart.com/en/my-first-pirates-1","sourceUrl":"https://gamesbysmart.com/en/my-first-pirates-1","aliases":["SmartMax My First Pirates","SMX 236"],"ageMinMonths":18,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["magnetic_build","pretend_role"],"skills":["精细动作","平衡能力","角色扮演","想象力"]},
+    {
+      "key":"smartmax-first-stacking-rings","brand":"SmartMax","name":"My First Stacking Rings","nameEn":"My First Stacking Rings","nameZh":"我的第一套叠叠圈","exactTitle":"SmartMax My First Stacking Rings","sku":"SMX 241","identitySource":"https://gamesbysmart.com/en/my-first-stacking-rings","sourceUrl":"https://gamesbysmart.com/en/my-first-stacking-rings","aliases":["SmartMax My First Stacking Rings","SMX 241"],"ageMinMonths":18,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["magnetic_build","balance"],"skills":["精细动作","手眼协调","平衡能力","空间认知"]},
+    {
+      "key":"smartmax-first-animals-around-world","brand":"SmartMax","name":"My First Animals Around The World","nameEn":"My First Animals Around The World","nameZh":"我的第一套环球动物","exactTitle":"SmartMax My First Animals Around The World","sku":"SMX 246","identitySource":"https://gamesbysmart.com/en/my-first-animals-around-the-world","sourceUrl":"https://gamesbysmart.com/en/my-first-animals-around-the-world","aliases":["SmartMax My First Animals Around The World","SMX 246"],"ageMinMonths":12,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["magnetic_build","pretend_role"],"skills":["精细动作","空间认知","角色扮演","想象力"]},
+    {
+      "key":"smartmax-first-acrobats","brand":"SmartMax","name":"My First Acrobats","nameEn":"My First Acrobats","nameZh":"我的第一套杂技","exactTitle":"SmartMax My First Acrobats","sku":"SMX 227","identitySource":"https://gamesbysmart.com/en/my-first-acrobats","sourceUrl":"https://gamesbysmart.com/en/my-first-acrobats","aliases":["SmartMax My First Acrobats","SMX 227"],"ageMinMonths":18,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["magnetic_build","balance"],"skills":["精细动作","平衡能力","空间认知","问题解决"]},
+    {"key":"smartmax-first-sounds-flowers","brand":"SmartMax","name":"My First Sounds & Flowers","nameEn":"My First Sounds & Flowers","nameZh":"我的第一套声音与花朵","exactTitle":"SmartMax My First Sounds & Flowers","sku":"SMX 247","identitySource":"https://gamesbysmart.com/en/my-first-sounds-flowers","sourceUrl":"https://gamesbysmart.com/en/my-first-sounds-flowers","aliases":["SmartMax My First Sounds and Flowers","SMX 247"],"ageMinMonths":12,"ageMaxMonths":60,"category":"积木/建构","playMechanics":["magnetic_build","cause_effect"],"skills":["精细动作","感官探索","因果关系","创造力"]},
+    {"key":"smartmax-start","brand":"SmartMax","name":"Start","nameEn":"Start","nameZh":"入门磁力建构套装","exactTitle":"SmartMax Start","sku":"SMX 309","identitySource":"https://gamesbysmart.com/en/start","sourceUrl":"https://gamesbysmart.com/en/start","aliases":["SmartMax Start","SMX 309"],"ageMinMonths":12,"ageMaxMonths":72,"category":"积木/建构","playMechanics":["magnetic_build"],"skills":["精细动作","空间认知","创造力","问题解决"]},
+    {"key":"smartmax-start-plus","brand":"SmartMax","name":"Start Plus","nameEn":"Start Plus","nameZh":"入门加强磁力建构套装","exactTitle":"SmartMax Start Plus","sku":"SMX 310","identitySource":"https://gamesbysmart.com/en/start-plus","sourceUrl":"https://gamesbysmart.com/en/start-plus","aliases":["SmartMax Start Plus","SMX 310"],"ageMinMonths":12,"ageMaxMonths":72,"category":"积木/建构","playMechanics":["magnetic_build"],"skills":["精细动作","空间认知","创造力","问题解决"]},
+    {"key":"smartmax-build-roll","brand":"SmartMax","name":"Build & Roll","nameEn":"Build & Roll","nameZh":"建构滚球套装","exactTitle":"SmartMax Build & Roll","sku":"SMX 909","identitySource":"https://gamesbysmart.com/en/build-roll","sourceUrl":"https://gamesbysmart.com/en/build-roll","aliases":["SmartMax Build and Roll","SMX 909"],"ageMinMonths":36,"ageMaxMonths":96,"category":"积木/建构","playMechanics":["magnetic_build","cause_effect"],"skills":["精细动作","空间认知","因果关系","问题解决"]},
+    {"key":"smartmax-first-sounds-senses","brand":"SmartMax","name":"My First Sounds & Senses","nameEn":"My First Sounds & Senses","nameZh":"我的第一套声音与感官","exactTitle":"SmartMax My First Sounds & Senses","sku":"SMX 224","identitySource":"https://gamesbysmart.com/en/my-first-sounds-senses","sourceUrl":"https://gamesbysmart.com/en/my-first-sounds-senses","aliases":["SmartMax My First Sounds and Senses","SMX 224"],"ageMinMonths":12,"ageMaxMonths":36,"category":"积木/建构","playMechanics":["magnetic_build","cause_effect"],"skills":["精细动作","手眼协调","感官探索","因果关系"]}
   ]
 }
