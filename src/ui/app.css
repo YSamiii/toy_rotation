@@ -461,6 +461,13 @@ pre { max-width: 100%; overflow: auto; color: var(--text-secondary); }
 .challenge-diagnostics { margin-top:16px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--surface-secondary); }
 .challenge-diagnostics h3 { margin:0 0 6px; font-size:1em; }
 .challenge-diagnostics p { margin:0; color:var(--text-secondary); }
+.challenge-diagnostic-list { margin-top:10px; border-top:1px solid var(--border); padding-top:10px; }
+.challenge-diagnostic-list summary { cursor:pointer; font-weight:700; color:var(--text-primary); }
+.challenge-diagnostic-list button { margin-top:10px; }
+.challenge-diagnostic-list ol { margin:10px 0 0; padding-left:20px; display:grid; gap:8px; }
+.challenge-diagnostic-list li { color:var(--text-primary); }
+.challenge-diagnostic-list li span { display:block; color:var(--text-secondary); font-size:.9em; }
+.challenge-copy-status { margin-top:7px !important; font-size:.9em; }
 .challenge-chip { display:inline-block; margin-left:5px; padding:2px 7px; border:1px solid var(--border); border-radius:999px; color:var(--text-secondary); font-size:.72em; font-weight:600; vertical-align:middle; }
 .challenge-status { font-weight:700; }
 .cross-age-approval h3 { margin-top:0; }

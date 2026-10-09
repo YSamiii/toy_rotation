@@ -8981,6 +8981,56 @@ function challengeDiagnostics(state, catalog2, age, profile = {}) {
   }
   return counts;
 }
+var DIAGNOSTIC_BUCKETS = Object.freeze(["hard", "insufficient", "skillUnknown", "tooEarly"]);
+function diagnosticBucket(review, supervisedKeys, profile) {
+  const { row, projected, decision } = review;
+  if (decision.reason === "HARD_SAFETY_BLOCK") return "hard";
+  if (decision.reason === "INSUFFICIENT_EVIDENCE_BLOCK" || ["RESEARCHED_INSUFFICIENT", "NOT_RESEARCHED"].includes(reviewedStatus(row))) return "insufficient";
+  if (supervisedKeys.has(row.canonicalKey) && challengeSkillState(projected, profile).unknown.length) return "skillUnknown";
+  if (decision.reason !== "NORMAL_AGE_ELIGIBLE" && decision.reason !== "EARLY_ROTATION_ALLOWED") return "tooEarly";
+  return null;
+}
+function challengeDiagnosticRows(state, catalog2, age, profile = {}) {
+  const candidates = challengeCandidates(state, catalog2, age, profile);
+  const supervisedKeys = new Set(candidates.filter((item) => item.source === "supervised").map((item) => item.row.canonicalKey));
+  const buckets = Object.fromEntries(DIAGNOSTIC_BUCKETS.map((bucket) => [bucket, []]));
+  const seen = /* @__PURE__ */ new Set();
+  for (const toy of state?.toys || []) {
+    if (!visibleOwnedToy(toy)) continue;
+    const review = challengeDecision(state, catalog2, toy, age, profile);
+    if (!review || seen.has(review.row.canonicalKey)) continue;
+    seen.add(review.row.canonicalKey);
+    const bucket = diagnosticBucket(review, supervisedKeys, profile);
+    if (!bucket) continue;
+    const { row, decision } = review;
+    buckets[bucket].push({
+      canonicalKey: row.canonicalKey,
+      brand: row.brand || "",
+      productName: row.productName || toy.productName || "",
+      sku: row.sku || row.model || "",
+      recommendedAgeMin: row.minAgeMonths ?? null,
+      classification: row.earlyRotationEligibility || "INSUFFICIENT_EVIDENCE",
+      researchStatus: reviewedStatus(row),
+      blockReason: decision.reason
+    });
+  }
+  for (const rows of Object.values(buckets)) rows.sort((a, b) => (a.recommendedAgeMin ?? Infinity) - (b.recommendedAgeMin ?? Infinity) || String(a.productName).localeCompare(String(b.productName)) || String(a.canonicalKey).localeCompare(String(b.canonicalKey)));
+  return buckets;
+}
+function ownerEvidencePriorityText(rows = []) {
+  const lines = ["OWNER EVIDENCE PRIORITY LIST", ""];
+  rows.forEach((row, index) => {
+    lines.push(`${index + 1}. canonicalKey: ${row.canonicalKey}`);
+    lines.push(`   Brand: ${row.brand || "\u2014"}`);
+    lines.push(`   Product: ${row.productName || "\u2014"}`);
+    lines.push(`   SKU/model: ${row.sku || "\u2014"}`);
+    lines.push(`   Recommended age: ${row.recommendedAgeMin == null ? "\u2014" : `${row.recommendedAgeMin} months+`}`);
+    lines.push(`   Classification: ${row.classification}`);
+    lines.push(`   Research status: ${row.researchStatus}`);
+    lines.push(`   Block reason: ${row.blockReason}`);
+  });
+  return lines.join("\n");
+}
 function recordSupervisedChallengeAttempt(state, toy, outcome = "started", { now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
   const key = String(toy?.canonicalKey || "");
   if (!key) return false;
@@ -9931,6 +9981,20 @@ Object.assign(DICTIONARY.en, {
   challengeAutoExplanation: "This toy is eligible for automatic early rotation when it fits the rest of the rotation rules.",
   challengeStatsTitle: "Where your owned toys are",
   challengeStats: "Normal rotation: {normal} \xB7 Early rotation: {autoEarly} \xB7 Supervised challenge: {supervised} \xB7 Too early: {tooEarly} \xB7 Safety limit: {hard} \xB7 Evidence missing: {insufficient} \xB7 Skills to observe in supervised challenges: {skillUnknownEligible} \xB7 Skills not yet eligible for automatic early rotation: {autoSkillBlocked}",
+  challengeDiagnosticInsufficient: "Evidence missing ({count})",
+  challengeDiagnosticHard: "Safety limit ({count})",
+  challengeDiagnosticSkillUnknown: "Skills to observe ({count})",
+  challengeDiagnosticTooEarly: "Still waiting ({count})",
+  challengeDiagnosticRecommendedAge: "Manufacturer guidance: {months} months+",
+  challengeDiagnosticReasonLabel: "Current status",
+  challengeDiagnosticReasonHard: "A documented safety age limit applies.",
+  challengeDiagnosticReasonEvidence: "Product-specific evidence is not sufficient yet.",
+  challengeDiagnosticReasonAutoSkills: "Not currently eligible for automatic early rotation.",
+  challengeDiagnosticReasonAge: "Outside the current challenge age window.",
+  challengeDiagnosticNone: "None right now.",
+  challengeCopyEvidenceList: "Copy evidence-missing toy list",
+  challengeCopyEvidenceDone: "Copied {count} product identities.",
+  challengeCopyEvidenceFailed: "Could not copy. Please try again.",
   challengeHardBlocked: "This toy has a documented hard safety restriction and cannot be added early to a challenge rotation.",
   challengeUnknownBlocked: "There is not enough safety information to support early participation in rotation."
 });
@@ -9972,6 +10036,20 @@ Object.assign(DICTIONARY.zh, {
   challengeAutoExplanation: "\u5F53\u7B26\u5408\u5176\u4ED6\u8F6E\u6362\u89C4\u5219\u65F6\uFF0C\u8FD9\u4EF6\u73A9\u5177\u53EF\u81EA\u52A8\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362\u3002",
   challengeStatsTitle: "\u5DF2\u62E5\u6709\u73A9\u5177\u7684\u5F53\u524D\u72B6\u6001",
   challengeStats: "\u6B63\u5E38\u8F6E\u6362\uFF1A{normal} \xB7 \u63D0\u524D\u8F6E\u6362\uFF1A{autoEarly} \xB7 \u5BB6\u957F\u76D1\u7763\u6311\u6218\uFF1A{supervised} \xB7 \u8FD8\u9700\u7B49\u5F85\uFF1A{tooEarly} \xB7 \u5B89\u5168\u9650\u5236\uFF1A{hard} \xB7 \u8BC1\u636E\u4E0D\u8DB3\uFF1A{insufficient} \xB7 \u80FD\u529B\u5F85\u786E\u8BA4\u4F46\u53EF\u76D1\u7763\u6311\u6218\uFF1A{skillUnknownEligible} \xB7 \u6682\u4E0D\u6EE1\u8DB3\u81EA\u52A8\u63D0\u524D\u8F6E\u6362\u80FD\u529B\u6761\u4EF6\uFF1A{autoSkillBlocked}",
+  challengeDiagnosticInsufficient: "\u8BC1\u636E\u4E0D\u8DB3\uFF08{count}\uFF09",
+  challengeDiagnosticHard: "\u5B89\u5168\u9650\u5236\uFF08{count}\uFF09",
+  challengeDiagnosticSkillUnknown: "\u80FD\u529B\u5F85\u786E\u8BA4\uFF08{count}\uFF09",
+  challengeDiagnosticTooEarly: "\u8FD8\u9700\u7B49\u5F85\uFF08{count}\uFF09",
+  challengeDiagnosticRecommendedAge: "\u5382\u5BB6\u5EFA\u8BAE\uFF1A{months} \u4E2A\u6708+",
+  challengeDiagnosticReasonLabel: "\u5F53\u524D\u72B6\u6001",
+  challengeDiagnosticReasonHard: "\u5B58\u5728\u5DF2\u8BB0\u5F55\u7684\u5B89\u5168\u5E74\u9F84\u9650\u5236\u3002",
+  challengeDiagnosticReasonEvidence: "\u76EE\u524D\u8FD8\u7F3A\u5C11\u8DB3\u591F\u7684\u4EA7\u54C1\u4E13\u5C5E\u8BC1\u636E\u3002",
+  challengeDiagnosticReasonAutoSkills: "\u5F53\u524D\u4E0D\u6EE1\u8DB3\u81EA\u52A8\u63D0\u524D\u8F6E\u6362\u6761\u4EF6\u3002",
+  challengeDiagnosticReasonAge: "\u4E0D\u5728\u5F53\u524D\u6311\u6218\u5E74\u9F84\u7A97\u53E3\u5185\u3002",
+  challengeDiagnosticNone: "\u5F53\u524D\u6CA1\u6709\u3002",
+  challengeCopyEvidenceList: "\u590D\u5236\u8BC1\u636E\u4E0D\u8DB3\u73A9\u5177\u5217\u8868",
+  challengeCopyEvidenceDone: "\u5DF2\u590D\u5236 {count} \u6761\u4EA7\u54C1\u8EAB\u4EFD\u4FE1\u606F\u3002",
+  challengeCopyEvidenceFailed: "\u6682\u65F6\u65E0\u6CD5\u590D\u5236\uFF0C\u8BF7\u518D\u8BD5\u4E00\u6B21\u3002",
   challengeHardBlocked: "\u6B64\u73A9\u5177\u6709\u660E\u786E\u7684\u786C\u6027\u5B89\u5168\u9650\u5236\uFF0C\u4E0D\u80FD\u63D0\u524D\u52A0\u5165\u6311\u6218\u8F6E\u6362\u3002",
   challengeUnknownBlocked: "\u76EE\u524D\u6CA1\u6709\u8DB3\u591F\u5B89\u5168\u4FE1\u606F\u652F\u6301\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362\u3002"
 });
@@ -11171,11 +11249,43 @@ function challengeStatusKey(row) {
   if (row.source === "supervised") return row.choice === "allowed" ? "challengeStatusAllowed" : row.attempt?.outcome === "started" ? "challengeStatusTrying" : "challengeStatusSupervised";
   return row.choice === "allowed" ? "challengeStatusAllowed" : row.choice === "declined" ? "challengeStatusDeclined" : "challengeStatusPending";
 }
+function challengeDiagnosticReason(row) {
+  if (row.blockReason === "HARD_SAFETY_BLOCK") return t("challengeDiagnosticReasonHard");
+  if (row.blockReason === "INSUFFICIENT_EVIDENCE_BLOCK" || ["RESEARCHED_INSUFFICIENT", "NOT_RESEARCHED"].includes(row.researchStatus)) return t("challengeDiagnosticReasonEvidence");
+  if (row.blockReason === "PREREQUISITES_NOT_MET") return t("challengeDiagnosticReasonAutoSkills");
+  return t("challengeDiagnosticReasonAge");
+}
+function challengeDiagnosticList(bucket, rows) {
+  const titleKey = { hard: "challengeDiagnosticHard", insufficient: "challengeDiagnosticInsufficient", skillUnknown: "challengeDiagnosticSkillUnknown", tooEarly: "challengeDiagnosticTooEarly" }[bucket];
+  const exportButton = bucket === "insufficient" && rows.length ? `<button type="button" data-copy-owner-evidence>${t("challengeCopyEvidenceList")}</button><p class="challenge-copy-status" data-copy-owner-evidence-status aria-live="polite"></p>` : "";
+  return `<details class="challenge-diagnostic-list" ${bucket === "insufficient" ? "open" : ""}><summary>${t(titleKey, { count: rows.length })}</summary>${rows.length ? `${exportButton}<ol>${rows.map((row) => `<li><b>${escape(row.productName)}</b><span>${escape(row.brand || "\u2014")} \xB7 ${t("challengeDiagnosticRecommendedAge", { months: row.recommendedAgeMin ?? "\u2014" })}</span><span>${t("challengeDiagnosticReasonLabel")}: ${escape(challengeDiagnosticReason(row))}</span></li>`).join("")}</ol>` : `<p>${t("challengeDiagnosticNone")}</p>`}</details>`;
+}
+async function copyOwnerEvidenceList(rows, status) {
+  const text2 = ownerEvidencePriorityText(rows);
+  try {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text2);
+    else {
+      const temporary = document.createElement("textarea");
+      temporary.value = text2;
+      temporary.setAttribute("readonly", "");
+      temporary.style.position = "fixed";
+      temporary.style.opacity = "0";
+      document.body.append(temporary);
+      temporary.select();
+      document.execCommand("copy");
+      temporary.remove();
+    }
+    status.textContent = t("challengeCopyEvidenceDone", { count: rows.length });
+  } catch {
+    status.textContent = t("challengeCopyEvidenceFailed");
+  }
+}
 function openChallengeSettings() {
   const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${t("challengeSettingsTitle")}</h2><button type="button" data-close>\xD7</button></header><p>${t("challengeSettingsIntro")}</p><p data-challenge-summary></p><div class="challenge-list" data-challenge-list></div><section class="challenge-diagnostics" data-challenge-diagnostics></section></section>`);
   const redraw = () => {
     const rows = currentChallengeRows();
     const diagnostics = challengeDiagnostics(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
+    const diagnosticRows = challengeDiagnosticRows(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
     dialog.querySelector("[data-challenge-summary]").textContent = t("challengeEntrySummary", {
       count: rows.length,
       auto: rows.filter((row) => row.source === "auto").length,
@@ -11188,7 +11298,12 @@ function openChallengeSettings() {
       const actions = source === "auto" ? `<p class="challenge-explanation">${t("challengeAutoExplanation")}</p>` : source === "supervised" ? supervisedChallengeActions(item) : choice === "allowed" ? `<button type="button" data-challenge-action="revoke">${t("crossAgeRevoke")}</button>` : `<button type="button" class="primary" data-challenge-action="allow">${t("crossAgeAllow")}</button>${choice === "pending" ? `<button type="button" data-challenge-action="decline">${t("crossAgeDecline")}</button>` : ""}`;
       return `<article class="challenge-item" data-challenge-key="${escape(row.canonicalKey)}" data-challenge-source="${source}"><img data-image='${escapedJson(libraryImageRef(toy, "challenge_settings"))}' alt=""><div><p class="challenge-kind">${challengeSourceLabel(source)}</p><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${t("challengeAges", { recommended: row.minAgeMonths, current: childAgeMonths2() })}</p>${monthsEarly > 0 ? `<p>${t("challengeMonthsEarly", { count: monthsEarly })}</p>` : ""}${challengeSkillSummary(item)}${source === "supervised" ? `<p>${t("challengeAgeGuidance")}</p>` : ""}<p class="challenge-status">${t(challengeStatusKey(item))}</p><div class="actions">${actions}</div></div></article>`;
     }).join("");
-    dialog.querySelector("[data-challenge-diagnostics]").innerHTML = `<h3>${t("challengeStatsTitle")}</h3><p>${t("challengeStats", diagnostics)}</p>`;
+    const diagnosticsHost = dialog.querySelector("[data-challenge-diagnostics]");
+    diagnosticsHost.innerHTML = `<h3>${t("challengeStatsTitle")}</h3><p>${t("challengeStats", diagnostics)}</p>${["insufficient", "hard", "skillUnknown", "tooEarly"].map((bucket) => challengeDiagnosticList(bucket, diagnosticRows[bucket])).join("")}`;
+    diagnosticsHost.querySelector("[data-copy-owner-evidence]")?.addEventListener("click", (event) => {
+      const status = diagnosticsHost.querySelector("[data-copy-owner-evidence-status]");
+      copyOwnerEvidenceList(diagnosticRows.insufficient, status);
+    });
     list.querySelectorAll("[data-challenge-action]").forEach((button) => {
       button.onclick = () => {
         const parent = button.closest("[data-challenge-key]");
