@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-10-08T19:32:11.243Z",
+  "generatedAt": "2026-10-09T13:33:07.413Z",
   "target": "safari16",
   "buildIdentity": {
-    "appVersion": "v0.11.7",
-    "buildName": "Toy Rotation v0.11.7 Evidence Research Batch 7 QA8",
+    "appVersion": "v0.11.8",
+    "buildName": "Toy Rotation v0.11.8 Supervised Challenge QA1",
     "buildDate": "20261008",
-    "buildId": "v0.11.7-evidence-research-batch7-qa8-20261008"
+    "buildId": "v0.11.8-supervised-challenge-qa1-20261008"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 1047873,
-      "sha256": "77b33cbe12b1b4d57728a148cf7fe173a4b57c4360d24dc2701c3705a091791d",
+      "bytes": 1062446,
+      "sha256": "ecea20c5cb9865995dda23e9e93647923fff2beda5468667619b672f5a0c2fc6",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -752,8 +752,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 425,
-      "sha256": "8a617186c52c0cad7099b46d20754f260a281ed4bbbd2efea6d5939a09c43c62",
+      "bytes": 410,
+      "sha256": "589472867c09732f15c32cfc2b0b246e6fe6c300fa05a2ea56fcc3811c3f2022",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -842,8 +842,8 @@
     {
       "path": "manifest.webmanifest",
       "resolvedDeployPath": "./manifest.webmanifest",
-      "bytes": 342,
-      "sha256": "82484a464402908c545586fad48b9d9028bc4e58b2ff2ceede9bc867dd9786c2",
+      "bytes": 337,
+      "sha256": "0e73230434afb5ce4be6aa395045236343bbfbe7a586131f0567e3ce6c5cabe5",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -857,8 +857,8 @@
     {
       "path": "src/ui/app.css",
       "resolvedDeployPath": "./src/ui/app.css",
-      "bytes": 20568,
-      "sha256": "846d7ba498c138fcf00df1df527a89d089cf7a84159c3f32c07be756e1561ca4",
+      "bytes": 21069,
+      "sha256": "aaf8680cdadb22aba5211ad3d95bc7ba40e7432ee775df858cae8e9b7ad8b96e",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -962,8 +962,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2703,
-      "sha256": "22ea5bbacb40cb8272b7bbe543adaac90a00cd78fd76527ce8acabdcbf2c39dc",
+      "bytes": 2699,
+      "sha256": "cf3070c2f8099f8c52b98de9ac12d02cd19592488fc5a229cea3824329bca1bd",
       "importedBy": [
         "qa2-runtime-package"
       ],

@@ -257,7 +257,7 @@ function normalizeWishlistItem(source = {}) {
   return { id: source.id || crypto.randomUUID(), canonicalKey: canonicalKey(source.canonicalKey || source.catalogKey || normalized2.canonicalKey), catalogId: source.catalogId || source.catalogKey || null, catalogSnapshot, status: ["want", "purchased", "dismissed"].includes(source.status) ? source.status : "want", priority: ["low", "medium", "high"].includes(source.priority) ? source.priority : "medium", notes: String(source.notes || "").slice(0, 2e3), sourceLink: String(source.sourceLink || "").slice(0, 2e3), recognizedMetadata: plainObject(source.recognizedMetadata), recommendationState: source.recommendationState || null, dismissedAt: source.dismissedAt || null, addedAt: source.addedAt || (/* @__PURE__ */ new Date()).toISOString() };
 }
 function emptyState() {
-  return { schemaVersion: SCHEMA_VERSION, settings: { language: "system", theme: "system", rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: "", childBirthDate: "", developmentProfile: {} }, developmentFeedbackHistory: [], crossAgeApprovals: {}, toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
+  return { schemaVersion: SCHEMA_VERSION, settings: { language: "system", theme: "system", rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: "", childBirthDate: "", developmentProfile: {} }, developmentFeedbackHistory: [], crossAgeApprovals: {}, challengeAttempts: {}, toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
 }
 function numeric(value) {
   return value === "" || value == null || Number.isNaN(Number(value)) ? null : Number(value);
@@ -316,7 +316,7 @@ function validCrossAgeApproval(toy, record) {
   const key = String(toy?.canonicalKey || "");
   return record?.approved === true && record.canonicalKey === key && record.sourceRecommendedMinAgeMonths === toy.minAgeMonths && /^\d{4}-\d{2}-\d{2}T/.test(String(record.approvedAt || ""));
 }
-function setCrossAgeApproval(state, toy, approved, { now: now3 = (/* @__PURE__ */ new Date()).toISOString(), note = "" } = {}) {
+function setCrossAgeApproval(state, toy, approved, { now: now3 = (/* @__PURE__ */ new Date()).toISOString(), note = "", kind = "parent_challenge" } = {}) {
   const key = String(toy?.canonicalKey || "");
   if (!key || !Number.isFinite(toy?.minAgeMonths)) return false;
   state.crossAgeApprovals ||= {};
@@ -329,6 +329,7 @@ function setCrossAgeApproval(state, toy, approved, { now: now3 = (/* @__PURE__ *
     approvedAt: now3,
     canonicalKey: key,
     sourceRecommendedMinAgeMonths: toy.minAgeMonths,
+    approvalKind: kind,
     ...note ? { note: String(note).slice(0, 240) } : {}
   };
   return true;
@@ -6169,7 +6170,13 @@ function rotationAgeEligibility(toy, age, profile = {}) {
     const policyOrigin = toy.eligibilityPolicyOrigin ?? toy.userMetadata?.developmentFit?.eligibilityPolicyOrigin;
     if (status === "NO_DOCUMENTED_HARD_GATE" && policyOrigin !== "OFFICIAL_EVIDENCE") return validCrossAgeApproval(toy, toy.crossAgeApproval) ? result2(true, "PARENT_APPROVED_CROSS_AGE") : result2(false, "PARENT_APPROVAL_REQUIRED");
     if (toy.earlyRotationEligibility === "INSUFFICIENT_EVIDENCE") return result2(false, "INSUFFICIENT_EVIDENCE_BLOCK");
-    if (toy.earlyRotationEligibility === "AGE_RECOMMENDED_ONLY") return result2(false, "AGE_RECOMMENDED_ONLY_BLOCK");
+    if (toy.earlyRotationEligibility === "AGE_RECOMMENDED_ONLY") {
+      const researchStatus = toy.userMetadata?.developmentFit?.researchStatus;
+      const monthsEarly = toy.minAgeMonths - age;
+      const supervisedApproval = toy.crossAgeApproval;
+      const approvedSupervisedChallenge = researchStatus === "RESEARCHED_RESOLVED" && monthsEarly > 0 && monthsEarly <= 6 && supervisedApproval?.approvalKind === "supervised_challenge" && validCrossAgeApproval(toy, supervisedApproval) && prerequisitesSatisfied(toy, profile);
+      return approvedSupervisedChallenge ? result2(true, "SUPERVISED_CHALLENGE_APPROVED") : result2(false, "AGE_RECOMMENDED_ONLY_BLOCK");
+    }
     if (toy.earlyRotationEligibility === "EARLY_ROTATION_ALLOWED") {
       const maximumEarlyMonths = Number(toy.maximumEarlyMonths ?? toy.userMetadata?.developmentFit?.maximumEarlyMonths);
       if (Number.isFinite(maximumEarlyMonths) && maximumEarlyMonths > 0 && toy.minAgeMonths - age > maximumEarlyMonths) return result2(false, "MAXIMUM_EARLY_WINDOW_BLOCK");
@@ -8852,7 +8859,17 @@ function executeMD1460MarkerOnly({ storage = globalThis.localStorage, previewFin
 function challengeDecision(state, catalog2, toy, age, profile = {}) {
   const row = catalog2.resolve(toy);
   if (!row || age == null) return null;
-  const projected = { ...withCatalogSafety(toy, row), minAgeMonths: row.minAgeMonths };
+  const ownedProjection = withCatalogSafety(toy, row);
+  const projected = {
+    ...ownedProjection,
+    minAgeMonths: row.minAgeMonths,
+    maxAgeMonths: row.maxAgeMonths,
+    earlyRotationEligibility: row.earlyRotationEligibility,
+    maximumEarlyMonths: row.maximumEarlyMonths,
+    prerequisiteSkills: row.prerequisiteSkills,
+    eligibilityPolicyOrigin: row.eligibilityPolicyOrigin,
+    userMetadata: { ...ownedProjection.userMetadata, developmentFit: row.userMetadata?.developmentFit || ownedProjection.userMetadata?.developmentFit }
+  };
   const approval = crossAgeApprovalFor(state, projected);
   return {
     row,
@@ -8868,8 +8885,101 @@ function parentApprovableChallenge(state, catalog2, toy, age, profile = {}) {
   if (!review || catalogSafetyStatus(review.row) !== "NO_DOCUMENTED_HARD_GATE" || review.row.minAgeMonths == null || age >= review.row.minAgeMonths) return null;
   return ["PARENT_APPROVAL_REQUIRED", "PARENT_APPROVED_CROSS_AGE"].includes(review.decision.reason) ? { toy, ...review } : null;
 }
-function parentApprovableChallenges(state, catalog2, age, profile = {}) {
-  return (state.toys || []).map((toy) => parentApprovableChallenge(state, catalog2, toy, age, profile)).filter(Boolean);
+function visibleOwnedToy(toy) {
+  return toy && !toy.hidden && !toy.archived && toy.set?.kind !== "parent" && !isRotationPaused(toy) && !isUserCustomPermanent(toy);
+}
+function reviewedStatus(row) {
+  return row?.userMetadata?.developmentFit?.researchStatus || "NOT_RESEARCHED";
+}
+function supervisedAgeOnlyChallenge(state, catalog2, toy, age, profile = {}) {
+  if (!visibleOwnedToy(toy)) return null;
+  const review = challengeDecision(state, catalog2, toy, age, profile);
+  if (!review || age == null || review.row.minAgeMonths == null) return null;
+  const monthsEarly = review.row.minAgeMonths - age;
+  if (review.row.earlyRotationEligibility !== "AGE_RECOMMENDED_ONLY" || reviewedStatus(review.row) !== "RESEARCHED_RESOLVED" || monthsEarly <= 0 || monthsEarly > 6 || review.decision.reason === "HARD_SAFETY_BLOCK" || !prerequisitesSatisfied(review.projected, profile)) return null;
+  return {
+    toy,
+    ...review,
+    source: "supervised",
+    monthsEarly,
+    attempt: state?.challengeAttempts?.[review.row.canonicalKey] || null
+  };
+}
+function autoEarlyChallenge(state, catalog2, toy, age, profile = {}) {
+  if (!visibleOwnedToy(toy)) return null;
+  const review = challengeDecision(state, catalog2, toy, age, profile);
+  if (!review || review.decision.reason !== "EARLY_ROTATION_ALLOWED") return null;
+  return { toy, ...review, source: "auto", monthsEarly: Math.max(0, review.row.minAgeMonths - age), attempt: null };
+}
+function legacyParentChallenge(state, catalog2, toy, age, profile = {}) {
+  const result2 = parentApprovableChallenge(state, catalog2, toy, age, profile);
+  return result2 ? { ...result2, source: "parent", monthsEarly: Math.max(0, result2.row.minAgeMonths - age), attempt: null } : null;
+}
+function challengeCandidates(state, catalog2, age, profile = {}) {
+  const byCanonical = /* @__PURE__ */ new Map();
+  for (const toy of state?.toys || []) {
+    const candidate = autoEarlyChallenge(state, catalog2, toy, age, profile) || supervisedAgeOnlyChallenge(state, catalog2, toy, age, profile) || legacyParentChallenge(state, catalog2, toy, age, profile);
+    if (!candidate || byCanonical.has(candidate.row.canonicalKey)) continue;
+    byCanonical.set(candidate.row.canonicalKey, candidate);
+  }
+  return [...byCanonical.values()].sort((a, b) => a.monthsEarly - b.monthsEarly || Number(b.source === "supervised") - Number(a.source === "supervised") || Number(Boolean(a.attempt?.lastChallengeAttempt)) - Number(Boolean(b.attempt?.lastChallengeAttempt)) || a.row.minAgeMonths - b.row.minAgeMonths || String(a.row.productName).localeCompare(String(b.row.productName)));
+}
+function challengeDiagnostics(state, catalog2, age, profile = {}) {
+  const candidates = challengeCandidates(state, catalog2, age, profile);
+  const supervisedKeys = new Set(candidates.filter((item) => item.source === "supervised").map((item) => item.row.canonicalKey));
+  const seen = /* @__PURE__ */ new Set();
+  const counts = { owned: 0, normal: 0, autoEarly: 0, supervised: 0, tooEarly: 0, hard: 0, insufficient: 0, skills: 0 };
+  for (const toy of state?.toys || []) {
+    if (!visibleOwnedToy(toy)) continue;
+    const review = challengeDecision(state, catalog2, toy, age, profile);
+    if (!review || seen.has(review.row.canonicalKey)) continue;
+    seen.add(review.row.canonicalKey);
+    counts.owned++;
+    const { row, projected, decision } = review;
+    if (supervisedKeys.has(row.canonicalKey)) {
+      counts.supervised++;
+      continue;
+    }
+    if (decision.reason === "NORMAL_AGE_ELIGIBLE") {
+      counts.normal++;
+      continue;
+    }
+    if (decision.reason === "EARLY_ROTATION_ALLOWED") {
+      counts.autoEarly++;
+      continue;
+    }
+    if (decision.reason === "HARD_SAFETY_BLOCK") {
+      counts.hard++;
+      continue;
+    }
+    if (decision.reason === "INSUFFICIENT_EVIDENCE_BLOCK" || reviewedStatus(row) === "RESEARCHED_INSUFFICIENT" || reviewedStatus(row) === "NOT_RESEARCHED") {
+      counts.insufficient++;
+      continue;
+    }
+    if (!prerequisitesSatisfied(projected, profile)) {
+      counts.skills++;
+      continue;
+    }
+    counts.tooEarly++;
+  }
+  return counts;
+}
+function recordSupervisedChallengeAttempt(state, toy, outcome = "started", { now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
+  const key = String(toy?.canonicalKey || "");
+  if (!key) return false;
+  state.challengeAttempts ||= {};
+  const previous = state.challengeAttempts[key] || {};
+  state.challengeAttempts[key] = {
+    canonicalKey: key,
+    challengeStartedAt: previous.challengeStartedAt || now3,
+    lastChallengeAttempt: now3,
+    outcome: outcome === "later" ? "later" : "started"
+  };
+  return true;
+}
+function approveSupervisedChallenge(state, toy, { now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
+  if (!recordSupervisedChallengeAttempt(state, toy, "started", { now: now3 })) return false;
+  return setCrossAgeApproval(state, toy, true, { now: now3, kind: "supervised_challenge" });
 }
 
 // src/features/startup-trace.js
@@ -9774,16 +9884,34 @@ Object.assign(DICTIONARY.en, {
   crossAgeRevoke: "Revoke allowance",
   challengeEntryTitle: "Challenge toys",
   challengeSettingsTitle: "Challenge toy settings",
-  challengeEntrySummary: "{count} toys can be considered early \xB7 {pending} to decide \xB7 {approved} allowed",
+  challengeEntrySummary: "{count} challenge options \xB7 {auto} early rotation \xB7 {supervised} supervised \xB7 {pending} to decide",
   challengeOpenSettings: "Manage challenge toys",
-  challengeSettingsIntro: "Decide separately for each toy. Allowing one does not guarantee it will be recommended.",
+  challengeSettingsIntro: "Early rotation and supervised challenges are shown separately. A challenge still needs to fit your child and the rest of the rotation.",
   challengeAges: "Manufacturer guidance: {recommended} months+ \xB7 Child: {current} months",
   challengeSafetyNote: "No specific hard safety warning was documented in the product information reviewed. This does not mean the manufacturer confirms use at a younger age.",
   challengeStatusPending: "Can decide",
   challengeStatusAllowed: "Allowed early in rotation",
   challengeStatusDeclined: "Not allowed early",
+  challengeStatusAuto: "Suitable for early rotation",
+  challengeStatusSupervised: "Can try with supervision",
+  challengeStatusTrying: "Trying it",
   challengeBadgeAvailable: "Early challenge available",
   challengeBadgeAllowed: "Challenge allowed",
+  challengeBadgeAuto: "Early rotation",
+  challengeBadgeSupervised: "Try with supervision",
+  challengeSourceAuto: "Early rotation",
+  challengeSourceSupervised: "Supervised challenge",
+  challengeSourceParent: "Parent decision",
+  challengeMonthsEarly: "{count} months before the suggested age",
+  challengeSkillsReady: "Ready skills: {skills}",
+  challengeSkillsReadyGeneric: "Current skills are a fit for this play.",
+  challengeAgeGuidance: "The official age is developmental guidance, not a documented hard safety gate.",
+  challengeTry: "Try it",
+  challengeLater: "Try later",
+  challengeMarkSuccess: "They can play this now",
+  challengeAutoExplanation: "This toy is eligible for automatic early rotation when it fits the rest of the rotation rules.",
+  challengeStatsTitle: "Where your owned toys are",
+  challengeStats: "Normal rotation: {normal} \xB7 Early rotation: {autoEarly} \xB7 Supervised challenge: {supervised} \xB7 Too early: {tooEarly} \xB7 Safety limit: {hard} \xB7 Evidence missing: {insufficient} \xB7 Skills not ready: {skills}",
   challengeHardBlocked: "This toy has a documented hard safety restriction and cannot be added early to a challenge rotation.",
   challengeUnknownBlocked: "There is not enough safety information to support early participation in rotation."
 });
@@ -9795,16 +9923,34 @@ Object.assign(DICTIONARY.zh, {
   crossAgeRevoke: "\u64A4\u9500\u5141\u8BB8",
   challengeEntryTitle: "\u6311\u6218\u73A9\u5177",
   challengeSettingsTitle: "\u6311\u6218\u73A9\u5177\u8BBE\u7F6E",
-  challengeEntrySummary: "{count} \u4E2A\u73A9\u5177\u53EF\u7531\u5BB6\u957F\u51B3\u5B9A\u662F\u5426\u63D0\u524D\u53C2\u4E0E \xB7 \u5F85\u51B3\u5B9A {pending} \xB7 \u5DF2\u5141\u8BB8 {approved}",
+  challengeEntrySummary: "\u6311\u6218\u9009\u62E9 {count} \xB7 \u63D0\u524D\u8F6E\u6362 {auto} \xB7 \u5BB6\u957F\u76D1\u7763\u6311\u6218 {supervised} \xB7 \u5F85\u51B3\u5B9A {pending}",
   challengeOpenSettings: "\u7BA1\u7406\u6311\u6218\u73A9\u5177",
-  challengeSettingsIntro: "\u8BF7\u9010\u4EF6\u51B3\u5B9A\u3002\u5141\u8BB8\u63D0\u524D\u53C2\u4E0E\u5E76\u4E0D\u4FDD\u8BC1\u8BE5\u73A9\u5177\u4E00\u5B9A\u88AB\u63A8\u8350\u3002",
+  challengeSettingsIntro: "\u63D0\u524D\u8F6E\u6362\u548C\u5BB6\u957F\u76D1\u7763\u6311\u6218\u4F1A\u5206\u522B\u663E\u793A\u3002\u6311\u6218\u9879\u76EE\u4ECD\u9700\u7B26\u5408\u5B69\u5B50\u80FD\u529B\u4E0E\u5176\u4ED6\u8F6E\u6362\u89C4\u5219\u3002",
   challengeAges: "\u5382\u5BB6\u5EFA\u8BAE\uFF1A{recommended} \u4E2A\u6708+ \xB7 \u5F53\u524D\u6708\u9F84\uFF1A{current} \u4E2A\u6708",
   challengeSafetyNote: "\u5DF2\u67E5\u9605\u7684\u4EA7\u54C1\u8D44\u6599\u4E2D\u672A\u8BB0\u5F55\u660E\u786E\u7684\u786C\u6027\u5B89\u5168\u8B66\u544A\uFF0C\u4F46\u8FD9\u4E0D\u4EE3\u8868\u5382\u5BB6\u786E\u8BA4\u66F4\u4F4E\u6708\u9F84\u4F7F\u7528\u5B89\u5168\u3002",
   challengeStatusPending: "\u53EF\u51B3\u5B9A",
   challengeStatusAllowed: "\u5DF2\u5141\u8BB8\u63D0\u524D\u53C2\u4E0E",
   challengeStatusDeclined: "\u6682\u4E0D\u5141\u8BB8",
+  challengeStatusAuto: "\u9002\u5408\u63D0\u524D\u8F6E\u6362",
+  challengeStatusSupervised: "\u53EF\u4EE5\u8BD5\u8BD5\u770B",
+  challengeStatusTrying: "\u6B63\u5728\u8BD5\u8BD5\u770B",
   challengeBadgeAvailable: "\u53EF\u63D0\u524D\u6311\u6218",
   challengeBadgeAllowed: "\u5DF2\u5141\u8BB8\u6311\u6218",
+  challengeBadgeAuto: "\u9002\u5408\u63D0\u524D\u8F6E\u6362",
+  challengeBadgeSupervised: "\u53EF\u4EE5\u8BD5\u8BD5\u770B",
+  challengeSourceAuto: "\u63D0\u524D\u8F6E\u6362",
+  challengeSourceSupervised: "\u5BB6\u957F\u76D1\u7763\u6311\u6218",
+  challengeSourceParent: "\u5BB6\u957F\u51B3\u5B9A",
+  challengeMonthsEarly: "\u8DDD\u79BB\u5EFA\u8BAE\u5E74\u9F84\u8FD8\u5DEE {count} \u4E2A\u6708",
+  challengeSkillsReady: "\u5DF2\u5177\u5907\u80FD\u529B\uFF1A{skills}",
+  challengeSkillsReadyGeneric: "\u5F53\u524D\u80FD\u529B\u4E0E\u8FD9\u4EF6\u73A9\u5177\u5339\u914D\u3002",
+  challengeAgeGuidance: "\u5B98\u65B9\u5E74\u9F84\u5C5E\u4E8E\u53D1\u5C55\u5EFA\u8BAE\uFF0C\u4E0D\u662F\u5DF2\u8BB0\u5F55\u7684\u786C\u6027\u5B89\u5168\u95E8\u69DB\u3002",
+  challengeTry: "\u8BD5\u8BD5\u770B",
+  challengeLater: "\u4EE5\u540E\u518D\u8BD5",
+  challengeMarkSuccess: "\u8FD9\u4E2A\u5DF2\u7ECF\u4F1A\u73A9\u4E86",
+  challengeAutoExplanation: "\u5F53\u7B26\u5408\u5176\u4ED6\u8F6E\u6362\u89C4\u5219\u65F6\uFF0C\u8FD9\u4EF6\u73A9\u5177\u53EF\u81EA\u52A8\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362\u3002",
+  challengeStatsTitle: "\u5DF2\u62E5\u6709\u73A9\u5177\u7684\u5F53\u524D\u72B6\u6001",
+  challengeStats: "\u6B63\u5E38\u8F6E\u6362\uFF1A{normal} \xB7 \u63D0\u524D\u8F6E\u6362\uFF1A{autoEarly} \xB7 \u5BB6\u957F\u76D1\u7763\u6311\u6218\uFF1A{supervised} \xB7 \u8FD8\u9700\u7B49\u5F85\uFF1A{tooEarly} \xB7 \u5B89\u5168\u9650\u5236\uFF1A{hard} \xB7 \u8BC1\u636E\u4E0D\u8DB3\uFF1A{insufficient} \xB7 \u80FD\u529B\u5C1A\u672A\u51C6\u5907\u597D\uFF1A{skills}",
   challengeHardBlocked: "\u6B64\u73A9\u5177\u6709\u660E\u786E\u7684\u786C\u6027\u5B89\u5168\u9650\u5236\uFF0C\u4E0D\u80FD\u63D0\u524D\u52A0\u5165\u6311\u6218\u8F6E\u6362\u3002",
   challengeUnknownBlocked: "\u76EE\u524D\u6CA1\u6709\u8DB3\u591F\u5B89\u5168\u4FE1\u606F\u652F\u6301\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362\u3002"
 });
@@ -10521,7 +10667,7 @@ function renderToyCard(toy, { showDevelopment = false } = {}) {
   return `<article class="card" data-toy-id="${escape(toy.id)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes || []).join("|"))}" data-mechanics="${escape((toy.playMechanics || []).join("|"))}" data-status="${toy.archived ? "archived" : toy.hidden ? "hidden" : paused ? "paused" : customPermanent ? "permanent" : onShelf ? "active" : "stored"}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t("permanentBadge")}</span>` : ""}</h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map((code) => `<span>${t(`skill.${code}`)}</span>`).join("")}</div><p>${toy.minAgeMonths ?? "?"}\u2013${toy.maxAgeMonths ?? "?"} ${ageUnit} \xB7 ${t(paused ? "paused" : customPermanent ? "customPermanent" : onShelf ? "onShelf" : "stored")}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === "like" ? "selected" : ""}">${t("liked")}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === "neutral" ? "selected" : ""}">${t("neutral")}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === "dislike" ? "selected" : ""}">${t("disliked")}</button>${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t("edit")}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t("remove")}</button></div></div></article>`;
 }
 function currentChallengeRows() {
-  return parentApprovableChallenges(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
+  return challengeCandidates(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
 }
 function renderChallengeBadges() {
   if (view !== "library") return;
@@ -10531,8 +10677,8 @@ function renderChallengeBadges() {
     if (!row) return;
     const badge = document.createElement("span");
     badge.className = "challenge-chip";
-    badge.dataset.challengeChoice = row.choice;
-    badge.textContent = t(row.choice === "allowed" ? "challengeBadgeAllowed" : "challengeBadgeAvailable");
+    badge.dataset.challengeSource = row.source;
+    badge.textContent = t(row.source === "auto" ? "challengeBadgeAuto" : row.source === "supervised" ? "challengeBadgeSupervised" : row.choice === "allowed" ? "challengeBadgeAllowed" : "challengeBadgeAvailable");
     card.querySelector("h3")?.append(" ", badge);
   });
 }
@@ -10638,10 +10784,12 @@ function renderChallengeEntry() {
   if (view !== "rotation") return;
   const rows = currentChallengeRows();
   if (!rows.length) return;
-  const approved = rows.filter((row) => row.choice === "allowed").length;
+  const auto = rows.filter((row) => row.source === "auto").length;
+  const supervised = rows.filter((row) => row.source === "supervised").length;
+  const pending = rows.filter((row) => row.source === "parent" && row.choice === "pending").length;
   const entry = document.createElement("section");
   entry.className = "panel challenge-entry";
-  entry.innerHTML = `<div><h3>${t("challengeEntryTitle")}</h3><p>${t("challengeEntrySummary", { count: rows.length, pending: rows.filter((row) => row.choice === "pending").length, approved })}</p></div><button type="button" data-action="challenge-settings">${t("challengeOpenSettings")}</button>`;
+  entry.innerHTML = `<div><h3>${t("challengeEntryTitle")}</h3><p>${t("challengeEntrySummary", { count: rows.length, auto, supervised, pending })}</p></div><button type="button" data-action="challenge-settings">${t("challengeOpenSettings")}</button>`;
   root.querySelector(".shelf-total")?.before(entry);
 }
 function renderWishlist() {
@@ -10978,26 +11126,65 @@ function installScrollTopButton(scroller, modal = false) {
 function updateChallengeChoice(projected, choice) {
   store.update((state) => {
     if (choice === "declined") declineCrossAgeApproval(state, projected);
-    else setCrossAgeApproval(state, projected, choice === "allowed");
+    else setCrossAgeApproval(state, projected, choice === "allowed", { kind: "parent_challenge" });
   }, "cross-age-choice");
 }
+function challengeSkillSummary(row) {
+  const skills = Object.keys(row.projected?.prerequisiteSkills || {});
+  const mechanicForSkill = { matching: "matching_sorting", sorting: "color_pattern", visualSpatial: "blocks_build", fineMotor: "fine_motor_general", attentionPersistence: "puzzle", problemSolving: "puzzle", earlyMath: "counting_quantity", pretendPlay: "pretend_role", language: "pretend_role", causeEffect: "cause_effect", grossMotor: "balance", toolUse: "screw_bolt_tool", handStrength: "screw_bolt_tool", bilateralCoordination: "threading_lacing" };
+  const labels = [...new Set(skills.map((skill) => mechanicLabel(mechanicForSkill[skill] || skill)))];
+  return labels.length ? t("challengeSkillsReady", { skills: labels.join(" \xB7 ") }) : t("challengeSkillsReadyGeneric");
+}
+function challengeSourceLabel(source) {
+  return t(source === "auto" ? "challengeSourceAuto" : source === "supervised" ? "challengeSourceSupervised" : "challengeSourceParent");
+}
+function supervisedChallengeActions(row) {
+  if (row.choice === "allowed") return `<button type="button" data-challenge-action="revoke-supervised">${t("crossAgeRevoke")}</button>`;
+  if (row.attempt?.outcome === "started") return `<button type="button" class="primary" data-challenge-action="approve-supervised">${t("challengeMarkSuccess")}</button><button type="button" data-challenge-action="later-supervised">${t("challengeLater")}</button>`;
+  return `<button type="button" class="primary" data-challenge-action="try-supervised">${t("challengeTry")}</button><button type="button" data-challenge-action="later-supervised">${t("challengeLater")}</button>`;
+}
+function challengeStatusKey(row) {
+  if (row.source === "auto") return "challengeStatusAuto";
+  if (row.source === "supervised") return row.choice === "allowed" ? "challengeStatusAllowed" : row.attempt?.outcome === "started" ? "challengeStatusTrying" : "challengeStatusSupervised";
+  return row.choice === "allowed" ? "challengeStatusAllowed" : row.choice === "declined" ? "challengeStatusDeclined" : "challengeStatusPending";
+}
 function openChallengeSettings() {
-  const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${t("challengeSettingsTitle")}</h2><button type="button" data-close>\xD7</button></header><p>${t("challengeSettingsIntro")}</p><p data-challenge-summary></p><div class="challenge-list" data-challenge-list></div></section>`);
+  const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${t("challengeSettingsTitle")}</h2><button type="button" data-close>\xD7</button></header><p>${t("challengeSettingsIntro")}</p><p data-challenge-summary></p><div class="challenge-list" data-challenge-list></div><section class="challenge-diagnostics" data-challenge-diagnostics></section></section>`);
   const redraw = () => {
     const rows = currentChallengeRows();
+    const diagnostics = challengeDiagnostics(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
     dialog.querySelector("[data-challenge-summary]").textContent = t("challengeEntrySummary", {
       count: rows.length,
-      pending: rows.filter((row) => row.choice === "pending").length,
-      approved: rows.filter((row) => row.choice === "allowed").length
+      auto: rows.filter((row) => row.source === "auto").length,
+      supervised: rows.filter((row) => row.source === "supervised").length,
+      pending: rows.filter((row) => row.source === "parent" && row.choice === "pending").length
     });
     const list = dialog.querySelector("[data-challenge-list]");
-    list.innerHTML = rows.map(({ toy, row, projected, choice }) => `<article class="challenge-item" data-challenge-key="${escape(row.canonicalKey)}" data-challenge-choice="${choice}"><img data-image='${escapedJson(libraryImageRef(toy, "challenge_settings"))}' alt=""><div><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${t("challengeAges", { recommended: row.minAgeMonths, current: childAgeMonths2() })}</p><p class="challenge-status">${t(choice === "allowed" ? "challengeStatusAllowed" : choice === "declined" ? "challengeStatusDeclined" : "challengeStatusPending")}</p><div class="actions">${choice === "allowed" ? `<button type="button" data-challenge-action="revoke">${t("crossAgeRevoke")}</button>` : `<button type="button" class="primary" data-challenge-action="allow">${t("crossAgeAllow")}</button>${choice === "pending" ? `<button type="button" data-challenge-action="decline">${t("crossAgeDecline")}</button>` : ""}`}</div></div></article>`).join("");
+    list.innerHTML = rows.map((item) => {
+      const { toy, row, choice, source, monthsEarly } = item;
+      const actions = source === "auto" ? `<p class="challenge-explanation">${t("challengeAutoExplanation")}</p>` : source === "supervised" ? supervisedChallengeActions(item) : choice === "allowed" ? `<button type="button" data-challenge-action="revoke">${t("crossAgeRevoke")}</button>` : `<button type="button" class="primary" data-challenge-action="allow">${t("crossAgeAllow")}</button>${choice === "pending" ? `<button type="button" data-challenge-action="decline">${t("crossAgeDecline")}</button>` : ""}`;
+      return `<article class="challenge-item" data-challenge-key="${escape(row.canonicalKey)}" data-challenge-source="${source}"><img data-image='${escapedJson(libraryImageRef(toy, "challenge_settings"))}' alt=""><div><p class="challenge-kind">${challengeSourceLabel(source)}</p><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${t("challengeAges", { recommended: row.minAgeMonths, current: childAgeMonths2() })}</p>${monthsEarly > 0 ? `<p>${t("challengeMonthsEarly", { count: monthsEarly })}</p>` : ""}<p>${escape(challengeSkillSummary(item))}</p>${source === "supervised" ? `<p>${t("challengeAgeGuidance")}</p>` : ""}<p class="challenge-status">${t(challengeStatusKey(item))}</p><div class="actions">${actions}</div></div></article>`;
+    }).join("");
+    dialog.querySelector("[data-challenge-diagnostics]").innerHTML = `<h3>${t("challengeStatsTitle")}</h3><p>${t("challengeStats", diagnostics)}</p>`;
     list.querySelectorAll("[data-challenge-action]").forEach((button) => {
       button.onclick = () => {
         const parent = button.closest("[data-challenge-key]");
         const selected = rows.find((item) => item.row.canonicalKey === parent?.dataset.challengeKey);
         if (!selected) return;
-        updateChallengeChoice(selected.projected, button.dataset.challengeAction === "allow" ? "allowed" : button.dataset.challengeAction === "decline" ? "declined" : "revoked");
+        const action2 = button.dataset.challengeAction;
+        if (action2 === "try-supervised") store.update((state) => {
+          recordSupervisedChallengeAttempt(state, selected.projected, "started");
+        }, "supervised-challenge-started");
+        else if (action2 === "later-supervised") store.update((state) => {
+          recordSupervisedChallengeAttempt(state, selected.projected, "later");
+        }, "supervised-challenge-later");
+        else if (action2 === "approve-supervised") store.update((state) => {
+          approveSupervisedChallenge(state, selected.projected);
+        }, "supervised-challenge-approved");
+        else if (action2 === "revoke-supervised") store.update((state) => {
+          setCrossAgeApproval(state, selected.projected, false);
+        }, "supervised-challenge-revoked");
+        else updateChallengeChoice(selected.projected, action2 === "allow" ? "allowed" : action2 === "decline" ? "declined" : "revoked");
         redraw();
       };
     });
@@ -11016,10 +11203,40 @@ function attachCrossAgeApprovalControl(form, toy) {
       host.remove();
       return;
     }
+    const candidate = currentChallengeRows().find((item) => item.row.canonicalKey === review.row.canonicalKey && item.source === "supervised");
     const approvable = parentApprovableChallenge(store.state, catalog, toy, age, store.state.profile?.developmentProfile || {});
     const blocked = review.decision.reason === "HARD_SAFETY_BLOCK" ? "challengeHardBlocked" : review.decision.reason === "UNKNOWN_AGE_BLOCK" ? "challengeUnknownBlocked" : null;
-    if (!approvable && !blocked) {
+    if (!candidate && !approvable && !blocked) {
       host.remove();
+      return;
+    }
+    if (candidate) {
+      host.hidden = false;
+      host.innerHTML = `<h3>${t("challengeSettingsTitle")}</h3><p>${t("challengeAges", { recommended: review.row.minAgeMonths, current: age })}</p><p>${t("challengeAgeGuidance")}</p><p>${escape(challengeSkillSummary(candidate))}</p><p class="challenge-status">${t(challengeStatusKey(candidate))}</p><div class="actions">${supervisedChallengeActions(candidate)}</div>`;
+      host.querySelector('[data-challenge-action="try-supervised"]')?.addEventListener("click", () => {
+        store.update((state) => {
+          recordSupervisedChallengeAttempt(state, candidate.projected, "started");
+        }, "supervised-challenge-started");
+        redraw();
+      });
+      host.querySelector('[data-challenge-action="later-supervised"]')?.addEventListener("click", () => {
+        store.update((state) => {
+          recordSupervisedChallengeAttempt(state, candidate.projected, "later");
+        }, "supervised-challenge-later");
+        redraw();
+      });
+      host.querySelector('[data-challenge-action="approve-supervised"]')?.addEventListener("click", () => {
+        store.update((state) => {
+          approveSupervisedChallenge(state, candidate.projected);
+        }, "supervised-challenge-approved");
+        redraw();
+      });
+      host.querySelector('[data-challenge-action="revoke-supervised"]')?.addEventListener("click", () => {
+        store.update((state) => {
+          setCrossAgeApproval(state, candidate.projected, false);
+        }, "supervised-challenge-revoked");
+        redraw();
+      });
       return;
     }
     const choice = approvable?.choice || "pending";
