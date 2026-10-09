@@ -257,7 +257,7 @@ function normalizeWishlistItem(source = {}) {
   return { id: source.id || crypto.randomUUID(), canonicalKey: canonicalKey(source.canonicalKey || source.catalogKey || normalized2.canonicalKey), catalogId: source.catalogId || source.catalogKey || null, catalogSnapshot, status: ["want", "purchased", "dismissed"].includes(source.status) ? source.status : "want", priority: ["low", "medium", "high"].includes(source.priority) ? source.priority : "medium", notes: String(source.notes || "").slice(0, 2e3), sourceLink: String(source.sourceLink || "").slice(0, 2e3), recognizedMetadata: plainObject(source.recognizedMetadata), recommendationState: source.recommendationState || null, dismissedAt: source.dismissedAt || null, addedAt: source.addedAt || (/* @__PURE__ */ new Date()).toISOString() };
 }
 function emptyState() {
-  return { schemaVersion: SCHEMA_VERSION, settings: { language: "system", theme: "system", rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: "", childBirthDate: "", developmentProfile: {} }, developmentFeedbackHistory: [], crossAgeApprovals: {}, challengeAttempts: {}, toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
+  return { schemaVersion: SCHEMA_VERSION, settings: { language: "system", theme: "system", rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: "", childBirthDate: "", developmentProfile: {} }, developmentFeedbackHistory: [], crossAgeApprovals: {}, challengeAttempts: {}, ownerUseStates: {}, challengeStates: {}, toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
 }
 function numeric(value) {
   return value === "" || value == null || Number.isNaN(Number(value)) ? null : Number(value);
@@ -316,36 +316,6 @@ function validCrossAgeApproval(toy, record) {
   const key = String(toy?.canonicalKey || "");
   return record?.approved === true && record.canonicalKey === key && record.sourceRecommendedMinAgeMonths === toy.minAgeMonths && /^\d{4}-\d{2}-\d{2}T/.test(String(record.approvedAt || ""));
 }
-function setCrossAgeApproval(state, toy, approved, { now: now3 = (/* @__PURE__ */ new Date()).toISOString(), note = "", kind = "parent_challenge" } = {}) {
-  const key = String(toy?.canonicalKey || "");
-  if (!key || !Number.isFinite(toy?.minAgeMonths)) return false;
-  state.crossAgeApprovals ||= {};
-  if (!approved) {
-    delete state.crossAgeApprovals[key];
-    return true;
-  }
-  state.crossAgeApprovals[key] = {
-    approved: true,
-    approvedAt: now3,
-    canonicalKey: key,
-    sourceRecommendedMinAgeMonths: toy.minAgeMonths,
-    approvalKind: kind,
-    ...note ? { note: String(note).slice(0, 240) } : {}
-  };
-  return true;
-}
-function declineCrossAgeApproval(state, toy, { now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
-  const key = String(toy?.canonicalKey || "");
-  if (!key || !Number.isFinite(toy?.minAgeMonths)) return false;
-  state.crossAgeApprovals ||= {};
-  state.crossAgeApprovals[key] = {
-    approved: false,
-    decidedAt: now3,
-    canonicalKey: key,
-    sourceRecommendedMinAgeMonths: toy.minAgeMonths
-  };
-  return true;
-}
 function crossAgeChoiceFor(state, toy) {
   const key = String(toy?.canonicalKey || "");
   const record = state?.crossAgeApprovals?.[key];
@@ -355,12 +325,23 @@ function crossAgeChoiceFor(state, toy) {
 }
 function redirectCrossAgeApproval(state, from, to) {
   const approvals = state?.crossAgeApprovals;
-  if (!approvals || !from || !to || from === to || !approvals[from]) return false;
-  const source = approvals[from];
-  const target = approvals[to];
-  approvals[to] = target?.approved ? target : { ...source, canonicalKey: to };
-  delete approvals[from];
-  return true;
+  if (!from || !to || from === to) return false;
+  let changed = false;
+  if (approvals?.[from]) {
+    const source = approvals[from];
+    const target = approvals[to];
+    approvals[to] = target?.approved ? target : { ...source, canonicalKey: to };
+    delete approvals[from];
+    changed = true;
+  }
+  for (const field of ["ownerUseStates", "challengeStates"]) {
+    const records = state?.[field];
+    if (!records?.[from]) continue;
+    records[to] ||= { ...records[from], canonicalKey: to };
+    delete records[from];
+    changed = true;
+  }
+  return changed;
 }
 function reconcileCrossAgeApprovals(state, resolve) {
   let changed = 0;
@@ -1122,6 +1103,20 @@ function runMigrations(input) {
   if ((state.schemaVersion || 0) < 10) state = migrateV10(state);
   if ((state.schemaVersion || 0) < 11) state = migrateV11(state);
   if ((state.schemaVersion || 0) < 12) state = migrateV12(state);
+  return normalizeToyUseModelState(state);
+}
+function normalizeToyUseModelState(state) {
+  state.ownerUseStates ||= {};
+  state.challengeStates ||= {};
+  for (const [key, approval] of Object.entries(state.crossAgeApprovals || {})) {
+    if (!approval?.approved || state.ownerUseStates[key]) continue;
+    state.ownerUseStates[key] = { canonicalKey: key, state: "CURRENTLY_PLAYING", observedAt: approval.approvedAt || null, source: "legacy_cross_age_approval", sourceRecommendedMinAgeMonths: approval.sourceRecommendedMinAgeMonths ?? null };
+  }
+  for (const [key, attempt] of Object.entries(state.challengeAttempts || {})) {
+    if (state.challengeStates[key]) continue;
+    const next = attempt?.outcome === "success" ? "MASTERED" : attempt?.lastChallengeAttempt ? "ATTEMPTED" : null;
+    if (next) state.challengeStates[key] = { canonicalKey: key, state: next, observedAt: attempt.lastChallengeAttempt || attempt.challengeStartedAt || null, source: "legacy_challenge_attempt" };
+  }
   return state;
 }
 function migrateV1(legacy) {
@@ -5851,11 +5846,129 @@ function compareRelationship(a, b) {
   return rank2[b.level] - rank2[a.level] || b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName));
 }
 
+// src/domain/toy-use-model.js
+var TOY_USE_PRIMARY_STATUS = Object.freeze({
+  NORMAL_ROTATION: "NORMAL_ROTATION",
+  AUTO_EARLY: "AUTO_EARLY",
+  SUPERVISED_CHALLENGE: "SUPERVISED_CHALLENGE",
+  FAMILIARIZATION: "FAMILIARIZATION",
+  OWNER_CONFIRMED_USE: "OWNER_CONFIRMED_USE",
+  SAFETY_BLOCKED: "SAFETY_BLOCKED",
+  EVIDENCE_BLOCKED: "EVIDENCE_BLOCKED"
+});
+var OWNER_USE_STATES = Object.freeze(["DEFAULT", "EXPLORING", "CURRENTLY_PLAYING", "DEFERRED"]);
+var CHALLENGE_STATES = Object.freeze(["NOT_TRIED", "ATTEMPTED", "MASTERED"]);
+function safetyGate(toy, age, profile = {}) {
+  const safety = toy?.userMetadata?.safety || toy?.safety || {};
+  const safetyStatus = catalogSafetyStatus(toy);
+  if (toy?.earlyRotationEligibility === "HARD_SAFETY_GATE") {
+    const declared = Number(safety.hardMinAgeMonths ?? safety.minAgeMonths ?? safety.safetyMinAgeMonths);
+    if (age == null || !Number.isFinite(declared) || age < declared) {
+      return { allowed: false, reason: "HARD_SAFETY_GATE", safetyStatus, hardMinAgeMonths: Number.isFinite(declared) ? declared : null };
+    }
+  }
+  const hardMinAgeMonths = Number(safety.hardMinAgeMonths ?? safety.minAgeMonths ?? safety.safetyMinAgeMonths);
+  if (Number.isFinite(hardMinAgeMonths) && hardMinAgeMonths > 0 && age != null && age < hardMinAgeMonths)
+    return { allowed: false, reason: "HARD_MIN_AGE", safetyStatus, hardMinAgeMonths };
+  if ((safety.chokingSmallParts === true || safety.smallParts === true || safetyStatus === "SMALL_PARTS_GATE") && age != null && age < 36)
+    return { allowed: false, reason: "SMALL_PARTS_GATE", safetyStatus, hardMinAgeMonths: 36 };
+  const requiredBalance = Number(safetyStatus === "GROSS_MOTOR_GATE" || safety.requiresStandingStability === true ? safety.requiredGrossMotorLevel ?? 2 : safety.requiredGrossMotorLevel);
+  if (Number.isFinite(requiredBalance) && requiredBalance > 0 && (profile.balance?.manualLevel ?? profile.balance?.currentLevel ?? 1) < requiredBalance)
+    return { allowed: false, reason: "GROSS_MOTOR_GATE", safetyStatus, hardMinAgeMonths: null };
+  if (safety.requiresAgeConfirmation === true) return { allowed: false, reason: "AGE_CONFIRMATION_REQUIRED", safetyStatus, hardMinAgeMonths: null };
+  return { allowed: true, reason: "SAFETY_ALLOWED", safetyStatus, hardMinAgeMonths: Number.isFinite(hardMinAgeMonths) ? hardMinAgeMonths : null };
+}
+function ownerUseStateFor(state, toy) {
+  const key = String(toy?.canonicalKey || "");
+  const record = state?.ownerUseStates?.[key];
+  if (record && OWNER_USE_STATES.includes(record.state) && record.canonicalKey === key) return record;
+  const legacy = state?.crossAgeApprovals?.[key];
+  if (legacy?.approved === true && legacy.canonicalKey === key) return {
+    canonicalKey: key,
+    state: "CURRENTLY_PLAYING",
+    source: "legacy_cross_age_approval",
+    observedAt: legacy.approvedAt || null
+  };
+  return { canonicalKey: key, state: "DEFAULT", source: "default", observedAt: null };
+}
+function challengeStateFor(state, toy) {
+  const key = String(toy?.canonicalKey || "");
+  const record = state?.challengeStates?.[key];
+  if (record && CHALLENGE_STATES.includes(record.state) && record.canonicalKey === key) return record;
+  const legacy = state?.challengeAttempts?.[key];
+  return { canonicalKey: key, state: legacy?.outcome === "success" ? "MASTERED" : legacy?.lastChallengeAttempt ? "ATTEMPTED" : "NOT_TRIED", source: legacy ? "legacy_attempt" : "default" };
+}
+function evidenceState(toy) {
+  const fit = toy?.userMetadata?.developmentFit || {};
+  const researchStatus = fit.researchStatus || "NOT_RESEARCHED";
+  const identityBlocked = researchStatus === "IDENTITY_BLOCKED" || fit.identityStatus === "IDENTITY_BLOCKED" || toy?.identityStatus === "IDENTITY_BLOCKED" || toy?.identityConflict === true;
+  const resolved = researchStatus === "RESEARCHED_RESOLVED";
+  const insufficient7 = identityBlocked || !resolved || toy?.earlyRotationEligibility === "INSUFFICIENT_EVIDENCE";
+  return { researchStatus, resolved, insufficient: insufficient7, identityBlocked };
+}
+function capabilityObservations(toy, profile = {}) {
+  const required = toy?.prerequisiteSkills || {};
+  const confirmed = [];
+  const unknown = [];
+  const explicitlyBlocked = [];
+  for (const [skill, level] of Object.entries(required)) {
+    const value = profile?.[skill] || {};
+    if (value.explicitlyBlocked === true || value.developmentallyBlocked === true || value.status === "blocked") explicitlyBlocked.push(skill);
+    else if ((value.manualLevel ?? value.currentLevel ?? 0) >= Number(level || 0)) confirmed.push(skill);
+    else unknown.push(skill);
+  }
+  return { confirmed, unknown, explicitlyBlocked, autoEarlyReady: prerequisitesSatisfied(toy, profile) };
+}
+function actions(...values) {
+  return values.filter(Boolean);
+}
+function deriveToyUseDecision(toy, { childAgeMonths: childAgeMonths3, profile = {}, state = {} } = {}) {
+  const age = childAgeMonths3 == null ? null : Number(childAgeMonths3);
+  const recommendedAgeMin = Number(toy?.minAgeMonths);
+  const hasRecommendedAge = Number.isFinite(recommendedAgeMin) && recommendedAgeMin > 0;
+  const recommendedAgeGap = hasRecommendedAge && age != null ? Math.max(0, recommendedAgeMin - age) : 0;
+  const safety = safetyGate(toy, age, profile);
+  const evidence2 = evidenceState(toy);
+  const ownerUse = ownerUseStateFor(state, toy);
+  const challenge = challengeStateFor(state, toy);
+  const capability = capabilityObservations(toy, profile);
+  const base = { safetyStatus: safety.allowed ? "SAFETY_ALLOWED" : "HARD_SAFETY_BLOCKED", developmentStatus: hasRecommendedAge && age != null && age >= recommendedAgeMin ? "AT_OR_ABOVE_RECOMMENDED_AGE" : "BELOW_RECOMMENDED_AGE", ownerUseStatus: ownerUse.state, challengeStatus: challenge.state, recommendedAgeMin: hasRecommendedAge ? recommendedAgeMin : null, recommendedAgeGap, capabilityObservations: capability, researchStatus: evidence2.researchStatus, reasonCodes: [], rotationEligible: false, availableActions: [] };
+  if (!safety.allowed) return { ...base, primaryStatus: TOY_USE_PRIMARY_STATUS.SAFETY_BLOCKED, reasonCodes: [safety.reason], availableActions: [] };
+  if (age != null && hasRecommendedAge && age < recommendedAgeMin && evidence2.insufficient) return { ...base, safetyStatus: evidence2.identityBlocked ? "IDENTITY_BLOCKED" : "EVIDENCE_BLOCKED", primaryStatus: TOY_USE_PRIMARY_STATUS.EVIDENCE_BLOCKED, reasonCodes: [evidence2.identityBlocked ? "IDENTITY_BLOCKED" : "INSUFFICIENT_EVIDENCE_BLOCK"], availableActions: [] };
+  if (age == null) return { ...base, primaryStatus: TOY_USE_PRIMARY_STATUS.EVIDENCE_BLOCKED, safetyStatus: "EVIDENCE_BLOCKED", reasonCodes: ["UNKNOWN_CHILD_AGE"], availableActions: [] };
+  if (!hasRecommendedAge || age >= recommendedAgeMin) return { ...base, primaryStatus: TOY_USE_PRIMARY_STATUS.NORMAL_ROTATION, reasonCodes: ["NORMAL_AGE_ELIGIBLE"], rotationEligible: true };
+  if (ownerUse.state === "CURRENTLY_PLAYING" || ownerUse.state === "EXPLORING") return { ...base, primaryStatus: TOY_USE_PRIMARY_STATUS.OWNER_CONFIRMED_USE, reasonCodes: [ownerUse.state === "CURRENTLY_PLAYING" ? "OWNER_CURRENTLY_PLAYING" : "OWNER_EXPLORING"], rotationEligible: true, availableActions: actions("stop_exploring", "defer") };
+  const early4 = toy?.earlyRotationEligibility === "EARLY_ROTATION_ALLOWED";
+  const declaredEarlyWindow = Number(toy?.maximumEarlyMonths ?? toy?.userMetadata?.developmentFit?.maximumEarlyMonths);
+  const maximumEarlyMonths = Number.isFinite(declaredEarlyWindow) && declaredEarlyWindow > 0 ? declaredEarlyWindow : 3;
+  if (early4 && evidence2.resolved && maximumEarlyMonths <= 3 && recommendedAgeGap <= maximumEarlyMonths && capability.autoEarlyReady) return { ...base, primaryStatus: TOY_USE_PRIMARY_STATUS.AUTO_EARLY, reasonCodes: ["EARLY_ROTATION_ALLOWED"], rotationEligible: true };
+  if (evidence2.resolved && toy?.earlyRotationEligibility === "AGE_RECOMMENDED_ONLY" && recommendedAgeGap <= 6 && !capability.explicitlyBlocked.length) return { ...base, primaryStatus: TOY_USE_PRIMARY_STATUS.SUPERVISED_CHALLENGE, reasonCodes: ["SUPERVISED_CHALLENGE_AVAILABLE"], availableActions: actions("try_challenge", "start_exploring", "currently_playing", "defer") };
+  return { ...base, primaryStatus: TOY_USE_PRIMARY_STATUS.FAMILIARIZATION, reasonCodes: [capability.explicitlyBlocked.length ? "TARGET_SKILL_NOT_YET_MASTERED" : "FAMILIARIZATION_AVAILABLE"], availableActions: actions("start_exploring", "currently_playing", "defer") };
+}
+function setOwnerUseState(state, toy, nextState, { now: now3 = (/* @__PURE__ */ new Date()).toISOString(), source = "owner" } = {}) {
+  const key = String(toy?.canonicalKey || "");
+  if (!key || !OWNER_USE_STATES.includes(nextState)) return false;
+  state.ownerUseStates ||= {};
+  if (nextState === "DEFAULT") {
+    delete state.ownerUseStates[key];
+    return true;
+  }
+  state.ownerUseStates[key] = { canonicalKey: key, state: nextState, observedAt: now3, sourceRecommendedMinAgeMonths: toy.minAgeMonths ?? null, source };
+  return true;
+}
+function setChallengeState(state, toy, nextState, { now: now3 = (/* @__PURE__ */ new Date()).toISOString(), source = "owner" } = {}) {
+  const key = String(toy?.canonicalKey || "");
+  if (!key || !CHALLENGE_STATES.includes(nextState)) return false;
+  state.challengeStates ||= {};
+  state.challengeStates[key] = { canonicalKey: key, state: nextState, observedAt: now3, source };
+  return true;
+}
+
 // src/domain/rotation-engine.js
 var GENERIC_MECHANICS2 = /* @__PURE__ */ new Set(["fine_motor_general", "construction_general", "pretend_play_general", "sensory_general"]);
-function selectRotation({ toys = [], history = [], childAgeMonths: childAgeMonths3, size = 6, now: now3 = Date.now(), childDevelopmentProfile = {}, developmentFeedbackHistory = [] }) {
+function selectRotation({ toys = [], history = [], childAgeMonths: childAgeMonths3, size = 6, now: now3 = Date.now(), childDevelopmentProfile = {}, developmentFeedbackHistory = [], ownerUseStates = {}, challengeStates = {} }) {
   const requestedRotationCount = Math.max(1, Number(size) || 6);
-  const classified = classifyCandidates(toys, childAgeMonths3, childDevelopmentProfile);
+  const classified = classifyCandidates(toys, childAgeMonths3, childDevelopmentProfile, { ownerUseStates, challengeStates });
   const candidates = classified.eligible.map((toy, index) => ({ toy, ...baseScore(toy, childAgeMonths3, now3, history, childDevelopmentProfile, developmentFeedbackHistory), index })).sort((a, b) => b.score - a.score || a.toy.productName.localeCompare(b.toy.productName));
   const selected = [];
   const selectedCandidateScores = [];
@@ -6092,7 +6205,7 @@ function refillCurrentRotation(state, { childAgeMonths: childAgeMonths3, now: no
   let additions = [];
   if (missing) {
     const pool = (state.toys || []).filter((toy) => !keptIds.has(toy.id) && !occupiedIds.has(toy.id) && !rotationIdentityKeys(toy).some((key) => occupiedIdentityKeys.has(key)));
-    additions = selectRotation({ toys: pool, history: (state.rotationHistory || []).slice(1), childAgeMonths: childAgeMonths3, size: missing, now: new Date(now3).getTime(), childDevelopmentProfile: state.profile?.developmentProfile || {}, developmentFeedbackHistory: state.developmentFeedbackHistory || [] }).selected.slice(0, missing);
+    additions = selectRotation({ toys: pool, history: (state.rotationHistory || []).slice(1), childAgeMonths: childAgeMonths3, size: missing, now: new Date(now3).getTime(), childDevelopmentProfile: state.profile?.developmentProfile || {}, developmentFeedbackHistory: state.developmentFeedbackHistory || [], ownerUseStates: state.ownerUseStates || {}, challengeStates: state.challengeStates || {} }).selected.slice(0, missing);
   }
   const selected = [...kept, ...additions];
   for (const toy of additions) toy.lastActivatedAt = now3;
@@ -6110,7 +6223,7 @@ function refreshLatestDiagnostics(state, childAgeMonths3) {
 }
 function buildCurrentDiagnostics(state, selectedRotationCount, childAgeMonths3) {
   const requestedRotationCount = Math.max(1, Number(state.settings?.rotationSize) || 6);
-  const classified = classifyCandidates(state.toys || [], childAgeMonths3, state.profile?.developmentProfile || {});
+  const classified = classifyCandidates(state.toys || [], childAgeMonths3, state.profile?.developmentProfile || {}, { ownerUseStates: state.ownerUseStates || {}, challengeStates: state.challengeStates || {} });
   const permanentCount = classified.customPermanent.length;
   const manualCount = currentShelfCollections(state).manual.length;
   const ordinaryRotationCount = selectedRotationCount + manualCount;
@@ -6139,7 +6252,7 @@ function withShelfCounts(diagnostics = {}, selectedRotationCount, permanentCount
 function rotationIdentityKeys(toy = {}) {
   return [toy.canonicalKey && `canonical:${toy.canonicalKey}`, toy.catalogId && `catalog:${toy.catalogId}`, toy.sku && `sku:${String(toy.sku).toLowerCase()}`].filter(Boolean);
 }
-function classifyCandidates(toys, age, profile = {}) {
+function classifyCandidates(toys, age, profile = {}, ownerState = {}) {
   const result2 = { eligible: [], customPermanent: [], hiddenOrArchived: 0, parentContainers: 0, ageRule: 0 };
   for (const toy of toys) {
     if (toy.hidden || toy.archived || isRotationPaused(toy)) {
@@ -6158,7 +6271,8 @@ function classifyCandidates(toys, age, profile = {}) {
       result2.manualOverride = (result2.manualOverride || 0) + 1;
       continue;
     }
-    if (!hardSafetyEligible(toy, age, profile)) {
+    const use = deriveToyUseDecision(toy, { childAgeMonths: age, profile, state: ownerState });
+    if (!use.rotationEligible) {
       result2.ageRule++;
       continue;
     }
@@ -6166,46 +6280,17 @@ function classifyCandidates(toys, age, profile = {}) {
   }
   return result2;
 }
-function rotationAgeEligibility(toy, age, profile = {}) {
-  const safety = toy.userMetadata?.safety || toy.safety || {};
-  const status = catalogSafetyStatus(toy);
-  const result2 = (eligible, reason2) => ({ eligible, reason: reason2 });
-  if (age == null) {
-    const eligible = !safety.requiresAgeConfirmation && !safety.chokingSmallParts && !safety.smallParts && !safety.requiresStandingStability && safety.minAgeMonths == null && safety.safetyMinAgeMonths == null && safety.hardMinAgeMonths == null && safety.requiredGrossMotorLevel == null && status !== "GROSS_MOTOR_GATE";
-    return result2(eligible, eligible ? "NORMAL_AGE_ELIGIBLE" : "UNKNOWN_AGE_BLOCK");
-  }
-  const minimum = Number(safety.hardMinAgeMonths ?? safety.minAgeMonths ?? safety.safetyMinAgeMonths);
-  if (Number.isFinite(minimum) && minimum > 0 && age < minimum) return result2(false, "HARD_SAFETY_BLOCK");
-  if ((safety.chokingSmallParts === true || safety.smallParts === true || status === "SMALL_PARTS_GATE") && age < 36) return result2(false, "HARD_SAFETY_BLOCK");
-  const requiredBalance = Number(status === "GROSS_MOTOR_GATE" || safety.requiresStandingStability === true ? safety.requiredGrossMotorLevel ?? 2 : safety.requiredGrossMotorLevel);
-  if (Number.isFinite(requiredBalance) && requiredBalance > 0 && (profile.balance?.manualLevel ?? profile.balance?.currentLevel ?? 1) < requiredBalance) return result2(false, "HARD_SAFETY_BLOCK");
-  if (safety.requiresAgeConfirmation === true) return result2(false, "HARD_SAFETY_BLOCK");
-  if (toy.minAgeMonths != null && age < toy.minAgeMonths) {
-    const policyOrigin = toy.eligibilityPolicyOrigin ?? toy.userMetadata?.developmentFit?.eligibilityPolicyOrigin;
-    if (status === "NO_DOCUMENTED_HARD_GATE" && policyOrigin !== "OFFICIAL_EVIDENCE") return validCrossAgeApproval(toy, toy.crossAgeApproval) ? result2(true, "PARENT_APPROVED_CROSS_AGE") : result2(false, "PARENT_APPROVAL_REQUIRED");
-    if (toy.earlyRotationEligibility === "INSUFFICIENT_EVIDENCE") return result2(false, "INSUFFICIENT_EVIDENCE_BLOCK");
-    if (toy.earlyRotationEligibility === "AGE_RECOMMENDED_ONLY") {
-      const researchStatus = toy.userMetadata?.developmentFit?.researchStatus;
-      const monthsEarly = toy.minAgeMonths - age;
-      const supervisedApproval = toy.crossAgeApproval;
-      const approvedSupervisedChallenge = researchStatus === "RESEARCHED_RESOLVED" && monthsEarly > 0 && monthsEarly <= 6 && supervisedApproval?.approvalKind === "supervised_challenge" && validCrossAgeApproval(toy, supervisedApproval);
-      return approvedSupervisedChallenge ? result2(true, "SUPERVISED_CHALLENGE_APPROVED") : result2(false, "AGE_RECOMMENDED_ONLY_BLOCK");
-    }
-    if (toy.earlyRotationEligibility === "EARLY_ROTATION_ALLOWED") {
-      const maximumEarlyMonths = Number(toy.maximumEarlyMonths ?? toy.userMetadata?.developmentFit?.maximumEarlyMonths);
-      if (Number.isFinite(maximumEarlyMonths) && maximumEarlyMonths > 0 && toy.minAgeMonths - age > maximumEarlyMonths) return result2(false, "MAXIMUM_EARLY_WINDOW_BLOCK");
-      return prerequisitesSatisfied(toy, profile) ? result2(true, "EARLY_ROTATION_ALLOWED") : result2(false, "PREREQUISITES_NOT_MET");
-    }
-    if (toy.earlyRotationEligibility === "HARD_SAFETY_GATE") return result2(false, "HARD_SAFETY_BLOCK");
-    if (status === "VERIFIED_NO_EXTRA_GATE") return result2(true, "VERIFIED_CROSS_AGE_ALLOWED");
-    if (["SMALL_PARTS_GATE", "GROSS_MOTOR_GATE", "OTHER_HARD_GATE"].includes(status)) return result2(true, "VERIFIED_CROSS_AGE_ALLOWED");
-    if (status === "NO_DOCUMENTED_HARD_GATE") return validCrossAgeApproval(toy, toy.crossAgeApproval) ? result2(true, "PARENT_APPROVED_CROSS_AGE") : result2(false, "PARENT_APPROVAL_REQUIRED");
-    return result2(false, "UNKNOWN_AGE_BLOCK");
-  }
-  return result2(true, "NORMAL_AGE_ELIGIBLE");
-}
-function hardSafetyEligible(toy, age, profile = {}) {
-  return rotationAgeEligibility(toy, age, profile).eligible;
+function rotationAgeEligibility(toy, age, profile = {}, options = {}) {
+  const legacyApproval = options.crossAgeApproval || toy?.crossAgeApproval;
+  const state = legacyApproval?.approved ? { crossAgeApprovals: { [toy.canonicalKey]: legacyApproval } } : {};
+  const decision = deriveToyUseDecision(toy, { childAgeMonths: age, profile, state });
+  const primary = decision.primaryStatus;
+  if (primary === "NORMAL_ROTATION") return { eligible: true, reason: "NORMAL_AGE_ELIGIBLE" };
+  if (primary === "AUTO_EARLY") return { eligible: true, reason: "EARLY_ROTATION_ALLOWED" };
+  if (primary === "OWNER_CONFIRMED_USE") return { eligible: true, reason: "OWNER_CONFIRMED_EXPLORATION" };
+  if (primary === "SAFETY_BLOCKED") return { eligible: false, reason: "HARD_SAFETY_BLOCK" };
+  if (primary === "EVIDENCE_BLOCKED") return { eligible: false, reason: "INSUFFICIENT_EVIDENCE_BLOCK" };
+  return { eligible: false, reason: primary === "SUPERVISED_CHALLENGE" ? "SUPERVISED_CHALLENGE_ONLY" : "FAMILIARIZATION_ONLY" };
 }
 function isShelfVisible(toy) {
   return !toy.hidden && !toy.archived && toy.set?.kind !== "parent";
@@ -8890,17 +8975,8 @@ function challengeDecision(state, catalog2, toy, age, profile = {}) {
     projected,
     approval,
     choice: crossAgeChoiceFor(state, projected),
-    decision: rotationAgeEligibility({ ...projected, crossAgeApproval: approval }, age, profile)
+    decision: deriveToyUseDecision(projected, { childAgeMonths: age, profile, state })
   };
-}
-function parentApprovableChallenge(state, catalog2, toy, age, profile = {}) {
-  if (!toy || toy.hidden || toy.archived || toy.set?.kind === "parent" || isRotationPaused(toy) || isUserCustomPermanent(toy)) return null;
-  const review = challengeDecision(state, catalog2, toy, age, profile);
-  if (!review || catalogSafetyStatus(review.row) !== "NO_DOCUMENTED_HARD_GATE" || review.row.minAgeMonths == null || age >= review.row.minAgeMonths) return null;
-  if (!["PARENT_APPROVAL_REQUIRED", "PARENT_APPROVED_CROSS_AGE"].includes(review.decision.reason)) return null;
-  const monthsEarly = review.row.minAgeMonths - age;
-  if (review.decision.reason === "PARENT_APPROVAL_REQUIRED" && monthsEarly > 6) return null;
-  return { toy, ...review };
 }
 function visibleOwnedToy(toy) {
   return toy && !toy.hidden && !toy.archived && toy.set?.kind !== "parent" && !isRotationPaused(toy) && !isUserCustomPermanent(toy);
@@ -8929,7 +9005,7 @@ function supervisedAgeOnlyChallenge(state, catalog2, toy, age, profile = {}) {
   const review = challengeDecision(state, catalog2, toy, age, profile);
   if (!review || age == null || review.row.minAgeMonths == null) return null;
   const monthsEarly = review.row.minAgeMonths - age;
-  if (review.row.earlyRotationEligibility !== "AGE_RECOMMENDED_ONLY" || reviewedStatus(review.row) !== "RESEARCHED_RESOLVED" || monthsEarly <= 0 || monthsEarly > 6 || review.decision.reason === "HARD_SAFETY_BLOCK" || challengeSkillState(review.projected, profile).explicitlyBlocked.length) return null;
+  if (review.decision.primaryStatus !== TOY_USE_PRIMARY_STATUS.SUPERVISED_CHALLENGE) return null;
   return {
     toy,
     ...review,
@@ -8942,7 +9018,7 @@ function supervisedAgeOnlyChallenge(state, catalog2, toy, age, profile = {}) {
 function autoEarlyChallenge(state, catalog2, toy, age, profile = {}) {
   if (!visibleOwnedToy(toy)) return null;
   const review = challengeDecision(state, catalog2, toy, age, profile);
-  if (!review || review.decision.reason !== "EARLY_ROTATION_ALLOWED") return null;
+  if (!review || review.decision.primaryStatus !== TOY_USE_PRIMARY_STATUS.AUTO_EARLY) return null;
   return { toy, ...review, source: "auto", monthsEarly: Math.max(0, review.row.minAgeMonths - age), attempt: null };
 }
 function challengeCandidates(state, catalog2, age, profile = {}) {
@@ -8954,12 +9030,20 @@ function challengeCandidates(state, catalog2, age, profile = {}) {
   }
   return [...byCanonical.values()].sort((a, b) => Number(b.source === "auto") - Number(a.source === "auto") || a.monthsEarly - b.monthsEarly || (b.skillState?.confirmed.length || 0) - (a.skillState?.confirmed.length || 0) || (a.skillState?.unknown.length || 0) - (b.skillState?.unknown.length || 0) || Number(Boolean(a.attempt?.lastChallengeAttempt)) - Number(Boolean(b.attempt?.lastChallengeAttempt)) || a.row.minAgeMonths - b.row.minAgeMonths || String(a.row.productName).localeCompare(String(b.row.productName)));
 }
+function familiarizationCandidates(state, catalog2, age, profile = {}) {
+  const byCanonical = /* @__PURE__ */ new Map();
+  for (const toy of state?.toys || []) {
+    if (!visibleOwnedToy(toy)) continue;
+    const review = challengeDecision(state, catalog2, toy, age, profile);
+    if (!review || review.decision.primaryStatus !== TOY_USE_PRIMARY_STATUS.FAMILIARIZATION || byCanonical.has(review.row.canonicalKey)) continue;
+    byCanonical.set(review.row.canonicalKey, { toy, ...review, source: "familiarization", monthsEarly: Math.max(0, Number(review.row.minAgeMonths || 0) - Number(age || 0)) });
+  }
+  return [...byCanonical.values()].sort((a, b) => a.monthsEarly - b.monthsEarly || String(a.row.productName).localeCompare(String(b.row.productName)));
+}
 function diagnosticSnapshot(state, catalog2, age, profile = {}) {
-  const candidates = challengeCandidates(state, catalog2, age, profile);
-  const supervisedKeys = new Set(candidates.filter((item) => item.source === "supervised").map((item) => item.row.canonicalKey));
   const buckets = Object.fromEntries(DIAGNOSTIC_BUCKETS.map((bucket) => [bucket, []]));
   const seen = /* @__PURE__ */ new Set();
-  const counts = { owned: 0, normal: 0, autoEarly: 0, supervised: 0, tooEarly: 0, hard: 0, insufficient: 0, skillUnknownEligible: 0, autoSkillBlocked: 0 };
+  const counts = { owned: 0, normal: 0, autoEarly: 0, supervised: 0, familiarization: 0, ownerConfirmed: 0, hard: 0, insufficient: 0, skillUnknownEligible: 0, autoSkillBlocked: 0 };
   for (const toy of state?.toys || []) {
     if (!visibleOwnedToy(toy)) continue;
     const review = challengeDecision(state, catalog2, toy, age, profile);
@@ -8967,17 +9051,10 @@ function diagnosticSnapshot(state, catalog2, age, profile = {}) {
     seen.add(review.row.canonicalKey);
     counts.owned++;
     const { row, projected, decision } = review;
-    if (supervisedKeys.has(row.canonicalKey)) {
-      counts.supervised++;
-      if (challengeSkillState(projected, profile).unknown.length) counts.skillUnknownEligible++;
-    } else if (decision.reason === "NORMAL_AGE_ELIGIBLE") counts.normal++;
-    else if (decision.reason === "EARLY_ROTATION_ALLOWED") counts.autoEarly++;
-    else if (decision.reason === "HARD_SAFETY_BLOCK") counts.hard++;
-    else if (decision.reason === "PREREQUISITES_NOT_MET") counts.autoSkillBlocked++;
-    else if (decision.reason === "INSUFFICIENT_EVIDENCE_BLOCK") counts.insufficient++;
-    else counts.tooEarly++;
-    const bucket = diagnosticBucket(review, supervisedKeys, profile);
-    if (!bucket) continue;
+    const bucket = diagnosticBucket(review);
+    counts[bucket]++;
+    if (bucket === "supervised" && challengeSkillState(projected, profile).unknown.length) counts.skillUnknownEligible++;
+    if (bucket === "familiarization" && decision.reasonCodes.includes("TARGET_SKILL_NOT_YET_MASTERED")) counts.autoSkillBlocked++;
     buckets[bucket].push({
       canonicalKey: row.canonicalKey,
       brand: row.brand || "",
@@ -8986,7 +9063,8 @@ function diagnosticSnapshot(state, catalog2, age, profile = {}) {
       recommendedAgeMin: row.minAgeMonths ?? null,
       classification: row.earlyRotationEligibility || "INSUFFICIENT_EVIDENCE",
       researchStatus: reviewedStatus(row),
-      blockReason: decision.reason,
+      primaryStatus: decision.primaryStatus,
+      blockReason: decision.reasonCodes.join(", "),
       logicalEvidenceGroup: toy.set?.kind === "child" && toy.set?.parentCanonicalKey ? {
         canonicalKey: String(toy.set.parentCanonicalKey),
         productName: toy.set.setName || String(toy.set.parentCanonicalKey),
@@ -9006,15 +9084,19 @@ function diagnosticSnapshot(state, catalog2, age, profile = {}) {
     logicalEvidenceGroupCount: logicalEvidenceGroups.length
   };
 }
-var DIAGNOSTIC_BUCKETS = Object.freeze(["hard", "insufficient", "skillUnknown", "tooEarly"]);
-function diagnosticBucket(review, supervisedKeys, profile) {
-  const { row, projected, decision } = review;
-  if (decision.reason === "NORMAL_AGE_ELIGIBLE" || decision.reason === "EARLY_ROTATION_ALLOWED") return null;
-  if (decision.reason === "HARD_SAFETY_BLOCK") return "hard";
-  if (decision.reason === "INSUFFICIENT_EVIDENCE_BLOCK") return "insufficient";
-  if (supervisedKeys.has(row.canonicalKey) && challengeSkillState(projected, profile).unknown.length) return "skillUnknown";
-  if (decision.reason !== "NORMAL_AGE_ELIGIBLE" && decision.reason !== "EARLY_ROTATION_ALLOWED") return "tooEarly";
-  return null;
+var DIAGNOSTIC_BUCKETS = Object.freeze(["normal", "autoEarly", "supervised", "familiarization", "ownerConfirmed", "hard", "insufficient"]);
+function diagnosticBucket(review) {
+  const status = review.decision.primaryStatus;
+  const mapping = {
+    [TOY_USE_PRIMARY_STATUS.NORMAL_ROTATION]: "normal",
+    [TOY_USE_PRIMARY_STATUS.AUTO_EARLY]: "autoEarly",
+    [TOY_USE_PRIMARY_STATUS.SUPERVISED_CHALLENGE]: "supervised",
+    [TOY_USE_PRIMARY_STATUS.FAMILIARIZATION]: "familiarization",
+    [TOY_USE_PRIMARY_STATUS.OWNER_CONFIRMED_USE]: "ownerConfirmed",
+    [TOY_USE_PRIMARY_STATUS.SAFETY_BLOCKED]: "hard",
+    [TOY_USE_PRIMARY_STATUS.EVIDENCE_BLOCKED]: "insufficient"
+  };
+  return mapping[status] || "insufficient";
 }
 function ownerChallengeDiagnostics(state, catalog2, age, profile = {}) {
   return diagnosticSnapshot(state, catalog2, age, profile);
@@ -9066,7 +9148,8 @@ function recordSupervisedChallengeAttempt(state, toy, outcome = "started", { now
 }
 function approveSupervisedChallenge(state, toy, { now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
   if (!recordSupervisedChallengeAttempt(state, toy, "success", { now: now3 })) return false;
-  return setCrossAgeApproval(state, toy, true, { now: now3, kind: "supervised_challenge" });
+  setChallengeState(state, toy, "MASTERED", { now: now3, source: "supervised_challenge" });
+  return setOwnerUseState(state, toy, "CURRENTLY_PLAYING", { now: now3, source: "supervised_challenge" });
 }
 
 // src/features/startup-trace.js
@@ -10000,11 +10083,10 @@ Object.assign(DICTIONARY.en, {
   challengeMarkSuccess: "They can play this now",
   challengeAutoExplanation: "This toy is eligible for automatic early rotation when it fits the rest of the rotation rules.",
   challengeStatsTitle: "Where your owned toys are",
-  challengeStats: "Normal rotation: {normal} \xB7 Early rotation: {autoEarly} \xB7 Supervised challenge: {supervised} \xB7 Too early: {tooEarly} \xB7 Safety limit: {hard} \xB7 Evidence missing: {insufficient} \xB7 Skills to observe in supervised challenges: {skillUnknownEligible} \xB7 Skills not yet eligible for automatic early rotation: {autoSkillBlocked}",
+  challengeStats: "Normal rotation: {normal} \xB7 Early rotation: {autoEarly} \xB7 Supervised challenge: {supervised} \xB7 Familiarization: {familiarization} \xB7 Owner-confirmed use: {ownerConfirmed} \xB7 Safety limit: {hard} \xB7 Evidence missing: {insufficient}",
   challengeDiagnosticInsufficient: "Evidence missing ({count})",
   challengeDiagnosticHard: "Safety limit ({count})",
-  challengeDiagnosticSkillUnknown: "Skills to observe ({count})",
-  challengeDiagnosticTooEarly: "Still waiting ({count})",
+  challengeDiagnosticFamiliarization: "Familiarization ({count})",
   challengeDiagnosticRecommendedAge: "Manufacturer guidance: {months} months+",
   challengeDiagnosticReasonLabel: "Current status",
   challengeDiagnosticReasonHard: "A documented safety age limit applies.",
@@ -10018,7 +10100,14 @@ Object.assign(DICTIONARY.en, {
   challengeDiagnosticCompositeChildren: "{count} child items blocked as one set group",
   challengeDiagnosticShowChildren: "Show child details",
   challengeHardBlocked: "This toy has a documented hard safety restriction and cannot be added early to a challenge rotation.",
-  challengeUnknownBlocked: "There is not enough safety information to support early participation in rotation."
+  challengeUnknownBlocked: "There is not enough safety information to support early participation in rotation.",
+  familiarizationTitle: "Explore together",
+  familiarizationIntro: "This is below the manufacturer\u2019s developmental guidance. It is not a recommendation or a safety promise; you can explore it together and record what is actually happening.",
+  familiarizationExplore: "Add to exploration",
+  familiarizationPlaying: "Already playing",
+  familiarizationDefer: "Decide later",
+  toyUseFamiliarization: "Explore together",
+  toyUseExploring: "Exploring together"
 });
 Object.assign(DICTIONARY.zh, {
   crossAgeApprovalExplanation: "\u5F00\u542F\u540E\uFF0C\u8FD9\u4EF6\u73A9\u5177\u53EA\u4F1A\u83B7\u5F97\u53C2\u4E0E\u6311\u6218\u578B\u8F6E\u6362\u7684\u8D44\u683C\uFF0C\u4ECD\u4F1A\u7EE7\u7EED\u7ECF\u8FC7\u80FD\u529B\u5339\u914D\u548C\u5176\u4ED6\u63A8\u8350\u89C4\u5219\u3002",
@@ -10057,11 +10146,10 @@ Object.assign(DICTIONARY.zh, {
   challengeMarkSuccess: "\u8FD9\u4E2A\u5DF2\u7ECF\u4F1A\u73A9\u4E86",
   challengeAutoExplanation: "\u5F53\u7B26\u5408\u5176\u4ED6\u8F6E\u6362\u89C4\u5219\u65F6\uFF0C\u8FD9\u4EF6\u73A9\u5177\u53EF\u81EA\u52A8\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362\u3002",
   challengeStatsTitle: "\u5DF2\u62E5\u6709\u73A9\u5177\u7684\u5F53\u524D\u72B6\u6001",
-  challengeStats: "\u6B63\u5E38\u8F6E\u6362\uFF1A{normal} \xB7 \u63D0\u524D\u8F6E\u6362\uFF1A{autoEarly} \xB7 \u5BB6\u957F\u76D1\u7763\u6311\u6218\uFF1A{supervised} \xB7 \u8FD8\u9700\u7B49\u5F85\uFF1A{tooEarly} \xB7 \u5B89\u5168\u9650\u5236\uFF1A{hard} \xB7 \u8BC1\u636E\u4E0D\u8DB3\uFF1A{insufficient} \xB7 \u80FD\u529B\u5F85\u786E\u8BA4\u4F46\u53EF\u76D1\u7763\u6311\u6218\uFF1A{skillUnknownEligible} \xB7 \u6682\u4E0D\u6EE1\u8DB3\u81EA\u52A8\u63D0\u524D\u8F6E\u6362\u80FD\u529B\u6761\u4EF6\uFF1A{autoSkillBlocked}",
+  challengeStats: "\u6B63\u5E38\u8F6E\u6362\uFF1A{normal} \xB7 \u63D0\u524D\u8F6E\u6362\uFF1A{autoEarly} \xB7 \u5BB6\u957F\u76D1\u7763\u6311\u6218\uFF1A{supervised} \xB7 \u966A\u4F34\u63A2\u7D22\uFF1A{familiarization} \xB7 \u5BB6\u957F\u786E\u8BA4\u6B63\u5728\u4F7F\u7528\uFF1A{ownerConfirmed} \xB7 \u5B89\u5168\u9650\u5236\uFF1A{hard} \xB7 \u8BC1\u636E\u4E0D\u8DB3\uFF1A{insufficient}",
   challengeDiagnosticInsufficient: "\u8BC1\u636E\u4E0D\u8DB3\uFF08{count}\uFF09",
   challengeDiagnosticHard: "\u5B89\u5168\u9650\u5236\uFF08{count}\uFF09",
-  challengeDiagnosticSkillUnknown: "\u80FD\u529B\u5F85\u786E\u8BA4\uFF08{count}\uFF09",
-  challengeDiagnosticTooEarly: "\u8FD8\u9700\u7B49\u5F85\uFF08{count}\uFF09",
+  challengeDiagnosticFamiliarization: "\u966A\u4F34\u63A2\u7D22\uFF08{count}\uFF09",
   challengeDiagnosticRecommendedAge: "\u5382\u5BB6\u5EFA\u8BAE\uFF1A{months} \u4E2A\u6708+",
   challengeDiagnosticReasonLabel: "\u5F53\u524D\u72B6\u6001",
   challengeDiagnosticReasonHard: "\u5B58\u5728\u5DF2\u8BB0\u5F55\u7684\u5B89\u5168\u5E74\u9F84\u9650\u5236\u3002",
@@ -10075,7 +10163,14 @@ Object.assign(DICTIONARY.zh, {
   challengeDiagnosticCompositeChildren: "\u540C\u4E00\u5957\u88C5\u4E2D\u6709 {count} \u4E2A\u5B50\u73A9\u5177\u53D7\u963B",
   challengeDiagnosticShowChildren: "\u67E5\u770B\u5B50\u73A9\u5177\u8BE6\u60C5",
   challengeHardBlocked: "\u6B64\u73A9\u5177\u6709\u660E\u786E\u7684\u786C\u6027\u5B89\u5168\u9650\u5236\uFF0C\u4E0D\u80FD\u63D0\u524D\u52A0\u5165\u6311\u6218\u8F6E\u6362\u3002",
-  challengeUnknownBlocked: "\u76EE\u524D\u6CA1\u6709\u8DB3\u591F\u5B89\u5168\u4FE1\u606F\u652F\u6301\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362\u3002"
+  challengeUnknownBlocked: "\u76EE\u524D\u6CA1\u6709\u8DB3\u591F\u5B89\u5168\u4FE1\u606F\u652F\u6301\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362\u3002",
+  familiarizationTitle: "\u966A\u4F34\u63A2\u7D22",
+  familiarizationIntro: "\u8FD9\u4EF6\u73A9\u5177\u4F4E\u4E8E\u5382\u5BB6\u53D1\u5C55\u5EFA\u8BAE\u6708\u9F84\uFF0C\u4E0D\u662F\u7CFB\u7EDF\u63A8\u8350\uFF0C\u4E5F\u4E0D\u4EE3\u8868\u66F4\u4F4E\u6708\u9F84\u5B89\u5168\u3002\u4F60\u53EF\u4EE5\u966A\u4F34\u63A2\u7D22\uFF0C\u5E76\u8BB0\u5F55\u5F53\u524D\u771F\u5B9E\u4F7F\u7528\u60C5\u51B5\u3002",
+  familiarizationExplore: "\u52A0\u5165\u63A2\u7D22\u8F6E\u6362",
+  familiarizationPlaying: "\u5DF2\u7ECF\u5728\u73A9",
+  familiarizationDefer: "\u4EE5\u540E\u518D\u8BF4",
+  toyUseFamiliarization: "\u53EF\u966A\u4F34\u63A2\u7D22",
+  toyUseExploring: "\u6B63\u5728\u63A2\u7D22"
 });
 function createI18n(store2) {
   const language = () => store2.state.settings.language === "system" ? navigator.language.startsWith("zh") ? "zh" : "en" : store2.state.settings.language;
@@ -10772,8 +10867,8 @@ function renderDraft(draft) {
   const statusKey = `recognition${capitalize(draft.status)}`;
   const owned = draft.ownedToyId && store.state.toys.find((toy) => toy.id === draft.ownedToyId);
   const duplicate = draft.duplicateCandidates?.[0];
-  const actions = String(draft.status).startsWith("ready") ? `${draft.status === "ready_catalog_unmatched" ? `<label class="choice"><input type="checkbox" data-draft-image-consent="${draft.id}" ${draft.imageConsent ? "checked" : ""}>${t("imageReviewConsent")}</label>` : ""}<button data-draft-edit="${draft.id}">${t("recognitionReview")}</button><button data-draft-confirm="${draft.id}" data-destination="library" class="primary">${t("addToToyLibrary")}</button><button data-draft-confirm="${draft.id}" data-destination="wishlist" class="primary">${t("addToWishlist")}</button>` : draft.status === "already_owned" && owned ? `<div class="recognition-owned"><img data-image='${escapedJson(libraryImageRef(owned))}' alt=""><span>${escape(brandLabel(owned.brand))} \xB7 ${escape(displayName(owned))}</span></div><button data-draft-view="${owned.id}">${t("viewExistingToy")}</button>` : draft.status === "duplicate_review_required" ? `<p>${t("recognitionPossibleDuplicate", { name: duplicate?.productName || t("pendingReview") })}</p><button data-draft-duplicate-same="${draft.id}">${t("recognitionSameToy")}</button><button data-draft-duplicate-not-same="${draft.id}" class="primary">${t("recognitionNotSameToy")}</button>` : "";
-  return `<div class="draft"><img data-image='${escapedJson(draft.imageRef)}' alt=""><div><b>${escape(draft.productName || t("pendingReview"))}</b><small>${t(statusKey)}${draft.error ? ` \xB7 ${escape(messageFor(draft.error))}` : ""}</small>${actions}${draft.status === "error" ? `<button data-draft-retry="${draft.id}">${t("retryRecognition")}</button>` : ""}<button data-draft-remove="${draft.id}">${t("remove")}</button></div></div>`;
+  const actions2 = String(draft.status).startsWith("ready") ? `${draft.status === "ready_catalog_unmatched" ? `<label class="choice"><input type="checkbox" data-draft-image-consent="${draft.id}" ${draft.imageConsent ? "checked" : ""}>${t("imageReviewConsent")}</label>` : ""}<button data-draft-edit="${draft.id}">${t("recognitionReview")}</button><button data-draft-confirm="${draft.id}" data-destination="library" class="primary">${t("addToToyLibrary")}</button><button data-draft-confirm="${draft.id}" data-destination="wishlist" class="primary">${t("addToWishlist")}</button>` : draft.status === "already_owned" && owned ? `<div class="recognition-owned"><img data-image='${escapedJson(libraryImageRef(owned))}' alt=""><span>${escape(brandLabel(owned.brand))} \xB7 ${escape(displayName(owned))}</span></div><button data-draft-view="${owned.id}">${t("viewExistingToy")}</button>` : draft.status === "duplicate_review_required" ? `<p>${t("recognitionPossibleDuplicate", { name: duplicate?.productName || t("pendingReview") })}</p><button data-draft-duplicate-same="${draft.id}">${t("recognitionSameToy")}</button><button data-draft-duplicate-not-same="${draft.id}" class="primary">${t("recognitionNotSameToy")}</button>` : "";
+  return `<div class="draft"><img data-image='${escapedJson(draft.imageRef)}' alt=""><div><b>${escape(draft.productName || t("pendingReview"))}</b><small>${t(statusKey)}${draft.error ? ` \xB7 ${escape(messageFor(draft.error))}` : ""}</small>${actions2}${draft.status === "error" ? `<button data-draft-retry="${draft.id}">${t("retryRecognition")}</button>` : ""}<button data-draft-remove="${draft.id}">${t("remove")}</button></div></div>`;
 }
 function renderToyCard(toy, { showDevelopment = false } = {}) {
   const ageUnit = t("monthUnit");
@@ -10787,21 +10882,26 @@ function renderToyCard(toy, { showDevelopment = false } = {}) {
   const pauseControl = toy.set?.kind === "parent" ? "" : `<button data-action="toggle-pause" data-id="${toy.id}">${t(paused ? "resumeRotation" : "pauseRotation")}</button>`;
   const runtimeImageRef = libraryImageRef(toy, "toy_library_card_render");
   const development = showDevelopment ? renderDevelopmentFeedback(toy) : "";
-  return `<article class="card" data-toy-id="${escape(toy.id)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes || []).join("|"))}" data-mechanics="${escape((toy.playMechanics || []).join("|"))}" data-status="${toy.archived ? "archived" : toy.hidden ? "hidden" : paused ? "paused" : customPermanent ? "permanent" : onShelf ? "active" : "stored"}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t("permanentBadge")}</span>` : ""}</h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map((code) => `<span>${t(`skill.${code}`)}</span>`).join("")}</div><p>${toy.minAgeMonths ?? "?"}\u2013${toy.maxAgeMonths ?? "?"} ${ageUnit} \xB7 ${t(paused ? "paused" : customPermanent ? "customPermanent" : onShelf ? "onShelf" : "stored")}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === "like" ? "selected" : ""}">${t("liked")}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === "neutral" ? "selected" : ""}">${t("neutral")}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === "dislike" ? "selected" : ""}">${t("disliked")}</button>${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t("edit")}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t("remove")}</button></div></div></article>`;
+  const use = challengeDecision(store.state, catalog, toy, childAgeMonths2(), store.state.profile?.developmentProfile || {})?.decision;
+  const useLabel = use?.primaryStatus === TOY_USE_PRIMARY_STATUS.FAMILIARIZATION ? t("toyUseFamiliarization") : use?.primaryStatus === TOY_USE_PRIMARY_STATUS.OWNER_CONFIRMED_USE ? t("toyUseExploring") : "";
+  return `<article class="card" data-toy-id="${escape(toy.id)}" data-toy-use="${escape(use?.primaryStatus || "")}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes || []).join("|"))}" data-mechanics="${escape((toy.playMechanics || []).join("|"))}" data-status="${toy.archived ? "archived" : toy.hidden ? "hidden" : paused ? "paused" : customPermanent ? "permanent" : onShelf ? "active" : "stored"}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t("permanentBadge")}</span>` : ""}${useLabel ? ` <span class="challenge-chip">${useLabel}</span>` : ""}</h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map((code) => `<span>${t(`skill.${code}`)}</span>`).join("")}</div><p>${toy.minAgeMonths ?? "?"}\u2013${toy.maxAgeMonths ?? "?"} ${ageUnit} \xB7 ${t(paused ? "paused" : customPermanent ? "customPermanent" : onShelf ? "onShelf" : "stored")}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === "like" ? "selected" : ""}">${t("liked")}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === "neutral" ? "selected" : ""}">${t("neutral")}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === "dislike" ? "selected" : ""}">${t("disliked")}</button>${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t("edit")}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t("remove")}</button></div></div></article>`;
 }
 function currentChallengeRows() {
   return challengeCandidates(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
 }
+function currentFamiliarizationRows() {
+  return familiarizationCandidates(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
+}
 function renderChallengeBadges() {
   if (view !== "library") return;
-  const byId = new Map(currentChallengeRows().map((row) => [row.toy.id, row]));
+  const byId = new Map([...currentChallengeRows(), ...currentFamiliarizationRows()].map((row) => [row.toy.id, row]));
   root.querySelectorAll("#library-list [data-toy-id]").forEach((card) => {
     const row = byId.get(card.dataset.toyId);
     if (!row) return;
     const badge = document.createElement("span");
     badge.className = "challenge-chip";
     badge.dataset.challengeSource = row.source;
-    badge.textContent = t(row.source === "auto" ? "challengeBadgeAuto" : row.source === "supervised" ? "challengeBadgeSupervised" : row.choice === "allowed" ? "challengeBadgeAllowed" : "challengeBadgeAvailable");
+    badge.textContent = t(row.source === "familiarization" ? "toyUseFamiliarization" : row.source === "auto" ? "challengeBadgeAuto" : "challengeBadgeSupervised");
     card.querySelector("h3")?.append(" ", badge);
   });
 }
@@ -11246,12 +11346,6 @@ function installScrollTopButton(scroller, modal = false) {
   scroller.addEventListener("scroll", update, { passive: true });
   update();
 }
-function updateChallengeChoice(projected, choice) {
-  store.update((state) => {
-    if (choice === "declined") declineCrossAgeApproval(state, projected);
-    else setCrossAgeApproval(state, projected, choice === "allowed", { kind: "parent_challenge" });
-  }, "cross-age-choice");
-}
 function challengeSkillSummary(row) {
   const mechanicForSkill = { matching: "matching_sorting", sorting: "color_pattern", visualSpatial: "blocks_build", fineMotor: "fine_motor_general", attentionPersistence: "puzzle", problemSolving: "puzzle", earlyMath: "counting_quantity", pretendPlay: "pretend_role", language: "pretend_role", causeEffect: "cause_effect", grossMotor: "balance", toolUse: "screw_bolt_tool", handStrength: "screw_bolt_tool", bilateralCoordination: "threading_lacing" };
   const labels = (skills) => [...new Set((skills || []).map((skill) => mechanicLabel(mechanicForSkill[skill] || skill)))];
@@ -11274,13 +11368,13 @@ function challengeStatusKey(row) {
   return row.choice === "allowed" ? "challengeStatusAllowed" : row.choice === "declined" ? "challengeStatusDeclined" : "challengeStatusPending";
 }
 function challengeDiagnosticReason(row) {
-  if (row.blockReason === "HARD_SAFETY_BLOCK") return t("challengeDiagnosticReasonHard");
-  if (row.blockReason === "INSUFFICIENT_EVIDENCE_BLOCK") return t("challengeDiagnosticReasonEvidence");
-  if (row.blockReason === "PREREQUISITES_NOT_MET") return t("challengeDiagnosticReasonAutoSkills");
+  if (row.primaryStatus === TOY_USE_PRIMARY_STATUS.SAFETY_BLOCKED) return t("challengeDiagnosticReasonHard");
+  if (row.primaryStatus === TOY_USE_PRIMARY_STATUS.EVIDENCE_BLOCKED) return t("challengeDiagnosticReasonEvidence");
+  if (row.primaryStatus === TOY_USE_PRIMARY_STATUS.FAMILIARIZATION) return t("toyUseFamiliarization");
   return t("challengeDiagnosticReasonAge");
 }
 function challengeDiagnosticList(bucket, rows) {
-  const titleKey = { hard: "challengeDiagnosticHard", insufficient: "challengeDiagnosticInsufficient", skillUnknown: "challengeDiagnosticSkillUnknown", tooEarly: "challengeDiagnosticTooEarly" }[bucket];
+  const titleKey = { hard: "challengeDiagnosticHard", insufficient: "challengeDiagnosticInsufficient", familiarization: "challengeDiagnosticFamiliarization" }[bucket];
   const exportButton = bucket === "insufficient" && rows.length ? `<button type="button" data-copy-owner-evidence>${t("challengeCopyEvidenceList")}</button><p class="challenge-copy-status" data-copy-owner-evidence-status aria-live="polite"></p>` : "";
   const groups = groupChallengeDiagnosticRows(rows);
   const item = (row) => `<li><b>${escape(row.productName)}</b><span>${escape(row.brand || "\u2014")} \xB7 ${t("challengeDiagnosticRecommendedAge", { months: row.recommendedAgeMin ?? "\u2014" })}</span><span>${t("challengeDiagnosticReasonLabel")}: ${escape(challengeDiagnosticReason(row))}</span></li>`;
@@ -11308,7 +11402,7 @@ async function copyOwnerEvidenceList(rows, status) {
   }
 }
 function openChallengeSettings() {
-  const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${t("challengeSettingsTitle")}</h2><button type="button" data-close>\xD7</button></header><p>${t("challengeSettingsIntro")}</p><p data-challenge-summary></p><div class="challenge-list" data-challenge-list></div><section class="challenge-diagnostics" data-challenge-diagnostics></section></section>`);
+  const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${t("challengeSettingsTitle")}</h2><button type="button" data-close>\xD7</button></header><p>${t("challengeSettingsIntro")}</p><p data-challenge-summary></p><div class="challenge-list" data-challenge-list></div><section data-familiarization-list></section><section class="challenge-diagnostics" data-challenge-diagnostics></section></section>`);
   const redraw = () => {
     const rows = currentChallengeRows();
     const ownerDiagnostics = ownerChallengeDiagnostics(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
@@ -11322,12 +11416,15 @@ function openChallengeSettings() {
     });
     const list = dialog.querySelector("[data-challenge-list]");
     list.innerHTML = rows.map((item) => {
-      const { toy, row, choice, source, monthsEarly } = item;
-      const actions = source === "auto" ? `<p class="challenge-explanation">${t("challengeAutoExplanation")}</p>` : source === "supervised" ? supervisedChallengeActions(item) : choice === "allowed" ? `<button type="button" data-challenge-action="revoke">${t("crossAgeRevoke")}</button>` : `<button type="button" class="primary" data-challenge-action="allow">${t("crossAgeAllow")}</button>${choice === "pending" ? `<button type="button" data-challenge-action="decline">${t("crossAgeDecline")}</button>` : ""}`;
-      return `<article class="challenge-item" data-challenge-key="${escape(row.canonicalKey)}" data-challenge-source="${source}"><img data-image='${escapedJson(libraryImageRef(toy, "challenge_settings"))}' alt=""><div><p class="challenge-kind">${challengeSourceLabel(source)}</p><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${t("challengeAges", { recommended: row.minAgeMonths, current: childAgeMonths2() })}</p>${monthsEarly > 0 ? `<p>${t("challengeMonthsEarly", { count: monthsEarly })}</p>` : ""}${challengeSkillSummary(item)}${source === "supervised" ? `<p>${t("challengeAgeGuidance")}</p>` : ""}<p class="challenge-status">${t(challengeStatusKey(item))}</p><div class="actions">${actions}</div></div></article>`;
+      const { toy, row, source, monthsEarly } = item;
+      const actions2 = source === "auto" ? `<p class="challenge-explanation">${t("challengeAutoExplanation")}</p>` : supervisedChallengeActions(item);
+      return `<article class="challenge-item" data-challenge-key="${escape(row.canonicalKey)}" data-challenge-source="${source}"><img data-image='${escapedJson(libraryImageRef(toy, "challenge_settings"))}' alt=""><div><p class="challenge-kind">${challengeSourceLabel(source)}</p><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${t("challengeAges", { recommended: row.minAgeMonths, current: childAgeMonths2() })}</p>${monthsEarly > 0 ? `<p>${t("challengeMonthsEarly", { count: monthsEarly })}</p>` : ""}${challengeSkillSummary(item)}${source === "supervised" ? `<p>${t("challengeAgeGuidance")}</p>` : ""}<p class="challenge-status">${t(challengeStatusKey(item))}</p><div class="actions">${actions2}</div></div></article>`;
     }).join("");
+    const familiar = currentFamiliarizationRows();
+    const familiarHost = dialog.querySelector("[data-familiarization-list]");
+    familiarHost.innerHTML = `<h3>${t("familiarizationTitle")}</h3><p>${t("familiarizationIntro")}</p>${familiar.length ? `<div class="challenge-list">${familiar.map((item) => `<article class="challenge-item" data-familiarization-key="${escape(item.row.canonicalKey)}"><img data-image='${escapedJson(libraryImageRef(item.toy, "familiarization_settings"))}' alt=""><div><h3>${escape(displayName(item.toy))}</h3><p>${escape(brandLabel(item.toy.brand))}</p><p>${t("challengeAges", { recommended: item.row.minAgeMonths, current: childAgeMonths2() })}</p><p>${t("toyUseFamiliarization")}</p><div class="actions"><button data-familiarization-action="exploring">${t("familiarizationExplore")}</button><button class="primary" data-familiarization-action="playing">${t("familiarizationPlaying")}</button><button data-familiarization-action="defer">${t("familiarizationDefer")}</button></div></div></article>`).join("")}</div>` : `<p>${t("challengeDiagnosticNone")}</p>`}`;
     const diagnosticsHost = dialog.querySelector("[data-challenge-diagnostics]");
-    diagnosticsHost.innerHTML = `<h3>${t("challengeStatsTitle")}</h3><p>${t("challengeStats", diagnostics)}</p>${["insufficient", "hard", "skillUnknown", "tooEarly"].map((bucket) => challengeDiagnosticList(bucket, diagnosticRows[bucket])).join("")}`;
+    diagnosticsHost.innerHTML = `<h3>${t("challengeStatsTitle")}</h3><p>${t("challengeStats", diagnostics)}</p>${["insufficient", "hard"].map((bucket) => challengeDiagnosticList(bucket, diagnosticRows[bucket])).join("")}`;
     diagnosticsHost.querySelector("[data-copy-owner-evidence]")?.addEventListener("click", (event) => {
       const status = diagnosticsHost.querySelector("[data-copy-owner-evidence-status]");
       copyOwnerEvidenceList(diagnosticRows.insufficient, status);
@@ -11348,13 +11445,22 @@ function openChallengeSettings() {
           approveSupervisedChallenge(state, selected.projected);
         }, "supervised-challenge-approved");
         else if (action2 === "revoke-supervised") store.update((state) => {
-          setCrossAgeApproval(state, selected.projected, false);
+          setOwnerUseState(state, selected.projected, "DEFAULT");
         }, "supervised-challenge-revoked");
-        else updateChallengeChoice(selected.projected, action2 === "allow" ? "allowed" : action2 === "decline" ? "declined" : "revoked");
         redraw();
       };
     });
-    bindImages(list);
+    familiarHost.querySelectorAll("[data-familiarization-action]").forEach((button) => button.onclick = () => {
+      const parent = button.closest("[data-familiarization-key]");
+      const selected = familiar.find((item) => item.row.canonicalKey === parent?.dataset.familiarizationKey);
+      if (!selected) return;
+      const next = { exploring: "EXPLORING", playing: "CURRENTLY_PLAYING", defer: "DEFERRED" }[button.dataset.familiarizationAction];
+      store.update((state) => {
+        setOwnerUseState(state, selected.projected, next);
+      }, "owner-use-state");
+      redraw();
+    });
+    bindImages(dialog);
   };
   redraw();
 }
@@ -11370,9 +11476,9 @@ function attachCrossAgeApprovalControl(form, toy) {
       return;
     }
     const candidate = currentChallengeRows().find((item) => item.row.canonicalKey === review.row.canonicalKey && item.source === "supervised");
-    const approvable = parentApprovableChallenge(store.state, catalog, toy, age, store.state.profile?.developmentProfile || {});
-    const blocked = review.decision.reason === "HARD_SAFETY_BLOCK" ? "challengeHardBlocked" : review.decision.reason === "UNKNOWN_AGE_BLOCK" ? "challengeUnknownBlocked" : null;
-    if (!candidate && !approvable && !blocked) {
+    const familiar = currentFamiliarizationRows().find((item) => item.row.canonicalKey === review.row.canonicalKey);
+    const blocked = review.decision.primaryStatus === TOY_USE_PRIMARY_STATUS.SAFETY_BLOCKED ? "challengeHardBlocked" : review.decision.primaryStatus === TOY_USE_PRIMARY_STATUS.EVIDENCE_BLOCKED ? "challengeUnknownBlocked" : null;
+    if (!candidate && !familiar && !blocked) {
       host.remove();
       return;
     }
@@ -11399,27 +11505,25 @@ function attachCrossAgeApprovalControl(form, toy) {
       });
       host.querySelector('[data-challenge-action="revoke-supervised"]')?.addEventListener("click", () => {
         store.update((state) => {
-          setCrossAgeApproval(state, candidate.projected, false);
+          setOwnerUseState(state, candidate.projected, "DEFAULT");
         }, "supervised-challenge-revoked");
         redraw();
       });
       return;
     }
-    const choice = approvable?.choice || "pending";
+    if (familiar) {
+      host.hidden = false;
+      host.innerHTML = `<h3>${t("familiarizationTitle")}</h3><p>${t("challengeAges", { recommended: review.row.minAgeMonths, current: age })}</p><p>${t("familiarizationIntro")}</p><div class="actions"><button data-owner-use="EXPLORING">${t("familiarizationExplore")}</button><button class="primary" data-owner-use="CURRENTLY_PLAYING">${t("familiarizationPlaying")}</button><button data-owner-use="DEFERRED">${t("familiarizationDefer")}</button></div>`;
+      host.querySelectorAll("[data-owner-use]").forEach((button) => button.addEventListener("click", () => {
+        store.update((state) => {
+          setOwnerUseState(state, review.projected, button.dataset.ownerUse);
+        }, "owner-use-state");
+        redraw();
+      }));
+      return;
+    }
     host.hidden = false;
-    host.innerHTML = `<h3>${t("challengeSettingsTitle")}</h3><p>${t("challengeAges", { recommended: review.row.minAgeMonths, current: age })}</p>${blocked ? `<p>${t(blocked)}</p>` : `<p>${t("challengeSafetyNote")}</p><p>${t("crossAgeApprovalExplanation", { months: review.row.minAgeMonths })}</p><p class="challenge-status">${t(choice === "allowed" ? "challengeStatusAllowed" : choice === "declined" ? "challengeStatusDeclined" : "challengeStatusPending")}</p><div class="actions">${choice === "allowed" ? `<button type="button" data-cross-age-revoke>${t("crossAgeRevoke")}</button>` : `<button type="button" class="primary" data-cross-age-allow>${t("crossAgeAllow")}</button>${choice === "pending" ? `<button type="button" data-cross-age-decline>${t("crossAgeDecline")}</button>` : ""}`}</div>`}`;
-    host.querySelector("[data-cross-age-allow]")?.addEventListener("click", () => {
-      updateChallengeChoice(review.projected, "allowed");
-      redraw();
-    });
-    host.querySelector("[data-cross-age-revoke]")?.addEventListener("click", () => {
-      updateChallengeChoice(review.projected, "revoked");
-      redraw();
-    });
-    host.querySelector("[data-cross-age-decline]")?.addEventListener("click", () => {
-      updateChallengeChoice(review.projected, "declined");
-      redraw();
-    });
+    host.innerHTML = `<h3>${t("challengeSettingsTitle")}</h3><p>${t("challengeAges", { recommended: review.row.minAgeMonths, current: age })}</p><p>${t(blocked || "challengeUnknownBlocked")}</p>`;
   };
   redraw();
 }
