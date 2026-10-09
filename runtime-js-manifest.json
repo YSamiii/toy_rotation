@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-10-09T14:39:42.493Z",
+  "generatedAt": "2026-10-09T19:07:04.239Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.11.8",
-    "buildName": "Toy Rotation v0.11.8 Owner Evidence Diagnostics QA3 Fix2",
+    "buildName": "Toy Rotation v0.11.8 Owner Evidence Diagnostics QA4 Fix3",
     "buildDate": "20261009",
-    "buildId": "v0.11.8-owner-evidence-diagnostics-qa3-fix2-20261009"
+    "buildId": "v0.11.8-owner-evidence-diagnostics-qa4-fix3-20261009"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 1072119,
-      "sha256": "035ff0ce90cc3259808ff6c68e09f7149b58b655b4d4e15533f5326ae954cc10",
+      "bytes": 1077561,
+      "sha256": "619d1155befbc35228fb6270a326b079a48509927318c204cc2e91ad3a6f6a62",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -753,7 +753,7 @@
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
       "bytes": 443,
-      "sha256": "e6cbdfa8c6bdaa0747c42f75d4037b7f32934dab4501e3a09e243145d42b6687",
+      "sha256": "53e48502ba2725f9b8863f2ee2629a840b6d2368b2bb752187bc7ccc27c8f9ba",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -843,7 +843,7 @@
       "path": "manifest.webmanifest",
       "resolvedDeployPath": "./manifest.webmanifest",
       "bytes": 348,
-      "sha256": "7a9df502a256012860ce714d88209277376511f2e50b5b6f6ac2d2e954143162",
+      "sha256": "a2ff1677ecdee94805e82127f89a62139e4875c8f7b14f52014a6d482b9bdc49",
       "importedBy": [
         "qa2-runtime-package"
       ],
@@ -963,7 +963,7 @@
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
       "bytes": 2710,
-      "sha256": "bbcc72403ee873869f453a8fd797680f13994475f0505c63e294d9dc278be3b6",
+      "sha256": "72e60c8c1efa86aff03bfc84206edbe5ea65397b7e3e9c1e25415f88f7b942b2",
       "importedBy": [
         "qa2-runtime-package"
       ],

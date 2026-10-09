@@ -1,7 +1,7 @@
 // Offline enhancement only. The page starts without this worker: failed
 // install/activation/cache work must never gate first paint or startup.
 importScripts('./sw-precache-assets.js');
-const CACHE = 'toy-rotation-v0.11.8-owner-evidence-diagnostics-qa3-fix2-20261009';
+const CACHE = 'toy-rotation-v0.11.8-owner-evidence-diagnostics-qa4-fix3-20261009';
 const FALLBACK_ASSETS = [
   './index.html', './config.js', './app.bundle.js', './src/ui/theme.css', './src/ui/app.css',
   './manifest.webmanifest', './storage-recovery-diagnostic.html', './storage-recovery-diagnostic.bundle.js',

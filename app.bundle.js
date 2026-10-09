@@ -3702,6 +3702,20 @@ var TENDER_LEAF_CATALOG_EXPANSION_EVIDENCE = Object.freeze({
 });
 var tenderLeafCatalogExpansionEvidenceFor = (canonicalKey2) => TENDER_LEAF_CATALOG_EXPANSION_EVIDENCE[String(canonicalKey2 || "")] || null;
 
+// src/data/early-rotation-owner-priority-wave1.js
+var official9 = (manufacturer, sourceUrl, sourceTitle, claim) => ({ sourceType: "OFFICIAL_PRODUCT_PAGE", sourceUrl, sourceTitle, manufacturer, retrievedAt: "2026-10-09", evidenceType: "owner_priority_exact_product_review", quotedOrStructuredClaim: claim, confidence: "high", reviewStatus: "reviewed", sourceAvailability: "AVAILABLE_AT_RESEARCH" });
+var ageOnly8 = (manufacturer, sourceUrl, sourceTitle, claim, prerequisiteSkills) => ({ earlyRotationEligibility: "AGE_RECOMMENDED_ONLY", safetyEvidenceStatus: "OFFICIAL_REVIEWED", prerequisiteSkills, stretchSkills: [], evidence: official9(manufacturer, sourceUrl, sourceTitle, claim), insufficientReason: "Official exact-product evidence supports the Catalog recommended age and developmental use, but does not create an automatic early-use route.", researchStatus: "RESEARCHED_RESOLVED", researchBatch: "OWNER_FIRST_WAVE_1" });
+var insufficient6 = (manufacturer, sourceUrl, sourceTitle, claim, prerequisiteSkills, reason2) => ({ earlyRotationEligibility: "INSUFFICIENT_EVIDENCE", safetyEvidenceStatus: "OFFICIAL_REVIEWED", prerequisiteSkills, stretchSkills: [], evidence: official9(manufacturer, sourceUrl, sourceTitle, claim), insufficientReason: `OWNER_FIRST_EVIDENCE_INSUFFICIENT: ${reason2} Keep fail-closed; do not infer a safety threshold or alter the Catalog age.`, researchStatus: "RESEARCHED_INSUFFICIENT", researchBatch: "OWNER_FIRST_WAVE_1" });
+var OWNER_PRIORITY_EVIDENCE_WAVE_1 = Object.freeze({
+  "lovevery-block-set": ageOnly8("Lovevery", "https://lovevery.com/products/the-block-set", "The Block Set", "Official Lovevery product page identifies The Block Set as a 70-piece solid-wood set for ages 12+ months, with stacking, rolling, counting, sorting and connecting activities; it states the product meets or exceeds global safety standards.", { fineMotor: 1, visualSpatial: 1, problemSolving: 1 }),
+  "hahaland-surprise-barn": ageOnly8("hahaland", "https://hahaland.com/products/montessori-sensory-farm-animal-set-for-6-12-months", "Montessori Farm Animal Set for 6\u201312 Months", "Official hahaland page identifies the My First Farm Animal Toys set for 6\u201312 months, with a barn and six plush animals; it explicitly says the product contains no small parts and is lab tested to regulatory safety standards.", { fineMotor: 1, sensoryExploration: 1, causeEffect: 1, language: 1 }),
+  "mfb-bath-hello-kitty": insufficient6("MY FIRST BOOK", "https://myfirstbook.us/products/bath-magic-book-hello-kitty", "Color Changing Bath Book - Hello Kitty", "Official My First Book page identifies the exact Color Changing Bath Book - Hello Kitty and states Recommended Age: 0+, while the current Catalog canonical states 6M+.", { sensoryExploration: 1, causeEffect: 1, language: 1 }, "CATALOG_AGE_CONFLICT: the exact current official page says 0+ but the Catalog canonical remains 6M+; no historical version evidence reconciles the discrepancy."),
+  "mfb-food-pink": insufficient6("MY FIRST BOOK", "https://myfirstbook.us/products/my-first-book-food", "Food Busy Book", "Official My First Book page identifies the Food Busy Book and its Pink variant, but does not publish a recommended-age statement for the exact variant while the Catalog canonical carries 12M+.", { fineMotor: 1, language: 1, matching: 1 }, "OFFICIAL_AGE_EVIDENCE_MISSING: exact product and Pink variant are confirmed, but current official evidence does not substantiate the Catalog 12M+ recommendation.")
+});
+function ownerPriorityEvidenceWave1For(canonicalKey2) {
+  return OWNER_PRIORITY_EVIDENCE_WAVE_1[String(canonicalKey2 || "")] || null;
+}
+
 // src/domain/early-rotation-baseline.js
 var EARLY_ROTATION_ELIGIBILITY = Object.freeze(["EARLY_ROTATION_ALLOWED", "AGE_RECOMMENDED_ONLY", "HARD_SAFETY_GATE", "INSUFFICIENT_EVIDENCE"]);
 var HARD = /* @__PURE__ */ new Set(["SMALL_PARTS_GATE", "GROSS_MOTOR_GATE", "OTHER_HARD_GATE"]);
@@ -3726,7 +3740,7 @@ function withEarlyRotationBaseline(toy = {}) {
   const mechanisms = (toy.playMechanics || []).filter(Boolean);
   const mechanism = mechanisms[0] || fallbackMechanism(toy);
   const safetyStatus = catalogSafetyStatus(toy);
-  const overlay = tenderLeafCatalogExpansionEvidenceFor(toy.canonicalKey) || earlyRotationEvidenceBatch7For(toy.canonicalKey) || earlyRotationEvidenceBatch6For(toy.canonicalKey) || earlyRotationEvidenceBatch5For(toy.canonicalKey) || earlyRotationEvidenceBatch4For(toy.canonicalKey) || earlyRotationEvidenceBatch3For(toy.canonicalKey) || earlyRotationEvidenceBatch2For(toy.canonicalKey) || earlyRotationEvidenceFor(toy.canonicalKey);
+  const overlay = ownerPriorityEvidenceWave1For(toy.canonicalKey) || tenderLeafCatalogExpansionEvidenceFor(toy.canonicalKey) || earlyRotationEvidenceBatch7For(toy.canonicalKey) || earlyRotationEvidenceBatch6For(toy.canonicalKey) || earlyRotationEvidenceBatch5For(toy.canonicalKey) || earlyRotationEvidenceBatch4For(toy.canonicalKey) || earlyRotationEvidenceBatch3For(toy.canonicalKey) || earlyRotationEvidenceBatch2For(toy.canonicalKey) || earlyRotationEvidenceFor(toy.canonicalKey);
   const existing = { ...toy.userMetadata?.developmentFit || {}, ...overlay || {} };
   const evidenceInfo = evidence(toy);
   const inferred = HARD.has(safetyStatus) ? "HARD_SAFETY_GATE" : safetyStatus === "VERIFIED_NO_EXTRA_GATE" ? "EARLY_ROTATION_ALLOWED" : safetyStatus === "NO_DOCUMENTED_HARD_GATE" ? "AGE_RECOMMENDED_ONLY" : "INSUFFICIENT_EVIDENCE";
@@ -8940,9 +8954,10 @@ function challengeCandidates(state, catalog2, age, profile = {}) {
   }
   return [...byCanonical.values()].sort((a, b) => Number(b.source === "auto") - Number(a.source === "auto") || a.monthsEarly - b.monthsEarly || (b.skillState?.confirmed.length || 0) - (a.skillState?.confirmed.length || 0) || (a.skillState?.unknown.length || 0) - (b.skillState?.unknown.length || 0) || Number(Boolean(a.attempt?.lastChallengeAttempt)) - Number(Boolean(b.attempt?.lastChallengeAttempt)) || a.row.minAgeMonths - b.row.minAgeMonths || String(a.row.productName).localeCompare(String(b.row.productName)));
 }
-function challengeDiagnostics(state, catalog2, age, profile = {}) {
+function diagnosticSnapshot(state, catalog2, age, profile = {}) {
   const candidates = challengeCandidates(state, catalog2, age, profile);
   const supervisedKeys = new Set(candidates.filter((item) => item.source === "supervised").map((item) => item.row.canonicalKey));
+  const buckets = Object.fromEntries(DIAGNOSTIC_BUCKETS.map((bucket) => [bucket, []]));
   const seen = /* @__PURE__ */ new Set();
   const counts = { owned: 0, normal: 0, autoEarly: 0, supervised: 0, tooEarly: 0, hard: 0, insufficient: 0, skillUnknownEligible: 0, autoSkillBlocked: 0 };
   for (const toy of state?.toys || []) {
@@ -8955,54 +8970,14 @@ function challengeDiagnostics(state, catalog2, age, profile = {}) {
     if (supervisedKeys.has(row.canonicalKey)) {
       counts.supervised++;
       if (challengeSkillState(projected, profile).unknown.length) counts.skillUnknownEligible++;
-      continue;
-    }
-    if (decision.reason === "NORMAL_AGE_ELIGIBLE") {
-      counts.normal++;
-      continue;
-    }
-    if (decision.reason === "EARLY_ROTATION_ALLOWED") {
-      counts.autoEarly++;
-      continue;
-    }
-    if (decision.reason === "HARD_SAFETY_BLOCK") {
-      counts.hard++;
-      continue;
-    }
-    if (decision.reason === "INSUFFICIENT_EVIDENCE_BLOCK" || reviewedStatus(row) === "RESEARCHED_INSUFFICIENT" || reviewedStatus(row) === "NOT_RESEARCHED") {
-      counts.insufficient++;
-      continue;
-    }
-    if (decision.reason === "PREREQUISITES_NOT_MET") {
-      counts.autoSkillBlocked++;
-      continue;
-    }
-    counts.tooEarly++;
-  }
-  return counts;
-}
-var DIAGNOSTIC_BUCKETS = Object.freeze(["hard", "insufficient", "skillUnknown", "tooEarly"]);
-function diagnosticBucket(review, supervisedKeys, profile) {
-  const { row, projected, decision } = review;
-  if (decision.reason === "HARD_SAFETY_BLOCK") return "hard";
-  if (decision.reason === "INSUFFICIENT_EVIDENCE_BLOCK" || ["RESEARCHED_INSUFFICIENT", "NOT_RESEARCHED"].includes(reviewedStatus(row))) return "insufficient";
-  if (supervisedKeys.has(row.canonicalKey) && challengeSkillState(projected, profile).unknown.length) return "skillUnknown";
-  if (decision.reason !== "NORMAL_AGE_ELIGIBLE" && decision.reason !== "EARLY_ROTATION_ALLOWED") return "tooEarly";
-  return null;
-}
-function challengeDiagnosticRows(state, catalog2, age, profile = {}) {
-  const candidates = challengeCandidates(state, catalog2, age, profile);
-  const supervisedKeys = new Set(candidates.filter((item) => item.source === "supervised").map((item) => item.row.canonicalKey));
-  const buckets = Object.fromEntries(DIAGNOSTIC_BUCKETS.map((bucket) => [bucket, []]));
-  const seen = /* @__PURE__ */ new Set();
-  for (const toy of state?.toys || []) {
-    if (!visibleOwnedToy(toy)) continue;
-    const review = challengeDecision(state, catalog2, toy, age, profile);
-    if (!review || seen.has(review.row.canonicalKey)) continue;
-    seen.add(review.row.canonicalKey);
+    } else if (decision.reason === "NORMAL_AGE_ELIGIBLE") counts.normal++;
+    else if (decision.reason === "EARLY_ROTATION_ALLOWED") counts.autoEarly++;
+    else if (decision.reason === "HARD_SAFETY_BLOCK") counts.hard++;
+    else if (decision.reason === "PREREQUISITES_NOT_MET") counts.autoSkillBlocked++;
+    else if (decision.reason === "INSUFFICIENT_EVIDENCE_BLOCK") counts.insufficient++;
+    else counts.tooEarly++;
     const bucket = diagnosticBucket(review, supervisedKeys, profile);
     if (!bucket) continue;
-    const { row, decision } = review;
     buckets[bucket].push({
       canonicalKey: row.canonicalKey,
       brand: row.brand || "",
@@ -9011,24 +8986,69 @@ function challengeDiagnosticRows(state, catalog2, age, profile = {}) {
       recommendedAgeMin: row.minAgeMonths ?? null,
       classification: row.earlyRotationEligibility || "INSUFFICIENT_EVIDENCE",
       researchStatus: reviewedStatus(row),
-      blockReason: decision.reason
+      blockReason: decision.reason,
+      logicalEvidenceGroup: toy.set?.kind === "child" && toy.set?.parentCanonicalKey ? {
+        canonicalKey: String(toy.set.parentCanonicalKey),
+        productName: toy.set.setName || String(toy.set.parentCanonicalKey),
+        partIndex: Number(toy.set.partIndex || 0) || null
+      } : null
     });
   }
   for (const rows of Object.values(buckets)) rows.sort((a, b) => (a.recommendedAgeMin ?? Infinity) - (b.recommendedAgeMin ?? Infinity) || String(a.productName).localeCompare(String(b.productName)) || String(a.canonicalKey).localeCompare(String(b.canonicalKey)));
-  return buckets;
+  const evidenceBlocked = buckets.insufficient;
+  const logicalEvidenceGroups = groupChallengeDiagnosticRows(evidenceBlocked);
+  return {
+    counts,
+    buckets,
+    evidenceBlocked,
+    evidenceBlockedCanonicalCount: evidenceBlocked.length,
+    logicalEvidenceGroups,
+    logicalEvidenceGroupCount: logicalEvidenceGroups.length
+  };
+}
+var DIAGNOSTIC_BUCKETS = Object.freeze(["hard", "insufficient", "skillUnknown", "tooEarly"]);
+function diagnosticBucket(review, supervisedKeys, profile) {
+  const { row, projected, decision } = review;
+  if (decision.reason === "NORMAL_AGE_ELIGIBLE" || decision.reason === "EARLY_ROTATION_ALLOWED") return null;
+  if (decision.reason === "HARD_SAFETY_BLOCK") return "hard";
+  if (decision.reason === "INSUFFICIENT_EVIDENCE_BLOCK") return "insufficient";
+  if (supervisedKeys.has(row.canonicalKey) && challengeSkillState(projected, profile).unknown.length) return "skillUnknown";
+  if (decision.reason !== "NORMAL_AGE_ELIGIBLE" && decision.reason !== "EARLY_ROTATION_ALLOWED") return "tooEarly";
+  return null;
+}
+function ownerChallengeDiagnostics(state, catalog2, age, profile = {}) {
+  return diagnosticSnapshot(state, catalog2, age, profile);
+}
+function groupChallengeDiagnosticRows(rows = []) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const row of rows) {
+    const composite = row.logicalEvidenceGroup;
+    const key = composite ? `composite:${composite.canonicalKey}` : `standalone:${row.canonicalKey}`;
+    if (!groups.has(key)) groups.set(key, { kind: composite ? "composite" : "standalone", canonicalKey: composite?.canonicalKey || row.canonicalKey, productName: composite?.productName || row.productName, brand: row.brand || "", rows: [] });
+    groups.get(key).rows.push(row);
+  }
+  return [...groups.values()].sort((left, right) => Number(right.kind === "composite") - Number(left.kind === "composite") || left.productName.localeCompare(right.productName));
 }
 function ownerEvidencePriorityText(rows = []) {
-  const lines = ["OWNER EVIDENCE PRIORITY LIST", ""];
-  rows.forEach((row, index) => {
-    lines.push(`${index + 1}. canonicalKey: ${row.canonicalKey}`);
-    lines.push(`   Brand: ${row.brand || "\u2014"}`);
-    lines.push(`   Product: ${row.productName || "\u2014"}`);
-    lines.push(`   SKU/model: ${row.sku || "\u2014"}`);
-    lines.push(`   Recommended age: ${row.recommendedAgeMin == null ? "\u2014" : `${row.recommendedAgeMin} months+`}`);
-    lines.push(`   Classification: ${row.classification}`);
-    lines.push(`   Research status: ${row.researchStatus}`);
-    lines.push(`   Block reason: ${row.blockReason}`);
-  });
+  const groups = groupChallengeDiagnosticRows(rows);
+  const lines = ["OWNER EVIDENCE PRIORITY LIST", `Blocked canonical count: ${rows.length}`, `Logical group count: ${groups.length}`, ""];
+  for (const group of groups) {
+    lines.push(`Group: ${group.productName || "\u2014"}`);
+    lines.push(`Parent canonical: ${group.kind === "composite" ? group.canonicalKey : "\u2014"}`);
+    lines.push(`Brand: ${group.brand || "\u2014"}`);
+    lines.push(`Blocked child count: ${group.rows.length}`);
+    lines.push("Children:");
+    for (const row of group.rows) {
+      lines.push(`- canonicalKey: ${row.canonicalKey}`);
+      lines.push(`  displayName: ${row.productName || "\u2014"}`);
+      lines.push(`  SKU/model: ${row.sku || "\u2014"}`);
+      lines.push(`  recommendedAgeMin: ${row.recommendedAgeMin == null ? "\u2014" : row.recommendedAgeMin}`);
+      lines.push(`  classification: ${row.classification}`);
+      lines.push(`  researchStatus: ${row.researchStatus}`);
+      lines.push(`  actualBlockReason: ${row.blockReason}`);
+    }
+    lines.push("");
+  }
   return lines.join("\n");
 }
 function recordSupervisedChallengeAttempt(state, toy, outcome = "started", { now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
@@ -9995,6 +10015,8 @@ Object.assign(DICTIONARY.en, {
   challengeCopyEvidenceList: "Copy evidence-missing toy list",
   challengeCopyEvidenceDone: "Copied {count} product identities.",
   challengeCopyEvidenceFailed: "Could not copy. Please try again.",
+  challengeDiagnosticCompositeChildren: "{count} child items blocked as one set group",
+  challengeDiagnosticShowChildren: "Show child details",
   challengeHardBlocked: "This toy has a documented hard safety restriction and cannot be added early to a challenge rotation.",
   challengeUnknownBlocked: "There is not enough safety information to support early participation in rotation."
 });
@@ -10050,6 +10072,8 @@ Object.assign(DICTIONARY.zh, {
   challengeCopyEvidenceList: "\u590D\u5236\u8BC1\u636E\u4E0D\u8DB3\u73A9\u5177\u5217\u8868",
   challengeCopyEvidenceDone: "\u5DF2\u590D\u5236 {count} \u6761\u4EA7\u54C1\u8EAB\u4EFD\u4FE1\u606F\u3002",
   challengeCopyEvidenceFailed: "\u6682\u65F6\u65E0\u6CD5\u590D\u5236\uFF0C\u8BF7\u518D\u8BD5\u4E00\u6B21\u3002",
+  challengeDiagnosticCompositeChildren: "\u540C\u4E00\u5957\u88C5\u4E2D\u6709 {count} \u4E2A\u5B50\u73A9\u5177\u53D7\u963B",
+  challengeDiagnosticShowChildren: "\u67E5\u770B\u5B50\u73A9\u5177\u8BE6\u60C5",
   challengeHardBlocked: "\u6B64\u73A9\u5177\u6709\u660E\u786E\u7684\u786C\u6027\u5B89\u5168\u9650\u5236\uFF0C\u4E0D\u80FD\u63D0\u524D\u52A0\u5165\u6311\u6218\u8F6E\u6362\u3002",
   challengeUnknownBlocked: "\u76EE\u524D\u6CA1\u6709\u8DB3\u591F\u5B89\u5168\u4FE1\u606F\u652F\u6301\u63D0\u524D\u53C2\u4E0E\u8F6E\u6362\u3002"
 });
@@ -11251,14 +11275,17 @@ function challengeStatusKey(row) {
 }
 function challengeDiagnosticReason(row) {
   if (row.blockReason === "HARD_SAFETY_BLOCK") return t("challengeDiagnosticReasonHard");
-  if (row.blockReason === "INSUFFICIENT_EVIDENCE_BLOCK" || ["RESEARCHED_INSUFFICIENT", "NOT_RESEARCHED"].includes(row.researchStatus)) return t("challengeDiagnosticReasonEvidence");
+  if (row.blockReason === "INSUFFICIENT_EVIDENCE_BLOCK") return t("challengeDiagnosticReasonEvidence");
   if (row.blockReason === "PREREQUISITES_NOT_MET") return t("challengeDiagnosticReasonAutoSkills");
   return t("challengeDiagnosticReasonAge");
 }
 function challengeDiagnosticList(bucket, rows) {
   const titleKey = { hard: "challengeDiagnosticHard", insufficient: "challengeDiagnosticInsufficient", skillUnknown: "challengeDiagnosticSkillUnknown", tooEarly: "challengeDiagnosticTooEarly" }[bucket];
   const exportButton = bucket === "insufficient" && rows.length ? `<button type="button" data-copy-owner-evidence>${t("challengeCopyEvidenceList")}</button><p class="challenge-copy-status" data-copy-owner-evidence-status aria-live="polite"></p>` : "";
-  return `<details class="challenge-diagnostic-list" ${bucket === "insufficient" ? "open" : ""}><summary>${t(titleKey, { count: rows.length })}</summary>${rows.length ? `${exportButton}<ol>${rows.map((row) => `<li><b>${escape(row.productName)}</b><span>${escape(row.brand || "\u2014")} \xB7 ${t("challengeDiagnosticRecommendedAge", { months: row.recommendedAgeMin ?? "\u2014" })}</span><span>${t("challengeDiagnosticReasonLabel")}: ${escape(challengeDiagnosticReason(row))}</span></li>`).join("")}</ol>` : `<p>${t("challengeDiagnosticNone")}</p>`}</details>`;
+  const groups = groupChallengeDiagnosticRows(rows);
+  const item = (row) => `<li><b>${escape(row.productName)}</b><span>${escape(row.brand || "\u2014")} \xB7 ${t("challengeDiagnosticRecommendedAge", { months: row.recommendedAgeMin ?? "\u2014" })}</span><span>${t("challengeDiagnosticReasonLabel")}: ${escape(challengeDiagnosticReason(row))}</span></li>`;
+  const group = (entry) => entry.kind === "standalone" ? item(entry.rows[0]) : `<li class="challenge-diagnostic-group"><b>${escape(entry.productName)}</b><span>${t("challengeDiagnosticCompositeChildren", { count: entry.rows.length })}</span><details><summary>${t("challengeDiagnosticShowChildren")}</summary><ol>${entry.rows.map(item).join("")}</ol></details></li>`;
+  return `<details class="challenge-diagnostic-list" ${bucket === "insufficient" ? "open" : ""}><summary>${t(titleKey, { count: rows.length })}</summary>${rows.length ? `${exportButton}<ol>${groups.map(group).join("")}</ol>` : `<p>${t("challengeDiagnosticNone")}</p>`}</details>`;
 }
 async function copyOwnerEvidenceList(rows, status) {
   const text2 = ownerEvidencePriorityText(rows);
@@ -11284,8 +11311,9 @@ function openChallengeSettings() {
   const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${t("challengeSettingsTitle")}</h2><button type="button" data-close>\xD7</button></header><p>${t("challengeSettingsIntro")}</p><p data-challenge-summary></p><div class="challenge-list" data-challenge-list></div><section class="challenge-diagnostics" data-challenge-diagnostics></section></section>`);
   const redraw = () => {
     const rows = currentChallengeRows();
-    const diagnostics = challengeDiagnostics(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
-    const diagnosticRows = challengeDiagnosticRows(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
+    const ownerDiagnostics = ownerChallengeDiagnostics(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
+    const diagnostics = ownerDiagnostics.counts;
+    const diagnosticRows = ownerDiagnostics.buckets;
     dialog.querySelector("[data-challenge-summary]").textContent = t("challengeEntrySummary", {
       count: rows.length,
       auto: rows.filter((row) => row.source === "auto").length,
