@@ -9257,7 +9257,7 @@ function selectPurposeBasedRotation({ toys = [], state = {}, childAgeMonths: chi
   }
   return {
     selected: selected.map((item) => item.toy),
-    selectedReasons: selected.map((item) => ({ canonicalKey: item.toy.canonicalKey, purpose: item.purpose, reasonCodes: item.reasonCodes, score: item.score })),
+    selectedReasons: selected.map((item) => ({ canonicalKey: item.toy.canonicalKey, purpose: item.purpose, reasonCodes: item.reasonCodes, explanation: explainSelection(item, selectedMechanics, recentIds), score: item.score })),
     candidates,
     allCandidates,
     diagnostics: { selectedMechanics: Object.fromEntries(selectedMechanics), recentAvoided: [...recentIds], eligibleNonpermanentCount: candidates.length, firstPassSelectedCount: selected.length, finalSelectedCount: selected.length, previousRoundOverlap: selected.filter((item) => previousIds.has(item.toy.id)).length, newToRoundCount: selected.filter((item) => !previousIds.has(item.toy.id)).length, minimumTurnover, seed, exclusionSummary: countExclusions(allCandidates) }
@@ -9267,6 +9267,10 @@ function countExclusions(allCandidates) {
   const summary3 = {};
   for (const item of allCandidates) for (const reason2 of item.reasonCodes || []) if (reason2 === "PERMANENT_SHELF" || reason2 === "OWNER_PAUSED" || reason2 === "OWNER_EXCLUDED" || /BLOCKED|ONLY|INSUFFICIENT/.test(reason2)) summary3[reason2] = (summary3[reason2] || 0) + 1;
   return summary3;
+}
+function explainSelection(item, selectedMechanics, recentIds) {
+  const mechanics = mechanicsOf(item.toy), skills = [...item.toy.skillCodes || []];
+  return { mechanics, skills, selectionSignals: [...mechanics.some((value) => (selectedMechanics.get(value) || 0) === 1) ? ["MECHANISM_VARIETY"] : [], ...recentIds.has(item.toy.id) ? [] : ["LESS_RECENT"], ...item.purpose === "PARENT_GOAL" ? ["PARENT_GOAL"] : [], ...item.purpose === "CURRENT_INTEREST" ? ["CURRENT_INTEREST"] : []] };
 }
 function purpose(recommendation, state, toy) {
   const modes = new Set(recommendation.modes);
@@ -10558,9 +10562,10 @@ function createI18n(store2) {
 
 // src/ui/display-resolver.js
 var ZH = Object.freeze({ fineMotor: "\u7CBE\u7EC6\u52A8\u4F5C", grossMotor: "\u5927\u8FD0\u52A8", problemSolving: "\u89E3\u51B3\u95EE\u9898", visualSpatial: "\u89C6\u89C9\u7A7A\u95F4", matching: "\u914D\u5BF9", sorting: "\u5206\u7C7B", causeEffect: "\u56E0\u679C\u5173\u7CFB", bilateralCoordination: "\u53CC\u624B\u534F\u8C03", handStrength: "\u624B\u90E8\u529B\u91CF", toolUse: "\u5DE5\u5177\u4F7F\u7528", language: "\u8BED\u8A00\u6C9F\u901A", pretendPlay: "\u5047\u88C5\u6E38\u620F", earlyMath: "\u65E9\u671F\u6570\u5B66", attentionPersistence: "\u4E13\u6CE8\u4E0E\u575A\u6301", fine_motor: "\u7CBE\u7EC6\u52A8\u4F5C", gross_motor: "\u5927\u8FD0\u52A8", problem_solving: "\u89E3\u51B3\u95EE\u9898", visual_spatial: "\u89C6\u89C9\u7A7A\u95F4", cause_effect: "\u56E0\u679C\u5173\u7CFB", pretend_play: "\u5047\u88C5\u6E38\u620F", attention_persistence: "\u4E13\u6CE8\u4E0E\u575A\u6301", OWNER_CONFIRMED_PENDING: "\u5BB6\u957F\u786E\u8BA4\u6B63\u5728\u73A9", CORE_CURRENT_PLAY: "\u5F53\u524D\u6838\u5FC3\u73A9\u6CD5", FAMILIARIZATION: "\u966A\u4F34\u63A2\u7D22", NEXT_MILESTONE_PRACTICE: "\u4E0B\u4E00\u9636\u6BB5\u7EC3\u4E60", PARENT_GOAL: "\u5BB6\u5EAD\u76EE\u6807", CURRENT_INTEREST: "\u5F53\u524D\u5174\u8DA3", OWNER_CONFIRMED: "\u5BB6\u957F\u5DF2\u786E\u8BA4\u6B63\u5728\u4F7F\u7528", NORMAL_PLAY_AVAILABLE: "\u9002\u5408\u65E5\u5E38\u73A9", PARENT_GOAL_MATCH: "\u7B26\u5408\u5BB6\u5EAD\u76EE\u6807", NEXT_MILESTONE_MATCH: "\u5339\u914D\u4E0B\u4E00\u9636\u6BB5\u80FD\u529B", FAMILIARIZATION_FIT: "\u9002\u5408\u966A\u4F34\u63A2\u7D22", NORMAL_PLAY: "\u6B63\u5E38\u73A9", OWNER_CONFIRMED_PLAY: "\u5BB6\u957F\u786E\u8BA4\u6B63\u5728\u73A9", DEVELOPMENT_CHALLENGE: "\u4E0B\u4E00\u6B65\u6311\u6218", SAFETY_BLOCKED: "\u5B89\u5168\u9650\u5236", EVIDENCE_BLOCKED: "\u4EA7\u54C1\u4FE1\u606F\u4E0D\u8DB3", "Explore pieces": "\u63A2\u7D22\u62FC\u56FE\u7247", "Match one or two": "\u914D\u5BF9\u4E00\u4E24\u5757", "Complete a section": "\u5B8C\u6210\u4E00\u90E8\u5206", "Complete the full puzzle": "\u5B8C\u6210\u6574\u5E45\u62FC\u56FE", "Explore materials": "\u63A2\u7D22\u6750\u6599", "Copy a simple idea": "\u6A21\u4EFF\u4E00\u4E2A\u7B80\u5355\u73A9\u6CD5", "Plan together": "\u4E00\u8D77\u89C4\u5212", "Create independently": "\u81EA\u4E3B\u521B\u4F5C", "Name and handle": "\u8BA4\u8BC6\u5E76\u64CD\u4F5C", "Copy a simple action": "\u6A21\u4EFF\u4E00\u4E2A\u7B80\u5355\u52A8\u4F5C", "Link two actions": "\u8FDE\u63A5\u4E24\u4E2A\u52A8\u4F5C", "Create a story": "\u521B\u7F16\u4E00\u4E2A\u6545\u4E8B", "Explore": "\u63A2\u7D22", "Try together": "\u4E00\u8D77\u8BD5\u8BD5", "Build independence": "\u7EC3\u4E60\u72EC\u7ACB\u5B8C\u6210", "Name or notice pictures; let the child handle one piece at a time.": "\u8BF4\u8BF4\u6216\u770B\u770B\u56FE\u7247\uFF1B\u6BCF\u6B21\u8BA9\u5B69\u5B50\u62FF\u4E00\u5757\u3002", "Offer one or two likely matches and pause before helping.": "\u63D0\u4F9B\u4E00\u4E24\u5757\u53EF\u80FD\u5339\u914D\u7684\u62FC\u7247\uFF0C\u5148\u505C\u4E00\u505C\u518D\u5E2E\u5FD9\u3002", "Let the child choose and turn pieces for part of the board.": "\u8BA9\u5B69\u5B50\u9009\u62E9\u5E76\u8F6C\u52A8\u62FC\u7247\uFF0C\u5B8C\u6210\u68CB\u76D8\u7684\u4E00\u90E8\u5206\u3002", "Use the full set with only the support the child requests.": "\u4F7F\u7528\u6574\u5957\u62FC\u56FE\uFF0C\u53EA\u5728\u5B69\u5B50\u9700\u8981\u65F6\u63D0\u4F9B\u5E2E\u52A9\u3002", "Stack, connect or separate pieces freely.": "\u81EA\u7531\u5806\u53E0\u3001\u8FDE\u63A5\u6216\u62C6\u5F00\u6750\u6599\u3002", "Model one small structure for the child to extend.": "\u793A\u8303\u4E00\u4E2A\u5C0F\u7ED3\u6784\uFF0C\u8BA9\u5B69\u5B50\u7EE7\u7EED\u642D\u5EFA\u3002", "Use spatial words such as on, under and beside.": "\u4F7F\u7528\u201C\u4E0A\u9762\u3001\u4E0B\u9762\u3001\u65C1\u8FB9\u201D\u7B49\u7A7A\u95F4\u8BCD\u3002", "Invite the child to explain or reuse their own construction.": "\u9080\u8BF7\u5B69\u5B50\u8BB2\u8BB2\u6216\u518D\u6B21\u4F7F\u7528\u81EA\u5DF1\u7684\u642D\u5EFA\u3002", "Let the child choose familiar objects and name actions.": "\u8BA9\u5B69\u5B50\u9009\u62E9\u719F\u6089\u7269\u54C1\uFF0C\u5E76\u8BF4\u8BF4\u52A8\u4F5C\u3002", "Model one short routine such as feeding or washing.": "\u793A\u8303\u4E00\u4E2A\u7B80\u77ED\u52A8\u4F5C\uFF0C\u4F8B\u5982\u5582\u98DF\u6216\u6E05\u6D17\u3002", "Invite a short sequence with a familiar story.": "\u7ED3\u5408\u719F\u6089\u6545\u4E8B\u9080\u8BF7\u5B69\u5B50\u5B8C\u6210\u77ED\u6B65\u9AA4\u3002", "Follow the child\u2019s ideas and add language only when welcome.": "\u8DDF\u968F\u5B69\u5B50\u7684\u60F3\u6CD5\uFF0C\u53EA\u5728\u5408\u9002\u65F6\u8865\u5145\u8BED\u8A00\u3002", "Offer one simple action with no completion expectation.": "\u63D0\u4F9B\u4E00\u4E2A\u7B80\u5355\u52A8\u4F5C\uFF0C\u4E0D\u8981\u6C42\u5B8C\u6210\u3002", "Model a short action, then pause for the child\u2019s turn.": "\u793A\u8303\u4E00\u4E2A\u7B80\u77ED\u52A8\u4F5C\uFF0C\u7136\u540E\u505C\u4E0B\u6765\u7B49\u5B69\u5B50\u5C1D\u8BD5\u3002", "Reduce help while keeping the goal small and achievable.": "\u5728\u76EE\u6807\u4FDD\u6301\u5C0F\u800C\u53EF\u5B8C\u6210\u7684\u540C\u65F6\u9010\u6B65\u51CF\u5C11\u5E2E\u52A9\u3002", "What draws the child\u2019s attention?": "\u4EC0\u4E48\u6700\u5438\u5F15\u5B69\u5B50\u7684\u6CE8\u610F\uFF1F", "Does the child try a new step before asking for help?": "\u5B69\u5B50\u4F1A\u5148\u5C1D\u8BD5\u65B0\u4E00\u6B65\u518D\u6C42\u52A9\u5417\uFF1F" });
+var EXTRA_ZH = Object.freeze({ PRODUCT_INFORMATION_NEEDED: "\u4EA7\u54C1\u4FE1\u606F\u5F85\u6838\u5B9E" });
 function resolveDisplay(value, locale = "en") {
   const text2 = String(value ?? "");
-  return locale === "zh" ? ZH[text2] || text2 : text2;
+  return locale === "zh" ? ZH[text2] || EXTRA_ZH[text2] || text2 : text2;
 }
 function displayPlayLadder(level, locale = "en") {
   return !level ? null : { ...level, title: resolveDisplay(level.title, locale), instruction: resolveDisplay(level.instruction, locale), observation: resolveDisplay(level.observation, locale) };
@@ -10986,7 +10991,7 @@ var root = document.querySelector("#app");
 var lastContentTap = null;
 root?.addEventListener("touchend", (event) => {
   if (event.touches.length || event.changedTouches.length !== 1) return;
-  if (event.target.closest('button,a,input,select,textarea,label,[contenteditable="true"]')) return;
+  if (event.target.closest('input,select,textarea,[contenteditable="true"]')) return;
   const now3 = Date.now(), touch = event.changedTouches[0];
   if (lastContentTap && now3 - lastContentTap.at < 280 && Math.hypot(touch.clientX - lastContentTap.x, touch.clientY - lastContentTap.y) < 24) event.preventDefault();
   lastContentTap = { at: now3, x: touch.clientX, y: touch.clientY };
@@ -11581,6 +11586,7 @@ async function copyRotationAudit() {
     alert(i18n.language === "zh" ? "\u8F6E\u6362\u8BCA\u65AD\u5DF2\u590D\u5236\u3002" : "Rotation audit copied.");
   } catch {
     downloadJson(JSON.parse(text2), "rotation-candidate-audit.json");
+    alert(i18n.language === "zh" ? "\u65E0\u6CD5\u8BBF\u95EE\u526A\u8D34\u677F\uFF0C\u5DF2\u4E0B\u8F7D\u8F6E\u6362\u8BCA\u65AD\u6587\u4EF6\u3002" : "Clipboard unavailable; the rotation audit was downloaded.");
   }
 }
 function confirmDevelopmentPlaying(id) {
