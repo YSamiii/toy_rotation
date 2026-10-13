@@ -9218,9 +9218,13 @@ function needsPurchaseRecommendation(coverage2, skill) {
 function buildRotationCandidates({ toys = [], state = {}, childAgeMonths: childAgeMonths3, skillProfile = {}, parentGoals = [], interests = [] } = {}) {
   return toys.filter((toy) => !toy.hidden && !toy.archived && toy.set?.kind !== "parent").map((toy) => {
     const recommendation = deriveRecommendation(toy, { childAgeMonths: childAgeMonths3, state, skillProfile, parentGoals, interests });
-    const excluded = toy.rotationParticipation === "paused" || toy.interest === "dislike";
+    const permanent = toy.shelfMode === "permanent" && toy.permanentSource === "user";
+    const excluded = permanent || toy.rotationParticipation === "paused" || toy.interest === "dislike";
     const eligible = !excluded && recommendation.rotationEligible;
     const reasons = [...recommendation.reasonCodes];
+    if (permanent) reasons.push("PERMANENT_SHELF");
+    else if (toy.rotationParticipation === "paused") reasons.push("OWNER_PAUSED");
+    else if (toy.interest === "dislike") reasons.push("OWNER_EXCLUDED");
     if (state.explorationRotation?.[toy.canonicalKey]?.enabled) reasons.push("EXPLORATION_ROTATION_ENABLED");
     return { toy, recommendation, eligible, purpose: purpose(recommendation, state, toy), reasonCodes: [...new Set(reasons)] };
   });
@@ -9232,6 +9236,7 @@ function selectPurposeBasedRotation({ toys = [], state = {}, childAgeMonths: chi
   const recentIds = new Set((state.rotationHistory || []).slice(0, 2).flatMap((entry) => entry.toyIds || []));
   const remaining = candidates.map((item) => ({ ...item, baseScore: priority2(item), score: priority2(item) }));
   const selected = [];
+  const selectedIdentity = /* @__PURE__ */ new Set();
   const selectedMechanics = /* @__PURE__ */ new Map();
   while (remaining.length && selected.length < target) {
     remaining.forEach((item) => {
@@ -9239,6 +9244,9 @@ function selectPurposeBasedRotation({ toys = [], state = {}, childAgeMonths: chi
     });
     remaining.sort((a, b) => b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName)));
     const next = remaining.shift();
+    const identity = next.toy.canonicalKey || next.toy.catalogId || next.toy.id;
+    if (selectedIdentity.has(identity)) continue;
+    selectedIdentity.add(identity);
     selected.push(next);
     mechanicsOf(next.toy).forEach((mechanic) => selectedMechanics.set(mechanic, (selectedMechanics.get(mechanic) || 0) + 1));
   }
@@ -9247,8 +9255,13 @@ function selectPurposeBasedRotation({ toys = [], state = {}, childAgeMonths: chi
     selectedReasons: selected.map((item) => ({ canonicalKey: item.toy.canonicalKey, purpose: item.purpose, reasonCodes: item.reasonCodes, score: item.score })),
     candidates,
     allCandidates,
-    diagnostics: { selectedMechanics: Object.fromEntries(selectedMechanics), recentAvoided: [...recentIds] }
+    diagnostics: { selectedMechanics: Object.fromEntries(selectedMechanics), recentAvoided: [...recentIds], eligibleNonpermanentCount: candidates.length, firstPassSelectedCount: selected.length, finalSelectedCount: selected.length, exclusionSummary: countExclusions(allCandidates) }
   };
+}
+function countExclusions(allCandidates) {
+  const summary3 = {};
+  for (const item of allCandidates) for (const reason2 of item.reasonCodes || []) if (reason2 === "PERMANENT_SHELF" || reason2 === "OWNER_PAUSED" || reason2 === "OWNER_EXCLUDED" || /BLOCKED|ONLY|INSUFFICIENT/.test(reason2)) summary3[reason2] = (summary3[reason2] || 0) + 1;
+  return summary3;
 }
 function purpose(recommendation, state, toy) {
   const modes = new Set(recommendation.modes);
@@ -10513,6 +10526,16 @@ function createI18n(store2) {
   } };
 }
 
+// src/ui/display-resolver.js
+var ZH = Object.freeze({ fineMotor: "\u7CBE\u7EC6\u52A8\u4F5C", grossMotor: "\u5927\u8FD0\u52A8", problemSolving: "\u89E3\u51B3\u95EE\u9898", visualSpatial: "\u89C6\u89C9\u7A7A\u95F4", matching: "\u914D\u5BF9", sorting: "\u5206\u7C7B", causeEffect: "\u56E0\u679C\u5173\u7CFB", bilateralCoordination: "\u53CC\u624B\u534F\u8C03", handStrength: "\u624B\u90E8\u529B\u91CF", toolUse: "\u5DE5\u5177\u4F7F\u7528", language: "\u8BED\u8A00\u6C9F\u901A", pretendPlay: "\u5047\u88C5\u6E38\u620F", earlyMath: "\u65E9\u671F\u6570\u5B66", attentionPersistence: "\u4E13\u6CE8\u4E0E\u575A\u6301", fine_motor: "\u7CBE\u7EC6\u52A8\u4F5C", gross_motor: "\u5927\u8FD0\u52A8", problem_solving: "\u89E3\u51B3\u95EE\u9898", visual_spatial: "\u89C6\u89C9\u7A7A\u95F4", cause_effect: "\u56E0\u679C\u5173\u7CFB", pretend_play: "\u5047\u88C5\u6E38\u620F", attention_persistence: "\u4E13\u6CE8\u4E0E\u575A\u6301", OWNER_CONFIRMED_PENDING: "\u5BB6\u957F\u786E\u8BA4\u6B63\u5728\u73A9", CORE_CURRENT_PLAY: "\u5F53\u524D\u6838\u5FC3\u73A9\u6CD5", FAMILIARIZATION: "\u966A\u4F34\u63A2\u7D22", NEXT_MILESTONE_PRACTICE: "\u4E0B\u4E00\u9636\u6BB5\u7EC3\u4E60", PARENT_GOAL: "\u5BB6\u5EAD\u76EE\u6807", CURRENT_INTEREST: "\u5F53\u524D\u5174\u8DA3", OWNER_CONFIRMED: "\u5BB6\u957F\u5DF2\u786E\u8BA4\u6B63\u5728\u4F7F\u7528", NORMAL_PLAY_AVAILABLE: "\u9002\u5408\u65E5\u5E38\u73A9", PARENT_GOAL_MATCH: "\u7B26\u5408\u5BB6\u5EAD\u76EE\u6807", NEXT_MILESTONE_MATCH: "\u5339\u914D\u4E0B\u4E00\u9636\u6BB5\u80FD\u529B", FAMILIARIZATION_FIT: "\u9002\u5408\u966A\u4F34\u63A2\u7D22", NORMAL_PLAY: "\u6B63\u5E38\u73A9", OWNER_CONFIRMED_PLAY: "\u5BB6\u957F\u786E\u8BA4\u6B63\u5728\u73A9", DEVELOPMENT_CHALLENGE: "\u4E0B\u4E00\u6B65\u6311\u6218", SAFETY_BLOCKED: "\u5B89\u5168\u9650\u5236", EVIDENCE_BLOCKED: "\u4EA7\u54C1\u4FE1\u606F\u4E0D\u8DB3", "Explore pieces": "\u63A2\u7D22\u62FC\u56FE\u7247", "Match one or two": "\u914D\u5BF9\u4E00\u4E24\u5757", "Complete a section": "\u5B8C\u6210\u4E00\u90E8\u5206", "Complete the full puzzle": "\u5B8C\u6210\u6574\u5E45\u62FC\u56FE", "Explore materials": "\u63A2\u7D22\u6750\u6599", "Copy a simple idea": "\u6A21\u4EFF\u4E00\u4E2A\u7B80\u5355\u73A9\u6CD5", "Plan together": "\u4E00\u8D77\u89C4\u5212", "Create independently": "\u81EA\u4E3B\u521B\u4F5C", "Name and handle": "\u8BA4\u8BC6\u5E76\u64CD\u4F5C", "Copy a simple action": "\u6A21\u4EFF\u4E00\u4E2A\u7B80\u5355\u52A8\u4F5C", "Link two actions": "\u8FDE\u63A5\u4E24\u4E2A\u52A8\u4F5C", "Create a story": "\u521B\u7F16\u4E00\u4E2A\u6545\u4E8B", "Explore": "\u63A2\u7D22", "Try together": "\u4E00\u8D77\u8BD5\u8BD5", "Build independence": "\u7EC3\u4E60\u72EC\u7ACB\u5B8C\u6210", "Name or notice pictures; let the child handle one piece at a time.": "\u8BF4\u8BF4\u6216\u770B\u770B\u56FE\u7247\uFF1B\u6BCF\u6B21\u8BA9\u5B69\u5B50\u62FF\u4E00\u5757\u3002", "Offer one or two likely matches and pause before helping.": "\u63D0\u4F9B\u4E00\u4E24\u5757\u53EF\u80FD\u5339\u914D\u7684\u62FC\u7247\uFF0C\u5148\u505C\u4E00\u505C\u518D\u5E2E\u5FD9\u3002", "Let the child choose and turn pieces for part of the board.": "\u8BA9\u5B69\u5B50\u9009\u62E9\u5E76\u8F6C\u52A8\u62FC\u7247\uFF0C\u5B8C\u6210\u68CB\u76D8\u7684\u4E00\u90E8\u5206\u3002", "Use the full set with only the support the child requests.": "\u4F7F\u7528\u6574\u5957\u62FC\u56FE\uFF0C\u53EA\u5728\u5B69\u5B50\u9700\u8981\u65F6\u63D0\u4F9B\u5E2E\u52A9\u3002", "Stack, connect or separate pieces freely.": "\u81EA\u7531\u5806\u53E0\u3001\u8FDE\u63A5\u6216\u62C6\u5F00\u6750\u6599\u3002", "Model one small structure for the child to extend.": "\u793A\u8303\u4E00\u4E2A\u5C0F\u7ED3\u6784\uFF0C\u8BA9\u5B69\u5B50\u7EE7\u7EED\u642D\u5EFA\u3002", "Use spatial words such as on, under and beside.": "\u4F7F\u7528\u201C\u4E0A\u9762\u3001\u4E0B\u9762\u3001\u65C1\u8FB9\u201D\u7B49\u7A7A\u95F4\u8BCD\u3002", "Invite the child to explain or reuse their own construction.": "\u9080\u8BF7\u5B69\u5B50\u8BB2\u8BB2\u6216\u518D\u6B21\u4F7F\u7528\u81EA\u5DF1\u7684\u642D\u5EFA\u3002", "Let the child choose familiar objects and name actions.": "\u8BA9\u5B69\u5B50\u9009\u62E9\u719F\u6089\u7269\u54C1\uFF0C\u5E76\u8BF4\u8BF4\u52A8\u4F5C\u3002", "Model one short routine such as feeding or washing.": "\u793A\u8303\u4E00\u4E2A\u7B80\u77ED\u52A8\u4F5C\uFF0C\u4F8B\u5982\u5582\u98DF\u6216\u6E05\u6D17\u3002", "Invite a short sequence with a familiar story.": "\u7ED3\u5408\u719F\u6089\u6545\u4E8B\u9080\u8BF7\u5B69\u5B50\u5B8C\u6210\u77ED\u6B65\u9AA4\u3002", "Follow the child\u2019s ideas and add language only when welcome.": "\u8DDF\u968F\u5B69\u5B50\u7684\u60F3\u6CD5\uFF0C\u53EA\u5728\u5408\u9002\u65F6\u8865\u5145\u8BED\u8A00\u3002", "Offer one simple action with no completion expectation.": "\u63D0\u4F9B\u4E00\u4E2A\u7B80\u5355\u52A8\u4F5C\uFF0C\u4E0D\u8981\u6C42\u5B8C\u6210\u3002", "Model a short action, then pause for the child\u2019s turn.": "\u793A\u8303\u4E00\u4E2A\u7B80\u77ED\u52A8\u4F5C\uFF0C\u7136\u540E\u505C\u4E0B\u6765\u7B49\u5B69\u5B50\u5C1D\u8BD5\u3002", "Reduce help while keeping the goal small and achievable.": "\u5728\u76EE\u6807\u4FDD\u6301\u5C0F\u800C\u53EF\u5B8C\u6210\u7684\u540C\u65F6\u9010\u6B65\u51CF\u5C11\u5E2E\u52A9\u3002", "What draws the child\u2019s attention?": "\u4EC0\u4E48\u6700\u5438\u5F15\u5B69\u5B50\u7684\u6CE8\u610F\uFF1F", "Does the child try a new step before asking for help?": "\u5B69\u5B50\u4F1A\u5148\u5C1D\u8BD5\u65B0\u4E00\u6B65\u518D\u6C42\u52A9\u5417\uFF1F" });
+function resolveDisplay(value, locale = "en") {
+  const text2 = String(value ?? "");
+  return locale === "zh" ? ZH[text2] || text2 : text2;
+}
+function displayPlayLadder(level, locale = "en") {
+  return !level ? null : { ...level, title: resolveDisplay(level.title, locale), instruction: resolveDisplay(level.instruction, locale), observation: resolveDisplay(level.observation, locale) };
+}
+
 // src/ui/modal-manager.js
 var ModalManager = class {
   #scrollY = 0;
@@ -11197,10 +11220,13 @@ function developmentText(key) {
   return copy[key]?.[zh ? 1 : 0] || key;
 }
 function developmentModeLabel(mode) {
-  return developmentText({ NORMAL_PLAY: "normalPlay", FAMILIARIZATION: "familiarization", OWNER_CONFIRMED_PLAY: "ownerConfirmed", DEVELOPMENT_CHALLENGE: "challenge", SAFETY_BLOCKED: "safetyBlocked", EVIDENCE_BLOCKED: "evidenceBlocked" }[mode] || "normalPlay");
+  return resolveDisplay(mode, i18n.language);
 }
 function developmentReasonLabel(reason2) {
-  return developmentText({ OWNER_CONFIRMED: "ownerReason", PARENT_GOAL_MATCH: "goalReason", NEXT_MILESTONE_MATCH: "milestoneReason", FAMILIARIZATION_FIT: "exploreReason", NORMAL_PLAY_AVAILABLE: "normalReason" }[reason2] || "normalReason");
+  return resolveDisplay(reason2, i18n.language);
+}
+function displayLadder(level) {
+  return displayPlayLadder(level, i18n.language);
 }
 function renderHome() {
   const toys = store.state.toys;
@@ -11212,7 +11238,7 @@ function renderHome() {
   const plan = buildDevelopmentPlan({ ownedToys: toys, catalogToys: catalog.active, ...context });
   const goals = plan.targetSkills.slice(0, 4).map((skill) => `<span>${escape(skill)}</span>`).join("") || "\u2014";
   const selected = shelf.rotation.map((toy) => toyUseViewModel(toy, context));
-  const purposes = [...new Set(selected.map((model) => model.rotationPurpose))].slice(0, 4).map((value) => `<span>${escape(value.replaceAll("_", " ").toLowerCase())}</span>`).join("") || "\u2014";
+  const purposes = [...new Set(selected.map((model) => model.rotationPurpose))].slice(0, 4).map((value) => `<span>${escape(resolveDisplay(value, i18n.language))}</span>`).join("") || "\u2014";
   const covered = Object.values(plan.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).length;
   const exploring = plan.ownedRecommendations.filter((row) => row.recommendation.modes.includes("FAMILIARIZATION")).slice(0, 3).map((row) => `<li>${escape(displayName(row.toy))}</li>`).join("");
   return `<section class="panel"><h2>${t("home")}</h2><div class="stats"><div><small>${t("library")}</small><b>${toys.length}</b></div><div><small>${t("onShelf")}</small><b>${shelf.totalShelfCount}</b></div><div><small>${t("currentAge")}</small><b>${age == null ? "\u2014" : `${age} ${t("monthUnit")}`}</b></div></div><section class="summary"><b>${escape(childLabel)}</b><p>${age == null ? t("setBirthDateHint") : t("ageSummary", { count: age })}</p><button data-action="settings">${t("editProfile")}</button></section><section class="summary"><h3>${developmentText("developmentFocus")}</h3><div class="chips">${goals}</div><p>${developmentText("coverage")}: ${covered} / ${Object.keys(plan.coverage.bySkill).length}</p><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button></section><section class="summary"><h3>${developmentText("rotationPurpose")}</h3><div class="chips">${purposes}</div><p>${reassessment.due ? t("reassessmentDue") : t("reassessmentCountdown", { count: reassessment.daysRemaining })}</p><div class="home-actions"><button data-action="generate" class="primary">${t("generateThisRotation")}</button><button class="secondary" data-action="catalog">${t("standardCatalog")}</button></div></section>${exploring ? `<section class="summary"><h3>${developmentText("exploring")}</h3><ul>${exploring}</ul></section>` : ""}</section>`;
@@ -11247,7 +11273,7 @@ function renderToyCard(toy, { showDevelopment = false } = {}) {
   const development = showDevelopment ? renderDevelopmentFeedback(toy) : "";
   const model = toyUseViewModel(toy, developmentContext());
   const useLabel = developmentModeLabel(model.primaryUseMode);
-  const ladder = model.playLadder?.[model.currentPlayLevel - 1];
+  const ladder = displayLadder(model.playLadder?.[model.currentPlayLevel - 1]);
   return `<article class="card" data-toy-id="${escape(toy.id)}" data-toy-use="${escape(model.primaryUseMode)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes || []).join("|"))}" data-mechanics="${escape((toy.playMechanics || []).join("|"))}" data-status="${toy.archived ? "archived" : toy.hidden ? "hidden" : paused ? "paused" : customPermanent ? "permanent" : onShelf ? "active" : "stored"}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t("permanentBadge")}</span>` : ""}<span class="challenge-chip">${escape(useLabel)}</span></h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map((code) => `<span>${t(`skill.${code}`)}</span>`).join("")}</div><p>${escape(developmentReasonLabel(model.displayReason))}</p>${ladder ? `<p><small>${escape(ladder.title)}: ${escape(ladder.instruction)}</small></p>` : ""}<p>${toy.minAgeMonths ?? "?"}\u2013${toy.maxAgeMonths ?? "?"} ${ageUnit} \xB7 ${t(paused ? "paused" : customPermanent ? "customPermanent" : onShelf ? "onShelf" : "stored")}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === "like" ? "selected" : ""}">${t("liked")}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === "neutral" ? "selected" : ""}">${t("neutral")}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === "dislike" ? "selected" : ""}">${t("disliked")}</button>${model.availableActions.includes("CONFIRM_CURRENT_PLAY") ? `<button data-action="development-confirm-playing" data-id="${toy.id}">${developmentText("ownerConfirmed")}</button>` : ""}${model.availableActions.includes("ENABLE_EXPLORATION_ROTATION") ? `<button data-action="development-enable-exploration" data-id="${toy.id}">${developmentText("exploring")}</button>` : ""}${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t("edit")}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t("remove")}</button></div></div></article>`;
 }
 function renderChallengeBadges() {
@@ -11360,7 +11386,7 @@ function renderRotation() {
   const latest2 = store.state.rotationHistory?.[0]?.rotationDiagnostics;
   const shortage = latest2?.shortageCount ? `<p class="panel">${t("rotationShortage", { selected: latest2.selectedRotationCount ?? latest2.selectedCount, requested: latest2.requestedRotationCount ?? latest2.requestedCount })}</p>` : "";
   const manual = shelf.manual.length ? `<section class="rotation-section"><h3>${t("manuallyOnShelf")} \xB7 ${shelf.manual.length}</h3><div class="list">${shelf.manual.map(renderToyCard).join("")}</div></section>` : "";
-  const coverage2 = Object.values(surface.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).slice(0, 6).map((row) => `<span>${escape(row.skill)} \u2713</span>`).join("") || "\u2014";
+  const coverage2 = Object.values(surface.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).slice(0, 6).map((row) => `<span>${escape(resolveDisplay(row.skill, i18n.language))} \u2713</span>`).join("") || "\u2014";
   const reasons = shelf.rotation.map((toy) => surface.byToyId.get(toy.id)).filter(Boolean).map((model) => `<li><b>${escape(displayName(model.toy))}</b> \u2014 ${escape(developmentReasonLabel(model.displayReason))}</li>`).join("");
   return `<section class="head"><h2>${t("rotation")}</h2><button class="primary" data-action="generate">${t("generate")}</button></section><section class="panel shelf-total"><b>${t("currentShelfTotal", { count: shelf.totalShelfCount })}</b><p>${t("thisRotation")} ${shelf.rotation.length} \xB7 ${t("customPermanent")} ${shelf.permanent.length} \xB7 ${t("paused")} ${pausedCount}</p><p>${t("permanentTargetHint")}</p></section><section class="panel"><h3>${developmentText("coverage")}</h3><div class="chips">${coverage2}</div><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button>${reasons ? `<h3>${developmentText("rotationPurpose")}</h3><ul>${reasons}</ul>` : ""}</section>${shortage}<section class="rotation-section"><h3>${t("customPermanent")} \xB7 ${shelf.permanent.length} <button data-action="toggle-permanent-collapse" aria-expanded="${!collapsed}">${collapsed ? "\u25B8" : "\u25BE"}</button></h3>${collapsed ? "" : `<div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div>`}</section>${manual}<section class="rotation-section"><h3>${t("thisRotation")} \xB7 ${shelf.rotation.length}</h3><div class="list">${shelf.rotation.length ? shelf.rotation.map((toy) => renderToyCard(toy, { showDevelopment: true })).join("") : renderEmpty()}</div></section>`;
 }
@@ -11696,7 +11722,7 @@ function openCoverageDetails() {
   const statusLabel = (status) => ({ CLEAR_GAP: i18n.language === "zh" ? "\u7F3A\u53E3" : "Gap", LOW: i18n.language === "zh" ? "\u504F\u5C11" : "Light", MODERATE: i18n.language === "zh" ? "\u5DF2\u6709\u8986\u76D6" : "Covered", SUFFICIENT: i18n.language === "zh" ? "\u8986\u76D6\u5145\u8DB3" : "Well covered" })[status] || status;
   const row = (entry) => {
     const contributions = entry.toys.map((item) => `<li><b>${escape(item.productName || item.canonicalKey)}</b><br><small>${escape(developmentModeLabel(toyUseViewModel(store.state.toys.find((toy) => toy.canonicalKey === item.canonicalKey) || { canonicalKey: item.canonicalKey }, developmentContext()).primaryUseMode))}</small></li>`).join("");
-    return `<article class="panel coverage-detail"><h3>${escape(entry.skill)} <span class="status-chip">${escape(statusLabel(entry.status))}</span></h3><p>${i18n.language === "zh" ? `\u6309\u903B\u8F91\u73A9\u5177\u53BB\u91CD\uFF1A${entry.logicalToyCount}\uFF1B\u73A9\u6CD5\u673A\u5236\uFF1A${entry.mechanismDiversity}\uFF1B\u96BE\u5EA6\u5C42\u7EA7\uFF1A${entry.difficultyLevels.join(", ") || "\u2014"}` : `Logical toys: ${entry.logicalToyCount}; mechanisms: ${entry.mechanismDiversity}; play levels: ${entry.difficultyLevels.join(", ") || "\u2014"}`}</p>${contributions ? `<details><summary>${i18n.language === "zh" ? "\u6BCF\u4EF6\u73A9\u5177\u7684\u8D21\u732E" : "Toy contributions"}</summary><ul>${contributions}</ul></details>` : `<p>${i18n.language === "zh" ? "\u5F53\u524D\u6CA1\u6709\u5BF9\u5E94\u7684\u5DF2\u62E5\u6709\u73A9\u5177\u3002" : "No owned toy currently contributes here."}</p>`}</article>`;
+    return `<article class="panel coverage-detail"><h3>${escape(resolveDisplay(entry.skill, i18n.language))} <span class="status-chip">${escape(statusLabel(entry.status))}</span></h3><p>${i18n.language === "zh" ? `\u6309\u903B\u8F91\u73A9\u5177\u53BB\u91CD\uFF1A${entry.logicalToyCount}\uFF1B\u73A9\u6CD5\u673A\u5236\uFF1A${entry.mechanismDiversity}\uFF1B\u96BE\u5EA6\u5C42\u7EA7\uFF1A${entry.difficultyLevels.join(", ") || "\u2014"}` : `Logical toys: ${entry.logicalToyCount}; mechanisms: ${entry.mechanismDiversity}; play levels: ${entry.difficultyLevels.join(", ") || "\u2014"}`}</p>${contributions ? `<details><summary>${i18n.language === "zh" ? "\u6BCF\u4EF6\u73A9\u5177\u7684\u8D21\u732E" : "Toy contributions"}</summary><ul>${contributions}</ul></details>` : `<p>${i18n.language === "zh" ? "\u5F53\u524D\u6CA1\u6709\u5BF9\u5E94\u7684\u5DF2\u62E5\u6709\u73A9\u5177\u3002" : "No owned toy currently contributes here."}</p>`}</article>`;
   };
   const dialog = openModal(`<section class="sheet coverage-details"><header><h2>${i18n.language === "zh" ? "\u53D1\u5C55\u8986\u76D6\u8BE6\u60C5" : "Development coverage details"}</h2><button type="button" data-close>\xD7</button></header><p>${i18n.language === "zh" ? "\u8986\u76D6\u6309\u903B\u8F91\u73A9\u5177\u8BA1\u7B97\uFF1A\u540C\u4E00\u5957\u88C5\u6216\u91CD\u590D\u8BB0\u5F55\u4E0D\u4F1A\u91CD\u590D\u63D0\u9AD8\u8986\u76D6\u3002" : "Coverage is counted by logical toy, so duplicate records and set children do not inflate it."}</p><div class="list">${rows.map(row).join("")}</div></section>`);
   bindImages(dialog);
@@ -11773,9 +11799,10 @@ function openDevelopmentUseModes() {
   const surface = developmentSurfaceModel(developmentContext());
   const rows = surface.toyModels.filter((model) => ["DEVELOPMENT_CHALLENGE", "FAMILIARIZATION"].includes(model.primaryUseMode));
   const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${developmentText("nextChallenge")}</h2><button type="button" data-close>\xD7</button></header><p>${developmentText("exploreReason")}</p><div class="challenge-list">${rows.length ? rows.map((model) => {
-    const level = model.playLadder?.[model.currentPlayLevel - 1];
+    const level = displayLadder(model.playLadder?.[model.currentPlayLevel - 1]);
     return `<article class="challenge-item"><img data-image='${escapedJson(libraryImageRef(model.toy, "development_use_modes"))}' alt=""><div><p class="challenge-kind">${escape(developmentModeLabel(model.primaryUseMode))}</p><h3>${escape(displayName(model.toy))}</h3><p>${escape(developmentReasonLabel(model.displayReason))}</p>${level ? `<p><b>${escape(level.title)}</b><br>${escape(level.instruction)}</p><p><small>${escape(level.observation)}</small></p>` : ""}<div class="actions">${model.availableActions.includes("CONFIRM_CURRENT_PLAY") ? `<button class="primary" data-development-playing="${escape(model.toy.id)}">${developmentText("ownerConfirmed")}</button>` : ""}${model.availableActions.includes("ENABLE_EXPLORATION_ROTATION") ? `<button data-development-explore="${escape(model.toy.id)}">${developmentText("exploring")}</button>` : ""}</div></div></article>`;
   }).join("") : `<p>${t("noData")}</p>`}</div></section>`);
+  bindImages(dialog);
   dialog.querySelectorAll("[data-development-playing]").forEach((button) => button.onclick = () => {
     confirmDevelopmentPlaying(button.dataset.developmentPlaying);
     dialog.close();
@@ -11795,7 +11822,7 @@ function attachCrossAgeApprovalControl(form, toy) {
       host.remove();
       return;
     }
-    const level = model.playLadder?.[model.currentPlayLevel - 1];
+    const level = displayLadder(model.playLadder?.[model.currentPlayLevel - 1]);
     host.hidden = false;
     host.innerHTML = `<h3>${developmentModeLabel(model.primaryUseMode)}</h3><p>${escape(developmentReasonLabel(model.displayReason))}</p>${level ? `<p><b>${escape(level.title)}</b><br>${escape(level.instruction)}</p>` : ""}<div class="actions">${model.availableActions.includes("CONFIRM_CURRENT_PLAY") ? `<button class="primary" data-development-owner-play>${developmentText("ownerConfirmed")}</button>` : ""}${model.availableActions.includes("ENABLE_EXPLORATION_ROTATION") ? `<button data-development-owner-explore>${developmentText("exploring")}</button>` : ""}</div>`;
     host.querySelector("[data-development-owner-play]")?.addEventListener("click", () => {
@@ -11931,7 +11958,7 @@ function generateNewRotation() {
   });
   const age = childAgeMonths2();
   const purposeResult = selectPurposeBasedRotation({ toys: planning.toys, state: planning, childAgeMonths: age, skillProfile: planning.profile?.skillProfile || {}, parentGoals: planning.profile?.parentDevelopmentGoals || [], interests: planning.profile?.interestProfile || [], size: planning.settings.rotationSize });
-  const result2 = { selected: purposeResult.selected, diagnostics: { requestedRotationCount: planning.settings.rotationSize, selectedRotationCount: purposeResult.selected.length, eligibleRotationCount: purposeResult.candidates.length, shortageCount: Math.max(0, Number(planning.settings.rotationSize) - purposeResult.selected.length), selectedCandidateScores: purposeResult.selectedReasons, purposeDriven: true } };
+  const result2 = { selected: purposeResult.selected, diagnostics: { requestedRotationCount: planning.settings.rotationSize, selectedRotationCount: purposeResult.selected.length, eligibleRotationCount: purposeResult.candidates.length, shortageCount: Math.max(0, Number(planning.settings.rotationSize) - purposeResult.selected.length), selectedCandidateScores: purposeResult.selectedReasons, purposeDriven: true, ...purposeResult.diagnostics } };
   store.update((state) => {
     persistRotationSelection(state, { selected: result2.selected, diagnostics: result2.diagnostics });
   }, "rotation");

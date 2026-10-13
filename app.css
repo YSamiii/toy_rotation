@@ -2,7 +2,11 @@
   max-width: 760px;
   margin: auto;
   padding: max(16px, env(safe-area-inset-top)) 16px calc(36px + env(safe-area-inset-bottom));
+  touch-action: manipulation;
 }
+
+button, a, input, select, textarea { touch-action: manipulation; }
+input, select, textarea { font-size: max(16px, 1rem); }
 
 .startup-shell {
   min-height: 45dvh;
