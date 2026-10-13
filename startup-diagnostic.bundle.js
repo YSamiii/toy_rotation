@@ -41,7 +41,7 @@ var inspect = async () => {
   } catch (error) {
     result.serviceWorker = { supported: "serviceWorker" in navigator, error: String(error?.message || error) };
   }
-  const paths = ["./", "./index.html", "./config.js", "./src/main.js", "./src/ui/app.css", "./manifest.webmanifest", "./sw.js"];
+  const paths = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./sw.js", "./runtime-js-manifest.json"];
   result.assets = await Promise.all(paths.map(inspectResponse));
   const manifestEntry = await inspectResponse("./runtime-js-manifest.json");
   result.runtimeManifest = { ...manifestEntry, parsed: false };
@@ -52,6 +52,7 @@ var inspect = async () => {
       result.runtimeManifest.parsed = true;
       result.runtimeManifest.fileCount = manifest.files?.length || 0;
       result.runtimeManifest.target = manifest.target || null;
+      result.runtimeManifest.productionRuntimeAssets = (manifest.files || []).map((file) => file.resolvedDeployPath || `./${file.path}`);
       result.runtimeAssetIdentity = await Promise.all((manifest.files || []).map(async (file) => {
         const actual = await inspectResponse(file.resolvedDeployPath || `./${file.path}`);
         return { ...actual, expectedSha256: file.sha256, expectedBytes: file.bytes, hashMatches: actual.sha256 ? actual.sha256 === file.sha256 : null, byteLengthMatches: typeof actual.length === "number" ? actual.length === file.bytes : null, importedBy: file.importedBy || [] };

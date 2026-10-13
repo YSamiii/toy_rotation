@@ -1,5 +1,5 @@
 // src/data/schema.js
-var SCHEMA_VERSION = 12;
+var SCHEMA_VERSION = 13;
 var CATEGORY_CODES = Object.freeze([
   "uncategorized",
   "cognitive",
@@ -254,10 +254,27 @@ function normalizeWishlistItem(source = {}) {
   const normalized2 = normalizeToy(sourceToy);
   const hasSnapshot = Boolean(sourceToy.productName || sourceToy.name || sourceToy.nameEn || sourceToy.nameZh);
   const catalogSnapshot = hasSnapshot ? { canonicalKey: normalized2.canonicalKey, sku: normalized2.sku, setNumber: normalized2.setNumber, variantId: normalized2.variantId, variantName: normalized2.variantName, pieceCount: normalized2.pieceCount, exactTitle: normalized2.exactTitle, identitySource: normalized2.identitySource, brand: normalized2.brand, productName: normalized2.productName, names: normalized2.names, categoryCode: normalized2.categoryCode, skillCodes: normalized2.skillCodes, playMechanics: normalized2.playMechanics, imageRef: normalized2.imageRef, minAgeMonths: normalized2.minAgeMonths, maxAgeMonths: normalized2.maxAgeMonths } : null;
-  return { id: source.id || crypto.randomUUID(), canonicalKey: canonicalKey(source.canonicalKey || source.catalogKey || normalized2.canonicalKey), catalogId: source.catalogId || source.catalogKey || null, catalogSnapshot, status: ["want", "purchased", "dismissed"].includes(source.status) ? source.status : "want", priority: ["low", "medium", "high"].includes(source.priority) ? source.priority : "medium", notes: String(source.notes || "").slice(0, 2e3), sourceLink: String(source.sourceLink || "").slice(0, 2e3), recognizedMetadata: plainObject(source.recognizedMetadata), recommendationState: source.recommendationState || null, dismissedAt: source.dismissedAt || null, addedAt: source.addedAt || (/* @__PURE__ */ new Date()).toISOString() };
+  const recommendationSource = ["MANUAL", "DEVELOPMENT_GAP", "MILESTONE_PREP", "INTEREST", "DIFFICULTY_LADDER"].includes(source.recommendationSource) ? source.recommendationSource : "MANUAL";
+  return {
+    id: source.id || crypto.randomUUID(),
+    canonicalKey: canonicalKey(source.canonicalKey || source.catalogKey || normalized2.canonicalKey),
+    catalogId: source.catalogId || source.catalogKey || null,
+    catalogSnapshot,
+    status: ["want", "purchased", "dismissed"].includes(source.status) ? source.status : "want",
+    priority: ["low", "medium", "high"].includes(source.priority) ? source.priority : "medium",
+    notes: String(source.notes || "").slice(0, 2e3),
+    sourceLink: String(source.sourceLink || "").slice(0, 2e3),
+    recognizedMetadata: plainObject(source.recognizedMetadata),
+    recommendationState: source.recommendationState || null,
+    recommendationSource,
+    recommendationReasons: unique(source.recommendationReasons || []),
+    systemRecommendationPriority: ["low", "medium", "high"].includes(source.systemRecommendationPriority) ? source.systemRecommendationPriority : null,
+    dismissedAt: source.dismissedAt || null,
+    addedAt: source.addedAt || (/* @__PURE__ */ new Date()).toISOString()
+  };
 }
 function emptyState() {
-  return { schemaVersion: SCHEMA_VERSION, settings: { language: "system", theme: "system", rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: "", childBirthDate: "", developmentProfile: {} }, developmentFeedbackHistory: [], crossAgeApprovals: {}, challengeAttempts: {}, ownerUseStates: {}, challengeStates: {}, toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
+  return { schemaVersion: SCHEMA_VERSION, settings: { language: "system", theme: "system", rotationSize: 6, rotationDays: 7, onboardingDone: false }, profile: { childName: "", childBirthDate: "", developmentProfile: {}, skillProfile: {}, parentDevelopmentGoals: [], interestProfile: [], playPreference: "balanced" }, developmentFeedbackHistory: [], crossAgeApprovals: {}, challengeAttempts: {}, ownerUseStates: {}, challengeStates: {}, explorationRotation: {}, developmentObservations: [], toys: [], drafts: [], wishlist: [], rotationHistory: [], lastRotationAt: null, catalogState: { tombstones: {}, adminEdits: {}, imageRefsByKey: {}, imageRefsByIdentity: {}, learnedEntries: [], syncMetadata: {} } };
 }
 function numeric(value) {
   return value === "" || value == null || Number.isNaN(Number(value)) ? null : Number(value);
@@ -306,22 +323,6 @@ function catalogSafetyStatus(row) {
   if (status === "VERIFIED_NO_EXTRA_GATE" && (safety.smallParts === true || safety.chokingSmallParts === true || safety.requiresStandingStability === true || Number(safety.hardMinAgeMonths) > 0 || Number(safety.safetyMinAgeMonths) > 0)) return "UNKNOWN";
   if (status === "NO_DOCUMENTED_HARD_GATE" && (safety.smallParts === true || safety.chokingSmallParts === true || safety.requiresStandingStability === true || Number(safety.hardMinAgeMonths) > 0 || Number(safety.safetyMinAgeMonths) > 0 || safety.warningType)) return "UNKNOWN";
   return status;
-}
-function crossAgeApprovalFor(state, toy) {
-  const key = String(toy?.canonicalKey || "");
-  const record = state?.crossAgeApprovals?.[key];
-  return validCrossAgeApproval(toy, record) ? record : null;
-}
-function validCrossAgeApproval(toy, record) {
-  const key = String(toy?.canonicalKey || "");
-  return record?.approved === true && record.canonicalKey === key && record.sourceRecommendedMinAgeMonths === toy.minAgeMonths && /^\d{4}-\d{2}-\d{2}T/.test(String(record.approvedAt || ""));
-}
-function crossAgeChoiceFor(state, toy) {
-  const key = String(toy?.canonicalKey || "");
-  const record = state?.crossAgeApprovals?.[key];
-  if (validCrossAgeApproval(toy, record)) return "allowed";
-  if (record?.approved === false && record.canonicalKey === key && record.sourceRecommendedMinAgeMonths === toy?.minAgeMonths) return "declined";
-  return "pending";
 }
 function redirectCrossAgeApproval(state, from, to) {
   const approvals = state?.crossAgeApprovals;
@@ -1103,6 +1104,7 @@ function runMigrations(input) {
   if ((state.schemaVersion || 0) < 10) state = migrateV10(state);
   if ((state.schemaVersion || 0) < 11) state = migrateV11(state);
   if ((state.schemaVersion || 0) < 12) state = migrateV12(state);
+  if ((state.schemaVersion || 0) < 13) state = migrateV13(state);
   return normalizeToyUseModelState(state);
 }
 function normalizeToyUseModelState(state) {
@@ -1267,6 +1269,26 @@ function migrateV12(state) {
   };
   state.catalogState.syncMetadata.catalogImageAuditV12 = { startedAt: (/* @__PURE__ */ new Date()).toISOString(), pending: true };
   state.schemaVersion = 12;
+  return state;
+}
+function migrateV13(state) {
+  state.profile ||= {};
+  state.profile.skillProfile ||= {};
+  state.profile.parentDevelopmentGoals ||= [];
+  state.profile.interestProfile ||= [];
+  state.profile.playPreference ||= "balanced";
+  state.developmentObservations ||= [];
+  state.explorationRotation ||= {};
+  state.catalogState ||= emptyState().catalogState;
+  state.catalogState.syncMetadata ||= {};
+  state.catalogState.syncMetadata.developmentCenteredV13 = {
+    migratedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    additive: true,
+    legacyOwnerUseStatesPreserved: true,
+    legacyChallengeStatesPreserved: true,
+    legacyCrossAgeApprovalsPreserved: true
+  };
+  state.schemaVersion = 13;
   return state;
 }
 async function recoverLegacyPersonalImages({ store: store2, images: images2, catalog: catalog2 }) {
@@ -5842,8 +5864,8 @@ function priority(rows) {
   return { overlapPenalty: penalty, priority: exact || high >= 2 ? "low" : high || medium >= 3 ? "medium" : "high" };
 }
 function compareRelationship(a, b) {
-  const rank2 = { exact_duplicate: 4, high_substitution: 3, medium_substitution: 2, skill_similarity_only: 1 };
-  return rank2[b.level] - rank2[a.level] || b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName));
+  const rank3 = { exact_duplicate: 4, high_substitution: 3, medium_substitution: 2, skill_similarity_only: 1 };
+  return rank3[b.level] - rank3[a.level] || b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName));
 }
 
 // src/domain/toy-use-model.js
@@ -5954,13 +5976,6 @@ function setOwnerUseState(state, toy, nextState, { now: now3 = (/* @__PURE__ */ 
     return true;
   }
   state.ownerUseStates[key] = { canonicalKey: key, state: nextState, observedAt: now3, sourceRecommendedMinAgeMonths: toy.minAgeMonths ?? null, source };
-  return true;
-}
-function setChallengeState(state, toy, nextState, { now: now3 = (/* @__PURE__ */ new Date()).toISOString(), source = "owner" } = {}) {
-  const key = String(toy?.canonicalKey || "");
-  if (!key || !CHALLENGE_STATES.includes(nextState)) return false;
-  state.challengeStates ||= {};
-  state.challengeStates[key] = { canonicalKey: key, state: nextState, observedAt: now3, source };
   return true;
 }
 
@@ -6279,18 +6294,6 @@ function classifyCandidates(toys, age, profile = {}, ownerState = {}) {
     result2.eligible.push(toy);
   }
   return result2;
-}
-function rotationAgeEligibility(toy, age, profile = {}, options = {}) {
-  const legacyApproval = options.crossAgeApproval || toy?.crossAgeApproval;
-  const state = legacyApproval?.approved ? { crossAgeApprovals: { [toy.canonicalKey]: legacyApproval } } : {};
-  const decision = deriveToyUseDecision(toy, { childAgeMonths: age, profile, state });
-  const primary = decision.primaryStatus;
-  if (primary === "NORMAL_ROTATION") return { eligible: true, reason: "NORMAL_AGE_ELIGIBLE" };
-  if (primary === "AUTO_EARLY") return { eligible: true, reason: "EARLY_ROTATION_ALLOWED" };
-  if (primary === "OWNER_CONFIRMED_USE") return { eligible: true, reason: "OWNER_CONFIRMED_EXPLORATION" };
-  if (primary === "SAFETY_BLOCKED") return { eligible: false, reason: "HARD_SAFETY_BLOCK" };
-  if (primary === "EVIDENCE_BLOCKED") return { eligible: false, reason: "INSUFFICIENT_EVIDENCE_BLOCK" };
-  return { eligible: false, reason: primary === "SUPERVISED_CHALLENGE" ? "SUPERVISED_CHALLENGE_ONLY" : "FAMILIARIZATION_ONLY" };
 }
 function isShelfVisible(toy) {
   return !toy.hidden && !toy.archived && toy.set?.kind !== "parent";
@@ -8387,8 +8390,8 @@ function summary2(total, items, owned) {
 }
 function priorityRows(owned, wishlist) {
   const rows = [...owned.filter((item) => item.catalogImageMissing).map((item) => ({ source: "owned", ...item, priorityBand: item.currentShelfState === "CURRENT_SHELF" ? "P0" : "P1" })), ...wishlist.filter((item) => item.catalogImageMissing).map((item) => ({ source: "wishlist", ...item, priorityBand: "P2" }))].map((item) => ({ source: item.source, canonicalKey: item.canonicalKey, brand: item.brand, name: item.name, catalogImageState: item.catalogImageState || item.imageState, hasPersonalImage: Boolean(item.hasPersonalImage), currentShelf: item.currentShelfState, priorityBand: item.priorityBand, exactIdentityAvailable: item.source === "wishlist" ? item.exactIdentity ? "YES" : "NO" : "YES", priorityBrand: PRIORITY_BRANDS.has(item.brand.toLowerCase()) }));
-  const rank2 = { P0: 0, P1: 1, P2: 2 };
-  return rows.sort((left, right) => rank2[left.priorityBand] - rank2[right.priorityBand] || Number(right.priorityBrand) - Number(left.priorityBrand) || left.canonicalKey.localeCompare(right.canonicalKey));
+  const rank3 = { P0: 0, P1: 1, P2: 2 };
+  return rows.sort((left, right) => rank3[left.priorityBand] - rank3[right.priorityBand] || Number(right.priorityBrand) - Number(left.priorityBrand) || left.canonicalKey.localeCompare(right.canonicalKey));
 }
 function imageState(ref) {
   if (ref?.kind === "catalog") return "CATALOG_IDB";
@@ -8438,13 +8441,197 @@ function resolveFromRows(reference, rows) {
   return rows.find((row) => keys.includes(String(row.canonicalKey)) || keys.includes(String(row.id))) || null;
 }
 
+// src/domain/development-model.js
+var SKILL_OBSERVATION = Object.freeze({
+  MASTERED: "MASTERED",
+  EMERGING: "EMERGING",
+  NOT_OBSERVED: "NOT_OBSERVED",
+  UNKNOWN: "UNKNOWN"
+});
+var SAFETY_DECISION = Object.freeze({
+  SAFE_FOR_NORMAL_USE: "SAFE_FOR_NORMAL_USE",
+  SAFE_FOR_CROSS_AGE_USE: "SAFE_FOR_CROSS_AGE_USE",
+  HARD_BLOCKED: "HARD_BLOCKED",
+  IDENTITY_UNRESOLVED: "IDENTITY_UNRESOLVED",
+  EVIDENCE_UNRESOLVED_FOR_CROSS_AGE: "EVIDENCE_UNRESOLVED_FOR_CROSS_AGE"
+});
+var RECOMMENDATION_MODE = Object.freeze({
+  NORMAL_PLAY: "NORMAL_PLAY",
+  NEXT_STEP_CHALLENGE: "NEXT_STEP_CHALLENGE",
+  FAMILIARIZATION: "FAMILIARIZATION",
+  MILESTONE_PRACTICE: "MILESTONE_PRACTICE",
+  OWNER_CONFIRMED_PLAY: "OWNER_CONFIRMED_PLAY",
+  INTEREST_MATCH: "INTEREST_MATCH",
+  PARENT_GOAL_MATCH: "PARENT_GOAL_MATCH"
+});
+var DEVELOPMENT_SKILLS = Object.freeze([
+  "fineMotor",
+  "grossMotor",
+  "problemSolving",
+  "visualSpatial",
+  "matching",
+  "sorting",
+  "causeEffect",
+  "bilateralCoordination",
+  "handStrength",
+  "toolUse",
+  "language",
+  "pretendPlay",
+  "earlyMath",
+  "attentionPersistence"
+]);
+var LEGACY_SKILL_MAP = Object.freeze({
+  fine_motor: "fineMotor",
+  gross_motor: "grossMotor",
+  problem_solving: "problemSolving",
+  visual_spatial: "visualSpatial",
+  spatial_awareness: "visualSpatial",
+  matching: "matching",
+  sorting: "sorting",
+  cause_effect: "causeEffect",
+  body_coordination: "bilateralCoordination",
+  hand_eye: "bilateralCoordination",
+  grasping: "handStrength",
+  practical_life: "toolUse",
+  language: "language",
+  pretend_play: "pretendPlay",
+  math: "earlyMath",
+  attention: "attentionPersistence",
+  memory: "attentionPersistence"
+});
+function developmentSkillKey(value) {
+  const key = String(value || "").trim();
+  return DEVELOPMENT_SKILLS.includes(key) ? key : LEGACY_SKILL_MAP[key] || null;
+}
+function normalizeSkillProfile(input = {}) {
+  const output = {};
+  for (const skill of DEVELOPMENT_SKILLS) {
+    const raw = input[skill] ?? input[Object.keys(LEGACY_SKILL_MAP).find((key) => LEGACY_SKILL_MAP[key] === skill)];
+    const observation = typeof raw === "string" ? raw : raw?.observation;
+    output[skill] = {
+      observation: Object.values(SKILL_OBSERVATION).includes(observation) ? observation : SKILL_OBSERVATION.UNKNOWN,
+      source: typeof raw === "object" && raw?.source ? raw.source : "default",
+      observedAt: typeof raw === "object" ? raw.observedAt || null : null
+    };
+  }
+  return output;
+}
+function catalogDevelopmentSkills(toy = {}) {
+  return [...new Set([...toy.skillCodes || [], ...toy.skills || [], ...toy.goalCodes || []].map(developmentSkillKey).filter(Boolean))];
+}
+function deriveSafetyDecision(toy = {}, childAgeMonths3) {
+  const fit = toy.userMetadata?.developmentFit || {};
+  const safety = toy.userMetadata?.safety || toy.safety || {};
+  const age = Number(childAgeMonths3);
+  const hardAge = numberOrNull(safety.hardMinAgeMonths ?? safety.minAgeMonths ?? safety.safetyMinAgeMonths);
+  const hardClassification = toy.earlyRotationEligibility === "HARD_SAFETY_GATE";
+  if (hardClassification && (!Number.isFinite(age) || !hardAge || age < hardAge) || hardAge && Number.isFinite(age) && age < hardAge) {
+    return { decision: SAFETY_DECISION.HARD_BLOCKED, hardSafetyAgeMin: hardAge, reasonCodes: ["HARD_SAFETY_GATE"] };
+  }
+  const researchStatus = fit.researchStatus || "NOT_RESEARCHED";
+  if (researchStatus === "IDENTITY_BLOCKED" || fit.identityStatus === "IDENTITY_BLOCKED" || toy.identityConflict === true) {
+    return { decision: SAFETY_DECISION.IDENTITY_UNRESOLVED, hardSafetyAgeMin: hardAge, reasonCodes: ["IDENTITY_UNRESOLVED"] };
+  }
+  const minAge = numberOrNull(toy.minAgeMonths);
+  const belowDevelopmentRecommendation = Number.isFinite(age) && minAge && age < minAge;
+  if (!belowDevelopmentRecommendation) return { decision: SAFETY_DECISION.SAFE_FOR_NORMAL_USE, hardSafetyAgeMin: hardAge, reasonCodes: ["NORMAL_AGE_USE"] };
+  const resolved = researchStatus === "RESEARCHED_RESOLVED";
+  const crossAgeAllowed = resolved && ["EARLY_ROTATION_ALLOWED", "AGE_RECOMMENDED_ONLY"].includes(toy.earlyRotationEligibility);
+  return crossAgeAllowed ? { decision: SAFETY_DECISION.SAFE_FOR_CROSS_AGE_USE, hardSafetyAgeMin: hardAge, reasonCodes: ["CROSS_AGE_EVIDENCE_RESOLVED"] } : { decision: SAFETY_DECISION.EVIDENCE_UNRESOLVED_FOR_CROSS_AGE, hardSafetyAgeMin: hardAge, reasonCodes: ["CROSS_AGE_EVIDENCE_UNRESOLVED"] };
+}
+function ownerToyFacts(state = {}, toy = {}) {
+  const key = String(toy.canonicalKey || "");
+  const use = state.ownerUseStates?.[key] || {};
+  const exploration = state.explorationRotation?.[key] || {};
+  return {
+    owned: Boolean(toy.id),
+    paused: toy.rotationParticipation === "paused",
+    disliked: toy.interest === "dislike",
+    permanent: toy.shelfMode === "permanent" && toy.permanentSource === "user",
+    ownerConfirmedPlaying: use.state === "CURRENTLY_PLAYING",
+    wantsFamiliarization: use.state === "EXPLORING",
+    explorationRotationEnabled: exploration.enabled === true,
+    favorite: toy.interest === "like"
+  };
+}
+function deriveRecommendation(toy, { childAgeMonths: childAgeMonths3, state = {}, skillProfile = {}, parentGoals = [], interests = [] } = {}) {
+  const safety = deriveSafetyDecision(toy, childAgeMonths3);
+  const owner = ownerToyFacts(state, toy);
+  const skills = catalogDevelopmentSkills(toy);
+  const profile = normalizeSkillProfile(skillProfile);
+  const modes = /* @__PURE__ */ new Set();
+  const reasonCodes = [...safety.reasonCodes];
+  if (safety.decision === SAFETY_DECISION.HARD_BLOCKED || safety.decision === SAFETY_DECISION.IDENTITY_UNRESOLVED) return result2();
+  const normal = safety.decision === SAFETY_DECISION.SAFE_FOR_NORMAL_USE;
+  const crossAge = safety.decision === SAFETY_DECISION.SAFE_FOR_CROSS_AGE_USE;
+  if (normal) {
+    modes.add(RECOMMENDATION_MODE.NORMAL_PLAY);
+    reasonCodes.push("NORMAL_PLAY_AVAILABLE");
+  }
+  if (crossAge) {
+    modes.add(RECOMMENDATION_MODE.FAMILIARIZATION);
+    reasonCodes.push("FAMILIARIZATION_FIT");
+  }
+  if (owner.ownerConfirmedPlaying) {
+    modes.add(RECOMMENDATION_MODE.OWNER_CONFIRMED_PLAY);
+    reasonCodes.push("OWNER_CONFIRMED");
+  }
+  const relevantGoals = parentGoals.filter((goal) => skills.includes(goal));
+  if (relevantGoals.length) {
+    modes.add(RECOMMENDATION_MODE.PARENT_GOAL_MATCH);
+    reasonCodes.push("PARENT_GOAL_MATCH");
+  }
+  const emerging = skills.filter((skill) => profile[skill]?.observation === SKILL_OBSERVATION.EMERGING);
+  if (emerging.length) {
+    modes.add(RECOMMENDATION_MODE.MILESTONE_PRACTICE);
+    reasonCodes.push("NEXT_MILESTONE_MATCH");
+  }
+  const observedMastery = skills.some((skill) => profile[skill]?.observation === SKILL_OBSERVATION.MASTERED || profile[skill]?.observation === SKILL_OBSERVATION.EMERGING);
+  const recommendedGap = Math.max(0, Number(toy.minAgeMonths || 0) - Number(childAgeMonths3 || 0));
+  if (crossAge && observedMastery && recommendedGap <= 6) {
+    modes.add(RECOMMENDATION_MODE.NEXT_STEP_CHALLENGE);
+    reasonCodes.push("DIFFICULTY_STEP_UP");
+  }
+  const mechanisms = (toy.playMechanics || []).map((value) => String(value).toLowerCase());
+  if (interests.some((interest) => mechanisms.includes(String(interest).toLowerCase()) || String(toy.productName || "").toLowerCase().includes(String(interest).toLowerCase()))) {
+    modes.add(RECOMMENDATION_MODE.INTEREST_MATCH);
+    reasonCodes.push("INTEREST_MATCH");
+  }
+  return result2();
+  function result2() {
+    const rotationEligible = !owner.paused && !owner.disliked && safety.decision !== SAFETY_DECISION.HARD_BLOCKED && safety.decision !== SAFETY_DECISION.IDENTITY_UNRESOLVED && (modes.has(RECOMMENDATION_MODE.NORMAL_PLAY) || modes.has(RECOMMENDATION_MODE.OWNER_CONFIRMED_PLAY) || owner.explorationRotationEnabled || modes.has(RECOMMENDATION_MODE.NEXT_STEP_CHALLENGE));
+    return {
+      canonicalKey: toy.canonicalKey || null,
+      safety,
+      owner,
+      skills,
+      modes: [...modes],
+      reasonCodes: [...new Set(reasonCodes)],
+      rotationEligible,
+      primaryPresentationMode: primaryPresentationMode({ modes, owner, safety })
+    };
+  }
+}
+function primaryPresentationMode({ modes, owner, safety }) {
+  if (safety.decision === SAFETY_DECISION.HARD_BLOCKED) return "SAFETY_BLOCKED";
+  if (safety.decision === SAFETY_DECISION.IDENTITY_UNRESOLVED || safety.decision === SAFETY_DECISION.EVIDENCE_UNRESOLVED_FOR_CROSS_AGE) return "EVIDENCE_BLOCKED";
+  if (owner.ownerConfirmedPlaying) return "OWNER_CONFIRMED_PLAY";
+  if (modes.has(RECOMMENDATION_MODE.NEXT_STEP_CHALLENGE)) return "NEXT_STEP_CHALLENGE";
+  if (modes.has(RECOMMENDATION_MODE.FAMILIARIZATION)) return "FAMILIARIZATION";
+  return "NORMAL_PLAY";
+}
+function numberOrNull(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : null;
+}
+
 // src/features/catalog-safety-audit.js
 var CATALOG_SAFETY_AUDIT_VERSION = "v0.11.6";
 var PRIORITY_BRANDS2 = /* @__PURE__ */ new Set(["mideer", "lovevery", "hape", "learning resources", "lego duplo", "lego / duplo", "vtech", "brio"]);
 function buildCatalogSafetyAudit({ state = {}, catalog: catalog2, build = {}, generatedAt = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
   const rows = Array.isArray(catalog2) ? catalog2 : catalog2?.active || [];
   const age = childAgeMonths(state.profile?.childBirthDate, new Date(generatedAt).getTime());
-  const profile = state.profile?.developmentProfile || {};
+  const profile = state.profile?.skillProfile || state.profile?.developmentProfile || {};
   const resolve = (reference) => catalog2?.resolve?.(reference) || rows.find((row) => [reference?.canonicalKey, reference?.catalogId].includes(row.canonicalKey) || reference?.catalogId === row.id) || null;
   const owned = mappedRows(state.toys || [], resolve, state, age, profile);
   const wishlist = mappedRows(state.wishlist || [], resolve, state, age, profile);
@@ -8474,8 +8661,13 @@ function safetyRow(row, reference, state, age, profile) {
   const safety = row.userMetadata?.safety || {};
   const ageSafetyStatus = catalogSafetyStatus(row);
   const projected = { ...withCatalogSafety(reference || row, row), canonicalKey: row.canonicalKey, minAgeMonths: row.minAgeMonths };
-  const approval = crossAgeApprovalFor(state, projected);
-  const decision = rotationAgeEligibility({ ...projected, crossAgeApproval: approval }, age, profile);
+  const recommendation = deriveRecommendation(projected, {
+    childAgeMonths: age,
+    state,
+    skillProfile: profile,
+    parentGoals: state.profile?.parentDevelopmentGoals || [],
+    interests: state.profile?.interestProfile || []
+  });
   return {
     canonicalKey: String(row.canonicalKey || ""),
     productName: String(row.productName || ""),
@@ -8484,14 +8676,8 @@ function safetyRow(row, reference, state, age, profile) {
     recommendedMinAgeMonths: row.minAgeMonths ?? null,
     ageSafetyStatus,
     childAgeMonths: age,
-    crossAgeApproval: approval ? {
-      approved: true,
-      approvedAt: approval.approvedAt,
-      canonicalKey: approval.canonicalKey,
-      sourceRecommendedMinAgeMonths: approval.sourceRecommendedMinAgeMonths
-    } : { approved: false },
-    eligibilityResult: decision.eligible ? "ELIGIBLE" : "BLOCKED",
-    eligibilityReason: decision.reason,
+    eligibilityResult: recommendation.rotationEligible ? "ELIGIBLE" : "BLOCKED",
+    eligibilityReason: recommendation.reasonCodes[0] || "NO_RECOMMENDATION_REASON",
     hardMinAgeMonths: ageSafetyStatus === "UNKNOWN" ? null : safety.hardMinAgeMonths ?? null,
     smallParts: ageSafetyStatus === "UNKNOWN" ? "unknown" : safety.smallParts ?? "unknown",
     requiresStandingStability: ageSafetyStatus === "UNKNOWN" ? "unknown" : safety.requiresStandingStability ?? "unknown",
@@ -8954,202 +9140,339 @@ function executeMD1460MarkerOnly({ storage = globalThis.localStorage, previewFin
   }
 }
 
-// src/features/cross-age-challenges.js
-function challengeDecision(state, catalog2, toy, age, profile = {}) {
-  const row = catalog2.resolve(toy);
-  if (!row || age == null) return null;
-  const ownedProjection = withCatalogSafety(toy, row);
-  const projected = {
-    ...ownedProjection,
-    minAgeMonths: row.minAgeMonths,
-    maxAgeMonths: row.maxAgeMonths,
-    earlyRotationEligibility: row.earlyRotationEligibility,
-    maximumEarlyMonths: row.maximumEarlyMonths,
-    prerequisiteSkills: row.prerequisiteSkills,
-    eligibilityPolicyOrigin: row.eligibilityPolicyOrigin,
-    userMetadata: { ...ownedProjection.userMetadata, developmentFit: row.userMetadata?.developmentFit || ownedProjection.userMetadata?.developmentFit }
-  };
-  const approval = crossAgeApprovalFor(state, projected);
-  return {
-    row,
-    projected,
-    approval,
-    choice: crossAgeChoiceFor(state, projected),
-    decision: deriveToyUseDecision(projected, { childAgeMonths: age, profile, state })
-  };
+// src/domain/play-ladder.js
+var LADDER_LIBRARY = Object.freeze({
+  puzzle: [
+    ["Explore pieces", "Name or notice pictures; let the child handle one piece at a time."],
+    ["Match one or two", "Offer one or two likely matches and pause before helping."],
+    ["Complete a section", "Let the child choose and turn pieces for part of the board."],
+    ["Complete the full puzzle", "Use the full set with only the support the child requests."]
+  ],
+  building: [
+    ["Explore materials", "Stack, connect or separate pieces freely."],
+    ["Copy a simple idea", "Model one small structure for the child to extend."],
+    ["Plan together", "Use spatial words such as on, under and beside."],
+    ["Create independently", "Invite the child to explain or reuse their own construction."]
+  ],
+  pretend: [
+    ["Name and handle", "Let the child choose familiar objects and name actions."],
+    ["Copy a simple action", "Model one short routine such as feeding or washing."],
+    ["Link two actions", "Invite a short sequence with a familiar story."],
+    ["Create a story", "Follow the child\u2019s ideas and add language only when welcome."]
+  ],
+  default: [
+    ["Explore", "Offer one simple action with no completion expectation."],
+    ["Try together", "Model a short action, then pause for the child\u2019s turn."],
+    ["Build independence", "Reduce help while keeping the goal small and achievable."]
+  ]
+});
+function playLadderFor(toy = {}) {
+  const mechanics = (toy.playMechanics || []).map((value) => String(value).toLowerCase()).join(" ");
+  const skills = catalogDevelopmentSkills(toy).join(" ");
+  const type = /puzzle|matching/.test(mechanics) || /matching|visualSpatial/.test(skills) ? "puzzle" : /block|build|construction|spatial/.test(mechanics) ? "building" : /pretend|kitchen|doll|role/.test(mechanics) || /pretendPlay/.test(skills) ? "pretend" : "default";
+  return LADDER_LIBRARY[type].map(([title, instruction], index) => ({ level: index + 1, title, instruction, observation: index === 0 ? "What draws the child\u2019s attention?" : "Does the child try a new step before asking for help?" }));
 }
-function visibleOwnedToy(toy) {
-  return toy && !toy.hidden && !toy.archived && toy.set?.kind !== "parent" && !isRotationPaused(toy) && !isUserCustomPermanent(toy);
+function currentPlayLevel(toy, recommendation) {
+  const ladder = playLadderFor(toy);
+  if (recommendation?.modes?.includes("NEXT_STEP_CHALLENGE")) return Math.min(2, ladder.length);
+  if (recommendation?.modes?.includes("FAMILIARIZATION")) return 1;
+  return Math.min(3, ladder.length);
 }
-function reviewedStatus(row) {
-  return row?.userMetadata?.developmentFit?.researchStatus || "NOT_RESEARCHED";
-}
-function challengeSkillState(row, profile = {}) {
-  const confirmed = [];
-  const unknown = [];
-  const explicitlyBlocked = [];
-  for (const [skill, required] of Object.entries(row?.prerequisiteSkills || {})) {
-    const evidence2 = profile?.[skill] || {};
-    if (evidence2.explicitlyBlocked === true || evidence2.developmentallyBlocked === true || evidence2.status === "blocked") {
-      explicitlyBlocked.push(skill);
-    } else if ((evidence2.manualLevel ?? evidence2.currentLevel ?? 0) >= Number(required || 0)) {
-      confirmed.push(skill);
-    } else {
-      unknown.push(skill);
+
+// src/domain/coverage-engine.js
+var LABELS = ["CLEAR_GAP", "LOW", "MODERATE", "SUFFICIENT"];
+function buildOwnedCoverage({ toys = [], childAgeMonths: childAgeMonths3, state = {}, skillProfile = {}, parentGoals = [], interests = [] } = {}) {
+  const logical = /* @__PURE__ */ new Map();
+  for (const toy of toys) {
+    if (toy.hidden || toy.archived || toy.set?.kind === "parent") continue;
+    const logicalKey = toy.set?.parentCanonicalKey || toy.canonicalKey || toy.id;
+    if (!logical.has(logicalKey)) logical.set(logicalKey, toy);
+  }
+  const bySkill = Object.fromEntries(DEVELOPMENT_SKILLS.map((skill) => [skill, { skill, logicalToyCount: 0, mechanismDiversity: 0, difficultyLevels: /* @__PURE__ */ new Set(), toys: [], status: "CLEAR_GAP" }]));
+  for (const toy of logical.values()) {
+    const recommendation = deriveRecommendation(toy, { childAgeMonths: childAgeMonths3, state, skillProfile, parentGoals, interests });
+    if (recommendation.safety.decision === "HARD_BLOCKED") continue;
+    const mechanics = new Set(toy.playMechanics || []);
+    for (const skill of catalogDevelopmentSkills(toy)) {
+      const entry = bySkill[skill];
+      if (!entry) continue;
+      entry.logicalToyCount++;
+      entry.mechanismDiversity += Math.max(1, mechanics.size ? 1 : 0);
+      entry.difficultyLevels.add(toy.progressionLevel || toy.challengeLevel || 1);
+      entry.toys.push({ canonicalKey: toy.canonicalKey, productName: toy.productName, recommendation });
     }
   }
-  return { confirmed, unknown, explicitlyBlocked };
+  for (const entry of Object.values(bySkill)) {
+    const effective = Math.min(entry.logicalToyCount, 2) + Math.min(entry.mechanismDiversity, 2) * 0.5 + Math.min(entry.difficultyLevels.size, 2) * 0.5;
+    entry.status = effective >= 3 ? "SUFFICIENT" : effective >= 2 ? "MODERATE" : effective >= 1 ? "LOW" : "CLEAR_GAP";
+    entry.difficultyLevels = [...entry.difficultyLevels].sort();
+  }
+  return { logicalOwnedToyCount: logical.size, bySkill, priorityGaps: Object.values(bySkill).filter((entry) => LABELS.indexOf(entry.status) <= 1).sort((a, b) => LABELS.indexOf(a.status) - LABELS.indexOf(b.status)) };
 }
-function supervisedAgeOnlyChallenge(state, catalog2, toy, age, profile = {}) {
-  if (!visibleOwnedToy(toy)) return null;
-  const review = challengeDecision(state, catalog2, toy, age, profile);
-  if (!review || age == null || review.row.minAgeMonths == null) return null;
-  const monthsEarly = review.row.minAgeMonths - age;
-  if (review.decision.primaryStatus !== TOY_USE_PRIMARY_STATUS.SUPERVISED_CHALLENGE) return null;
+function needsPurchaseRecommendation(coverage2, skill) {
+  const entry = coverage2?.bySkill?.[skill];
+  return Boolean(entry && ["CLEAR_GAP", "LOW"].includes(entry.status));
+}
+
+// src/domain/rotation-candidate-engine.js
+function buildRotationCandidates({ toys = [], state = {}, childAgeMonths: childAgeMonths3, skillProfile = {}, parentGoals = [], interests = [] } = {}) {
+  return toys.filter((toy) => !toy.hidden && !toy.archived && toy.set?.kind !== "parent").map((toy) => {
+    const recommendation = deriveRecommendation(toy, { childAgeMonths: childAgeMonths3, state, skillProfile, parentGoals, interests });
+    const excluded = toy.rotationParticipation === "paused" || toy.interest === "dislike";
+    const eligible = !excluded && recommendation.rotationEligible;
+    const reasons = [...recommendation.reasonCodes];
+    if (state.explorationRotation?.[toy.canonicalKey]?.enabled) reasons.push("EXPLORATION_ROTATION_ENABLED");
+    return { toy, recommendation, eligible, purpose: purpose(recommendation, state, toy), reasonCodes: [...new Set(reasons)] };
+  });
+}
+function selectPurposeBasedRotation({ toys = [], state = {}, childAgeMonths: childAgeMonths3, skillProfile = {}, parentGoals = [], interests = [], size = 6 } = {}) {
+  const allCandidates = buildRotationCandidates({ toys, state, childAgeMonths: childAgeMonths3, skillProfile, parentGoals, interests });
+  const candidates = allCandidates.filter((item) => item.eligible);
+  const target = Math.max(1, Number(size) || 6);
+  const recentIds = new Set((state.rotationHistory || []).slice(0, 2).flatMap((entry) => entry.toyIds || []));
+  const remaining = candidates.map((item) => ({ ...item, baseScore: priority2(item), score: priority2(item) }));
+  const selected = [];
+  const selectedMechanics = /* @__PURE__ */ new Map();
+  while (remaining.length && selected.length < target) {
+    remaining.forEach((item) => {
+      item.score = item.baseScore + diversityAdjustment2(item, selectedMechanics, recentIds);
+    });
+    remaining.sort((a, b) => b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName)));
+    const next = remaining.shift();
+    selected.push(next);
+    mechanicsOf(next.toy).forEach((mechanic) => selectedMechanics.set(mechanic, (selectedMechanics.get(mechanic) || 0) + 1));
+  }
+  return {
+    selected: selected.map((item) => item.toy),
+    selectedReasons: selected.map((item) => ({ canonicalKey: item.toy.canonicalKey, purpose: item.purpose, reasonCodes: item.reasonCodes, score: item.score })),
+    candidates,
+    allCandidates,
+    diagnostics: { selectedMechanics: Object.fromEntries(selectedMechanics), recentAvoided: [...recentIds] }
+  };
+}
+function purpose(recommendation, state, toy) {
+  const modes = new Set(recommendation.modes);
+  if (modes.has(RECOMMENDATION_MODE.OWNER_CONFIRMED_PLAY)) return "OWNER_CONFIRMED_PENDING";
+  if (state.explorationRotation?.[toy.canonicalKey]?.enabled) return "FAMILIARIZATION";
+  if (modes.has(RECOMMENDATION_MODE.NEXT_STEP_CHALLENGE)) return "NEXT_MILESTONE_PRACTICE";
+  if (modes.has(RECOMMENDATION_MODE.PARENT_GOAL_MATCH)) return "PARENT_GOAL";
+  if (modes.has(RECOMMENDATION_MODE.INTEREST_MATCH)) return "CURRENT_INTEREST";
+  return "CORE_CURRENT_PLAY";
+}
+function priority2(item) {
+  const base = { OWNER_CONFIRMED_PENDING: 100, FAMILIARIZATION: 85, NEXT_MILESTONE_PRACTICE: 75, PARENT_GOAL: 65, CURRENT_INTEREST: 55, CORE_CURRENT_PLAY: 40 }[item.purpose] || 0;
+  const pending = item.recommendation.owner.ownerConfirmedPlaying || item.recommendation.owner.explorationRotationEnabled;
+  return base + (pending ? 40 : 0);
+}
+function mechanicsOf(toy) {
+  return [...new Set([...toy.playMechanics || [], ...toy.skillCodes || []].filter(Boolean))];
+}
+function diversityAdjustment2(item, selectedMechanics, recentIds) {
+  const mechanics = mechanicsOf(item.toy);
+  const overlap2 = mechanics.reduce((sum, mechanic) => sum + (selectedMechanics.get(mechanic) || 0), 0);
+  const diversityPenalty = overlap2 * 18;
+  const recencyPenalty = recentIds.has(item.toy.id) ? 16 : 0;
+  return -(diversityPenalty + recencyPenalty);
+}
+
+// src/domain/development-view-model.js
+function createDevelopmentContext({ state = {}, catalog: catalog2, childAgeMonths: childAgeMonths3 } = {}) {
+  const profile = state.profile || {};
+  return { state, catalog: catalog2, childAgeMonths: childAgeMonths3, skillProfile: profile.skillProfile || {}, parentGoals: profile.parentDevelopmentGoals || [], interests: profile.interestProfile || [] };
+}
+function toyUseViewModel(toy, context = {}) {
+  const catalogToy = context.catalog?.resolve?.(toy) || {};
+  const product = { ...catalogToy, ...toy, userMetadata: { ...catalogToy.userMetadata || {}, ...toy.userMetadata || {} } };
+  const recommendation = deriveRecommendation(product, context);
+  const modes = new Set(recommendation.modes);
+  const nextSkills = recommendation.skills.filter((skill) => context.parentGoals?.includes(skill));
+  const emergingSkills = recommendation.skills.filter((skill) => context.skillProfile?.[skill]?.observation === "EMERGING");
   return {
     toy,
-    ...review,
-    source: "supervised",
-    monthsEarly,
-    attempt: state?.challengeAttempts?.[review.row.canonicalKey] || null,
-    skillState: challengeSkillState(review.projected, profile)
+    product,
+    primaryUseMode: presentationMode(recommendation),
+    rotationEligible: recommendation.rotationEligible,
+    rotationPurpose: rotationPurpose(recommendation, context),
+    developmentFit: developmentFit2(recommendation),
+    challengeLevel: product.challengeLevel || product.progressionLevel || null,
+    safetyStatus: recommendation.safety.decision,
+    ownerUseStatus: recommendation.owner.ownerConfirmedPlaying ? "CURRENTLY_PLAYING" : recommendation.owner.wantsFamiliarization ? "EXPLORING" : "DEFAULT",
+    recommendedAgeGap: Math.max(0, Number(product.minAgeMonths || 0) - Number(context.childAgeMonths || 0)),
+    matchedSkills: recommendation.skills,
+    emergingSkills,
+    nextSkills,
+    matchedInterests: modes.has(RECOMMENDATION_MODE.INTEREST_MATCH) ? context.interests : [],
+    coverageContribution: recommendation.skills,
+    availableActions: availableActions(recommendation),
+    reasonCodes: recommendation.reasonCodes,
+    displayReason: displayReason(recommendation, nextSkills, emergingSkills),
+    playLadder: playLadderFor(product),
+    currentPlayLevel: currentPlayLevel(product, recommendation),
+    recommendation
   };
 }
-function autoEarlyChallenge(state, catalog2, toy, age, profile = {}) {
-  if (!visibleOwnedToy(toy)) return null;
-  const review = challengeDecision(state, catalog2, toy, age, profile);
-  if (!review || review.decision.primaryStatus !== TOY_USE_PRIMARY_STATUS.AUTO_EARLY) return null;
-  return { toy, ...review, source: "auto", monthsEarly: Math.max(0, review.row.minAgeMonths - age), attempt: null };
+function developmentSurfaceModel(context) {
+  const toyModels = (context.state?.toys || []).map((toy) => toyUseViewModel(toy, context));
+  const coverage2 = buildOwnedCoverage({ toys: context.state?.toys || [], childAgeMonths: context.childAgeMonths, state: context.state, skillProfile: context.skillProfile, parentGoals: context.parentGoals, interests: context.interests });
+  const candidates = buildRotationCandidates({ toys: context.state?.toys || [], state: context.state, childAgeMonths: context.childAgeMonths, skillProfile: context.skillProfile, parentGoals: context.parentGoals, interests: context.interests });
+  return { toyModels, coverage: coverage2, candidates, byToyId: new Map(toyModels.map((model) => [model.toy.id, model])) };
 }
-function challengeCandidates(state, catalog2, age, profile = {}) {
-  const byCanonical = /* @__PURE__ */ new Map();
-  for (const toy of state?.toys || []) {
-    const candidate = autoEarlyChallenge(state, catalog2, toy, age, profile) || supervisedAgeOnlyChallenge(state, catalog2, toy, age, profile);
-    if (!candidate || byCanonical.has(candidate.row.canonicalKey)) continue;
-    byCanonical.set(candidate.row.canonicalKey, candidate);
-  }
-  return [...byCanonical.values()].sort((a, b) => Number(b.source === "auto") - Number(a.source === "auto") || a.monthsEarly - b.monthsEarly || (b.skillState?.confirmed.length || 0) - (a.skillState?.confirmed.length || 0) || (a.skillState?.unknown.length || 0) - (b.skillState?.unknown.length || 0) || Number(Boolean(a.attempt?.lastChallengeAttempt)) - Number(Boolean(b.attempt?.lastChallengeAttempt)) || a.row.minAgeMonths - b.row.minAgeMonths || String(a.row.productName).localeCompare(String(b.row.productName)));
+function presentationMode(recommendation) {
+  const modes = new Set(recommendation.modes);
+  if (recommendation.safety.decision === "HARD_BLOCKED") return "SAFETY_BLOCKED";
+  if (recommendation.safety.decision === "IDENTITY_UNRESOLVED" || recommendation.safety.decision === "EVIDENCE_UNRESOLVED_FOR_CROSS_AGE") return "EVIDENCE_BLOCKED";
+  if (modes.has(RECOMMENDATION_MODE.OWNER_CONFIRMED_PLAY)) return "OWNER_CONFIRMED_PLAY";
+  if (modes.has(RECOMMENDATION_MODE.NEXT_STEP_CHALLENGE)) return "DEVELOPMENT_CHALLENGE";
+  if (modes.has(RECOMMENDATION_MODE.FAMILIARIZATION)) return "FAMILIARIZATION";
+  return "NORMAL_PLAY";
 }
-function familiarizationCandidates(state, catalog2, age, profile = {}) {
-  const byCanonical = /* @__PURE__ */ new Map();
-  for (const toy of state?.toys || []) {
-    if (!visibleOwnedToy(toy)) continue;
-    const review = challengeDecision(state, catalog2, toy, age, profile);
-    if (!review || review.decision.primaryStatus !== TOY_USE_PRIMARY_STATUS.FAMILIARIZATION || byCanonical.has(review.row.canonicalKey)) continue;
-    byCanonical.set(review.row.canonicalKey, { toy, ...review, source: "familiarization", monthsEarly: Math.max(0, Number(review.row.minAgeMonths || 0) - Number(age || 0)) });
-  }
-  return [...byCanonical.values()].sort((a, b) => a.monthsEarly - b.monthsEarly || String(a.row.productName).localeCompare(String(b.row.productName)));
+function rotationPurpose(recommendation, context) {
+  const modes = new Set(recommendation.modes);
+  if (modes.has(RECOMMENDATION_MODE.OWNER_CONFIRMED_PLAY)) return "OWNER_CONFIRMED_PENDING";
+  if (recommendation.owner.explorationRotationEnabled) return "FAMILIARIZATION";
+  if (modes.has(RECOMMENDATION_MODE.NEXT_STEP_CHALLENGE)) return "NEXT_MILESTONE_PRACTICE";
+  if (modes.has(RECOMMENDATION_MODE.PARENT_GOAL_MATCH)) return "PARENT_GOAL";
+  if (modes.has(RECOMMENDATION_MODE.INTEREST_MATCH)) return "CURRENT_INTEREST";
+  return "CORE_CURRENT_PLAY";
 }
-function diagnosticSnapshot(state, catalog2, age, profile = {}) {
-  const buckets = Object.fromEntries(DIAGNOSTIC_BUCKETS.map((bucket) => [bucket, []]));
-  const seen = /* @__PURE__ */ new Set();
-  const counts = { owned: 0, normal: 0, autoEarly: 0, supervised: 0, familiarization: 0, ownerConfirmed: 0, hard: 0, insufficient: 0, skillUnknownEligible: 0, autoSkillBlocked: 0 };
-  for (const toy of state?.toys || []) {
-    if (!visibleOwnedToy(toy)) continue;
-    const review = challengeDecision(state, catalog2, toy, age, profile);
-    if (!review || seen.has(review.row.canonicalKey)) continue;
-    seen.add(review.row.canonicalKey);
-    counts.owned++;
-    const { row, projected, decision } = review;
-    const bucket = diagnosticBucket(review);
-    counts[bucket]++;
-    if (bucket === "supervised" && challengeSkillState(projected, profile).unknown.length) counts.skillUnknownEligible++;
-    if (bucket === "familiarization" && decision.reasonCodes.includes("TARGET_SKILL_NOT_YET_MASTERED")) counts.autoSkillBlocked++;
-    buckets[bucket].push({
-      canonicalKey: row.canonicalKey,
-      brand: row.brand || "",
-      productName: row.productName || toy.productName || "",
-      sku: row.sku || row.model || "",
-      recommendedAgeMin: row.minAgeMonths ?? null,
-      classification: row.earlyRotationEligibility || "INSUFFICIENT_EVIDENCE",
-      researchStatus: reviewedStatus(row),
-      primaryStatus: decision.primaryStatus,
-      blockReason: decision.reasonCodes.join(", "),
-      logicalEvidenceGroup: toy.set?.kind === "child" && toy.set?.parentCanonicalKey ? {
-        canonicalKey: String(toy.set.parentCanonicalKey),
-        productName: toy.set.setName || String(toy.set.parentCanonicalKey),
-        partIndex: Number(toy.set.partIndex || 0) || null
-      } : null
-    });
-  }
-  for (const rows of Object.values(buckets)) rows.sort((a, b) => (a.recommendedAgeMin ?? Infinity) - (b.recommendedAgeMin ?? Infinity) || String(a.productName).localeCompare(String(b.productName)) || String(a.canonicalKey).localeCompare(String(b.canonicalKey)));
-  const evidenceBlocked = buckets.insufficient;
-  const logicalEvidenceGroups = groupChallengeDiagnosticRows(evidenceBlocked);
+function developmentFit2(recommendation) {
+  const modes = new Set(recommendation.modes);
+  return modes.has(RECOMMENDATION_MODE.NEXT_STEP_CHALLENGE) ? "NEXT_STEP" : modes.has(RECOMMENDATION_MODE.FAMILIARIZATION) ? "EXPLORATORY" : "CURRENT";
+}
+function availableActions(recommendation) {
+  if (recommendation.safety.decision === "HARD_BLOCKED" || recommendation.safety.decision === "IDENTITY_UNRESOLVED" || recommendation.safety.decision === "EVIDENCE_UNRESOLVED_FOR_CROSS_AGE") return [];
+  const actions2 = [];
+  const modes = new Set(recommendation.modes);
+  if (modes.has(RECOMMENDATION_MODE.FAMILIARIZATION)) actions2.push("ENABLE_EXPLORATION_ROTATION");
+  if (modes.has(RECOMMENDATION_MODE.FAMILIARIZATION) || modes.has(RECOMMENDATION_MODE.NORMAL_PLAY)) actions2.push("CONFIRM_CURRENT_PLAY");
+  return actions2;
+}
+function displayReason(recommendation, nextSkills, emergingSkills) {
+  if (recommendation.safety.decision === "HARD_BLOCKED") return "SAFETY_LIMIT";
+  if (recommendation.safety.decision === "IDENTITY_UNRESOLVED" || recommendation.safety.decision === "EVIDENCE_UNRESOLVED_FOR_CROSS_AGE") return "PRODUCT_INFORMATION_NEEDED";
+  if (recommendation.owner.ownerConfirmedPlaying) return "OWNER_CONFIRMED";
+  if (nextSkills.length) return "PARENT_GOAL_MATCH";
+  if (emergingSkills.length) return "NEXT_MILESTONE_MATCH";
+  if (recommendation.modes.includes(RECOMMENDATION_MODE.FAMILIARIZATION)) return "FAMILIARIZATION_FIT";
+  return "NORMAL_PLAY_AVAILABLE";
+}
+
+// src/data/milestones.js
+var MILESTONE_MAP = Object.freeze([
+  { id: "matching-18-24", ageBand: [18, 24], domain: "cognitive", skill: "matching", developmentalObservation: "Can gradually begin matching familiar objects and pictures.", source: "CDC developmental milestones", sourceVersion: "2026 reference", sourceDate: "2026-10-09", notDiagnosticDisclaimer: true },
+  { id: "visual-spatial-18-30", ageBand: [18, 30], domain: "cognitive", skill: "visualSpatial", developmentalObservation: "Can explore fitting, turning and placing pieces with adult support.", source: "CDC developmental milestones", sourceVersion: "2026 reference", sourceDate: "2026-10-09", notDiagnosticDisclaimer: true },
+  { id: "bilateral-18-30", ageBand: [18, 30], domain: "motor", skill: "bilateralCoordination", developmentalObservation: "Can gradually practise using two hands together during play.", source: "CDC developmental milestones", sourceVersion: "2026 reference", sourceDate: "2026-10-09", notDiagnosticDisclaimer: true },
+  { id: "pretend-18-30", ageBand: [18, 30], domain: "social-play", skill: "pretendPlay", developmentalObservation: "Can begin simple pretend actions with familiar toys.", source: "CDC developmental milestones", sourceVersion: "2026 reference", sourceDate: "2026-10-09", notDiagnosticDisclaimer: true },
+  { id: "fine-motor-18-30", ageBand: [18, 30], domain: "motor", skill: "fineMotor", developmentalObservation: "Can practise increasingly controlled grasping, placing and releasing.", source: "CDC developmental milestones", sourceVersion: "2026 reference", sourceDate: "2026-10-09", notDiagnosticDisclaimer: true }
+]);
+function nextMilestones(childAgeMonths3, { limit = 4 } = {}) {
+  const age = Number(childAgeMonths3);
+  if (!Number.isFinite(age)) return [];
+  return MILESTONE_MAP.filter((item) => age <= item.ageBand[1] && age + 6 >= item.ageBand[0]).slice(0, limit);
+}
+
+// src/domain/development-recommendation-engine.js
+function buildDevelopmentPlan({ ownedToys = [], catalogToys = [], state = {}, childAgeMonths: childAgeMonths3, skillProfile = {}, parentGoals = [], interests = [] } = {}) {
+  const profile = normalizeSkillProfile(skillProfile);
+  const milestones = nextMilestones(childAgeMonths3);
+  const targetSkills = prioritizeTargets({ milestones, profile, parentGoals });
+  const ownedRecommendations = ownedToys.map((toy) => ({ toy, recommendation: deriveRecommendation(toy, { childAgeMonths: childAgeMonths3, state, skillProfile: profile, parentGoals, interests }) })).filter((item) => item.recommendation.safety.decision !== "HARD_BLOCKED").map((item) => ({ ...item, whyNow: whyNow(item.recommendation, targetSkills), howToPlayNow: howToPlay(item.toy, item.recommendation), whatToObserve: whatToObserve(item.recommendation) })).sort((a, b) => rank2(b.recommendation, targetSkills) - rank2(a.recommendation, targetSkills));
+  const coverage2 = buildOwnedCoverage({ toys: ownedToys, childAgeMonths: childAgeMonths3, state, skillProfile: profile, parentGoals, interests });
+  const catalogSuggestions = targetSkills.flatMap((skill) => {
+    if (!needsPurchaseRecommendation(coverage2, skill)) return [];
+    return catalogToys.filter((toy) => !ownedToys.some((owned) => owned.canonicalKey === toy.canonicalKey)).map((toy) => ({ toy, recommendation: deriveRecommendation(toy, { childAgeMonths: childAgeMonths3, state, skillProfile: profile, parentGoals, interests }) })).filter((item) => item.recommendation.safety.decision !== "HARD_BLOCKED" && item.recommendation.skills.includes(skill)).sort((a, b) => rank2(b.recommendation, [skill]) - rank2(a.recommendation, [skill])).slice(0, 2).map((item) => ({ skill, ...item, reasonCodes: ["LOW_LIBRARY_COVERAGE", ...item.recommendation.reasonCodes] }));
+  });
   return {
-    counts,
-    buckets,
-    evidenceBlocked,
-    evidenceBlockedCanonicalCount: evidenceBlocked.length,
-    logicalEvidenceGroups,
-    logicalEvidenceGroupCount: logicalEvidenceGroups.length
+    profile,
+    milestones,
+    targetSkills,
+    ownedRecommendations,
+    coverage: coverage2,
+    purchaseRecommendation: catalogSuggestions.length ? { needed: true, suggestions: dedupe(catalogSuggestions) } : { needed: false, suggestions: [], reason: "NO_PURCHASE_NEEDED" }
   };
 }
-var DIAGNOSTIC_BUCKETS = Object.freeze(["normal", "autoEarly", "supervised", "familiarization", "ownerConfirmed", "hard", "insufficient"]);
-function diagnosticBucket(review) {
-  const status = review.decision.primaryStatus;
-  const mapping = {
-    [TOY_USE_PRIMARY_STATUS.NORMAL_ROTATION]: "normal",
-    [TOY_USE_PRIMARY_STATUS.AUTO_EARLY]: "autoEarly",
-    [TOY_USE_PRIMARY_STATUS.SUPERVISED_CHALLENGE]: "supervised",
-    [TOY_USE_PRIMARY_STATUS.FAMILIARIZATION]: "familiarization",
-    [TOY_USE_PRIMARY_STATUS.OWNER_CONFIRMED_USE]: "ownerConfirmed",
-    [TOY_USE_PRIMARY_STATUS.SAFETY_BLOCKED]: "hard",
-    [TOY_USE_PRIMARY_STATUS.EVIDENCE_BLOCKED]: "insufficient"
-  };
-  return mapping[status] || "insufficient";
-}
-function ownerChallengeDiagnostics(state, catalog2, age, profile = {}) {
-  return diagnosticSnapshot(state, catalog2, age, profile);
-}
-function groupChallengeDiagnosticRows(rows = []) {
-  const groups = /* @__PURE__ */ new Map();
-  for (const row of rows) {
-    const composite = row.logicalEvidenceGroup;
-    const key = composite ? `composite:${composite.canonicalKey}` : `standalone:${row.canonicalKey}`;
-    if (!groups.has(key)) groups.set(key, { kind: composite ? "composite" : "standalone", canonicalKey: composite?.canonicalKey || row.canonicalKey, productName: composite?.productName || row.productName, brand: row.brand || "", rows: [] });
-    groups.get(key).rows.push(row);
+function prioritizeTargets({ milestones, profile, parentGoals }) {
+  const candidates = [...parentGoals, ...milestones.map((item) => item.skill)];
+  return [...new Set(candidates)].filter(Boolean).sort((a, b) => priority3(b) - priority3(a));
+  function priority3(skill) {
+    const observation = profile[skill]?.observation;
+    return (parentGoals.includes(skill) ? 10 : 0) + (observation === SKILL_OBSERVATION.EMERGING ? 4 : observation === SKILL_OBSERVATION.NOT_OBSERVED ? 3 : observation === SKILL_OBSERVATION.UNKNOWN ? 2 : 1);
   }
-  return [...groups.values()].sort((left, right) => Number(right.kind === "composite") - Number(left.kind === "composite") || left.productName.localeCompare(right.productName));
 }
-function ownerEvidencePriorityText(rows = []) {
-  const groups = groupChallengeDiagnosticRows(rows);
-  const lines = ["OWNER EVIDENCE PRIORITY LIST", `Blocked canonical count: ${rows.length}`, `Logical group count: ${groups.length}`, ""];
-  for (const group of groups) {
-    lines.push(`Group: ${group.productName || "\u2014"}`);
-    lines.push(`Parent canonical: ${group.kind === "composite" ? group.canonicalKey : "\u2014"}`);
-    lines.push(`Brand: ${group.brand || "\u2014"}`);
-    lines.push(`Blocked child count: ${group.rows.length}`);
-    lines.push("Children:");
-    for (const row of group.rows) {
-      lines.push(`- canonicalKey: ${row.canonicalKey}`);
-      lines.push(`  displayName: ${row.productName || "\u2014"}`);
-      lines.push(`  SKU/model: ${row.sku || "\u2014"}`);
-      lines.push(`  recommendedAgeMin: ${row.recommendedAgeMin == null ? "\u2014" : row.recommendedAgeMin}`);
-      lines.push(`  classification: ${row.classification}`);
-      lines.push(`  researchStatus: ${row.researchStatus}`);
-      lines.push(`  actualBlockReason: ${row.blockReason}`);
-    }
-    lines.push("");
+function rank2(recommendation, targetSkills) {
+  const modes = new Set(recommendation.modes);
+  return (recommendation.rotationEligible ? 20 : 0) + (modes.has(RECOMMENDATION_MODE.OWNER_CONFIRMED_PLAY) ? 30 : 0) + (modes.has(RECOMMENDATION_MODE.MILESTONE_PRACTICE) ? 15 : 0) + (modes.has(RECOMMENDATION_MODE.PARENT_GOAL_MATCH) ? 12 : 0) + (modes.has(RECOMMENDATION_MODE.INTEREST_MATCH) ? 8 : 0) + recommendation.skills.filter((skill) => targetSkills.includes(skill)).length * 5;
+}
+function whyNow(recommendation, targetSkills) {
+  const skill = recommendation.skills.find((value) => targetSkills.includes(value));
+  if (recommendation.modes.includes(RECOMMENDATION_MODE.OWNER_CONFIRMED_PLAY)) return "OWNER_CONFIRMED";
+  if (skill) return "NEXT_MILESTONE_MATCH";
+  return recommendation.reasonCodes[0] || "AVAILABLE_TO_PLAY";
+}
+function howToPlay(toy, recommendation) {
+  if (recommendation.modes.includes(RECOMMENDATION_MODE.FAMILIARIZATION)) return "Start with one small action, model the next step, and let the child choose whether to continue.";
+  if (recommendation.modes.includes(RECOMMENDATION_MODE.NEXT_STEP_CHALLENGE)) return "Offer one slightly harder step and give time before helping.";
+  return `Use ${toy.productName || "this toy"} in a way that keeps the next step achievable.`;
+}
+function whatToObserve(recommendation) {
+  if (recommendation.modes.includes(RECOMMENDATION_MODE.NEXT_STEP_CHALLENGE)) return "Notice whether the child tries a new strategy, even if they do not finish.";
+  if (recommendation.modes.includes(RECOMMENDATION_MODE.FAMILIARIZATION)) return "Notice which materials or actions attract attention first.";
+  return "Notice which part of play the child repeats independently.";
+}
+function dedupe(items) {
+  const keys = /* @__PURE__ */ new Set();
+  return items.filter((item) => {
+    const key = item.toy.canonicalKey;
+    if (keys.has(key)) return false;
+    keys.add(key);
+    return true;
+  });
+}
+
+// src/domain/development-questionnaire.js
+var DEVELOPMENT_QUESTIONNAIRE = Object.freeze([
+  { id: "match-familiar", skill: "matching", promptKey: "development.question.matching" },
+  { id: "try-fit-turn", skill: "visualSpatial", promptKey: "development.question.visualSpatial" },
+  { id: "use-two-hands", skill: "bilateralCoordination", promptKey: "development.question.bilateralCoordination" },
+  { id: "small-grasp", skill: "fineMotor", promptKey: "development.question.fineMotor" },
+  { id: "simple-pretend", skill: "pretendPlay", promptKey: "development.question.pretendPlay" },
+  { id: "stay-with-task", skill: "attentionPersistence", promptKey: "development.question.attentionPersistence" },
+  { id: "sort-familiar", skill: "sorting", promptKey: "development.question.sorting" },
+  { id: "cause-effect", skill: "causeEffect", promptKey: "development.question.causeEffect" }
+]);
+var QUESTIONNAIRE_ANSWERS = Object.freeze({
+  OFTEN: SKILL_OBSERVATION.MASTERED,
+  SOMETIMES: SKILL_OBSERVATION.EMERGING,
+  NOT_OBSERVED: SKILL_OBSERVATION.NOT_OBSERVED,
+  UNSURE: SKILL_OBSERVATION.UNKNOWN
+});
+function applyQuestionnaire(state, { answers = {}, parentGoals = [], interests = [], playPreference = "balanced", now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
+  state.profile ||= {};
+  const profile = normalizeSkillProfile(state.profile.skillProfile || {});
+  for (const question of DEVELOPMENT_QUESTIONNAIRE) {
+    const observation = QUESTIONNAIRE_ANSWERS[answers[question.id]];
+    if (!observation) continue;
+    profile[question.skill] = { observation, source: "questionnaire", observedAt: now3 };
   }
-  return lines.join("\n");
+  state.profile.skillProfile = profile;
+  state.profile.parentDevelopmentGoals = [...new Set(parentGoals.filter((skill) => DEVELOPMENT_SKILLS.includes(skill)))].slice(0, 3);
+  state.profile.interestProfile = [...new Set(interests.map((value) => String(value || "").trim()).filter(Boolean))].slice(0, 12);
+  state.profile.playPreference = ["gentle", "balanced", "stretch"].includes(playPreference) ? playPreference : "balanced";
+  state.developmentObservations ||= [];
+  state.developmentObservations.push({ kind: "questionnaire", at: now3, answerCount: Object.keys(answers).length });
+  return state.profile;
 }
-function recordSupervisedChallengeAttempt(state, toy, outcome = "started", { now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
-  const key = String(toy?.canonicalKey || "");
-  if (!key) return false;
-  state.challengeAttempts ||= {};
-  const previous = state.challengeAttempts[key] || {};
-  state.challengeAttempts[key] = {
-    canonicalKey: key,
-    challengeStartedAt: previous.challengeStartedAt || now3,
-    lastChallengeAttempt: now3,
-    outcome: ["later", "success"].includes(outcome) ? outcome : "started"
-  };
+function recordPlayObservation(state, { toy, skill, outcome, now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
+  if (!DEVELOPMENT_SKILLS.includes(skill) || !["TOO_EASY", "JUST_RIGHT", "A_LITTLE_HARD", "WILLING_NOT_YET"].includes(outcome)) return false;
+  state.developmentObservations ||= [];
+  state.developmentObservations.push({ kind: "play", canonicalKey: toy?.canonicalKey || null, skill, outcome, at: now3 });
+  const recent = state.developmentObservations.filter((item) => item.kind === "play" && item.skill === skill).slice(-4);
+  state.profile ||= {};
+  const profile = normalizeSkillProfile(state.profile.skillProfile || {});
+  if (recent.filter((item) => item.outcome === "TOO_EASY").length >= 2) profile[skill] = { observation: SKILL_OBSERVATION.MASTERED, source: "repeated_play_observation", observedAt: now3 };
+  else if (recent.filter((item) => item.outcome === "JUST_RIGHT" || item.outcome === "WILLING_NOT_YET").length >= 2) profile[skill] = { observation: SKILL_OBSERVATION.EMERGING, source: "repeated_play_observation", observedAt: now3 };
+  state.profile.skillProfile = profile;
   return true;
-}
-function approveSupervisedChallenge(state, toy, { now: now3 = (/* @__PURE__ */ new Date()).toISOString() } = {}) {
-  if (!recordSupervisedChallengeAttempt(state, toy, "success", { now: now3 })) return false;
-  setChallengeState(state, toy, "MASTERED", { now: now3, source: "supervised_challenge" });
-  return setOwnerUseState(state, toy, "CURRENTLY_PLAYING", { now: now3, source: "supervised_challenge" });
 }
 
 // src/features/startup-trace.js
@@ -10846,13 +11169,53 @@ function renderPersistenceWarning() {
   const titleKey = classification === "Q" ? "persistenceQuotaRecoveryTitle" : "persistenceRecoveryTitle";
   return `<section class="panel danger"><h2>${t(titleKey)}</h2><p>${t(detailKey)}</p>${classificationLabel}<div class="actions"><button data-action="persistence-diagnostic">${t("exportPersistenceDiagnostic")}</button>${recover}${quotaRetry}${fresh}</div></section>`;
 }
+function developmentContext() {
+  return createDevelopmentContext({ state: store.state, catalog, childAgeMonths: childAgeMonths2() });
+}
+function developmentText(key) {
+  const zh = i18n.language === "zh";
+  const copy = {
+    developmentFocus: ["Current development focus", "\u6700\u8FD1\u7684\u53D1\u5C55\u91CD\u70B9"],
+    rotationPurpose: ["Why this rotation", "\u672C\u8F6E\u4E3A\u4EC0\u4E48\u8FD9\u6837\u9009"],
+    exploring: ["Exploring now", "\u6B63\u5728\u63A2\u7D22"],
+    nextChallenge: ["Next step to try", "\u4E0B\u4E00\u6B65\u53EF\u4EE5\u6311\u6218"],
+    coverage: ["Play opportunities this round", "\u672C\u8F6E\u73A9\u6CD5\u8986\u76D6"],
+    normalPlay: ["Play now", "\u6B63\u5E38\u73A9"],
+    familiarization: ["Explore together", "\u53EF\u4EE5\u63A2\u7D22"],
+    ownerConfirmed: ["Playing now", "\u73B0\u5728\u6B63\u5728\u73A9"],
+    challenge: ["Next-step challenge", "\u4E0B\u4E00\u6B65\u6311\u6218"],
+    safetyBlocked: ["Not recommended: safety limit", "\u6682\u4E0D\u63A8\u8350\uFF1A\u5B89\u5168\u9650\u5236"],
+    evidenceBlocked: ["Not recommended: product information needed", "\u6682\u4E0D\u63A8\u8350\uFF1A\u4EA7\u54C1\u4FE1\u606F\u4E0D\u8DB3"],
+    ownerReason: ["You confirmed this toy is already in use.", "\u5BB6\u957F\u5DF2\u786E\u8BA4\u8FD9\u4EF6\u73A9\u5177\u6B63\u5728\u4F7F\u7528\u3002"],
+    goalReason: ["Matches a current family goal.", "\u7B26\u5408\u8FD1\u671F\u60F3\u591A\u63D0\u4F9B\u7684\u4F53\u9A8C\u3002"],
+    milestoneReason: ["A next skill can be practised through play.", "\u53EF\u4EE5\u901A\u8FC7\u73A9\u800D\u5C1D\u8BD5\u4E0B\u4E00\u9636\u6BB5\u80FD\u529B\u3002"],
+    exploreReason: ["Try a simpler, supported way to play first.", "\u53EF\u4EE5\u5148\u7528\u4F4E\u96BE\u5EA6\u65B9\u5F0F\u966A\u4F34\u63A2\u7D22\u3002"],
+    normalReason: ["Ready for its usual play.", "\u9002\u5408\u6309\u65E5\u5E38\u65B9\u5F0F\u73A9\u3002"],
+    noPurchase: ["No purchase needed right now.", "\u76EE\u524D\u4E0D\u9700\u8981\u8865\u5145\u65B0\u73A9\u5177\u3002"],
+    profile: ["Development profile", "\u53D1\u5C55\u6863\u6848"]
+  };
+  return copy[key]?.[zh ? 1 : 0] || key;
+}
+function developmentModeLabel(mode) {
+  return developmentText({ NORMAL_PLAY: "normalPlay", FAMILIARIZATION: "familiarization", OWNER_CONFIRMED_PLAY: "ownerConfirmed", DEVELOPMENT_CHALLENGE: "challenge", SAFETY_BLOCKED: "safetyBlocked", EVIDENCE_BLOCKED: "evidenceBlocked" }[mode] || "normalPlay");
+}
+function developmentReasonLabel(reason2) {
+  return developmentText({ OWNER_CONFIRMED: "ownerReason", PARENT_GOAL_MATCH: "goalReason", NEXT_MILESTONE_MATCH: "milestoneReason", FAMILIARIZATION_FIT: "exploreReason", NORMAL_PLAY_AVAILABLE: "normalReason" }[reason2] || "normalReason");
+}
 function renderHome() {
   const toys = store.state.toys;
   const shelf = currentShelfCollections(store.state);
   const age = childAgeMonths2();
   const reassessment = reassessmentState({ lastRotationAt: store.state.lastRotationAt, rotationHistory: store.state.rotationHistory, rotationDays: store.state.settings.rotationDays });
   const childLabel = store.state.profile.childName || t("childProfile");
-  return `<section class="panel"><h2>${t("home")}</h2><div class="stats"><div><small>${t("library")}</small><b>${toys.length}</b></div><div><small>${t("onShelf")}</small><b>${shelf.totalShelfCount}</b></div><div><small>${t("currentAge")}</small><b>${age == null ? "\u2014" : `${age} ${t("monthUnit")}`}</b></div></div><section class="summary"><b>${escape(childLabel)}</b><p>${age == null ? t("setBirthDateHint") : t("ageSummary", { count: age })}</p><button data-action="settings">${t("editProfile")}</button></section><section class="summary"><b>${reassessment.due ? t("reassessmentDue") : t("reassessmentCountdown", { count: reassessment.daysRemaining })}</b><p>${t("rotationIntervalSummary", { count: reassessment.days })} \xB7 ${t("targetShelfSummary", { count: store.state.settings.rotationSize })}</p><div class="home-actions"><button data-action="generate" class="primary">${t("generateThisRotation")}</button><button class="secondary" data-action="catalog">${t("standardCatalog")}</button></div></section></section>`;
+  const context = developmentContext();
+  const plan = buildDevelopmentPlan({ ownedToys: toys, catalogToys: catalog.active, ...context });
+  const goals = plan.targetSkills.slice(0, 4).map((skill) => `<span>${escape(skill)}</span>`).join("") || "\u2014";
+  const selected = shelf.rotation.map((toy) => toyUseViewModel(toy, context));
+  const purposes = [...new Set(selected.map((model) => model.rotationPurpose))].slice(0, 4).map((value) => `<span>${escape(value.replaceAll("_", " ").toLowerCase())}</span>`).join("") || "\u2014";
+  const covered = Object.values(plan.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).length;
+  const exploring = plan.ownedRecommendations.filter((row) => row.recommendation.modes.includes("FAMILIARIZATION")).slice(0, 3).map((row) => `<li>${escape(displayName(row.toy))}</li>`).join("");
+  return `<section class="panel"><h2>${t("home")}</h2><div class="stats"><div><small>${t("library")}</small><b>${toys.length}</b></div><div><small>${t("onShelf")}</small><b>${shelf.totalShelfCount}</b></div><div><small>${t("currentAge")}</small><b>${age == null ? "\u2014" : `${age} ${t("monthUnit")}`}</b></div></div><section class="summary"><b>${escape(childLabel)}</b><p>${age == null ? t("setBirthDateHint") : t("ageSummary", { count: age })}</p><button data-action="settings">${t("editProfile")}</button></section><section class="summary"><h3>${developmentText("developmentFocus")}</h3><div class="chips">${goals}</div><p>${developmentText("coverage")}: ${covered} / ${Object.keys(plan.coverage.bySkill).length}</p><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button></section><section class="summary"><h3>${developmentText("rotationPurpose")}</h3><div class="chips">${purposes}</div><p>${reassessment.due ? t("reassessmentDue") : t("reassessmentCountdown", { count: reassessment.daysRemaining })}</p><div class="home-actions"><button data-action="generate" class="primary">${t("generateThisRotation")}</button><button class="secondary" data-action="catalog">${t("standardCatalog")}</button></div></section>${exploring ? `<section class="summary"><h3>${developmentText("exploring")}</h3><ul>${exploring}</ul></section>` : ""}</section>`;
 }
 function renderLibrary() {
   const toys = store.state.toys;
@@ -10882,26 +11245,21 @@ function renderToyCard(toy, { showDevelopment = false } = {}) {
   const pauseControl = toy.set?.kind === "parent" ? "" : `<button data-action="toggle-pause" data-id="${toy.id}">${t(paused ? "resumeRotation" : "pauseRotation")}</button>`;
   const runtimeImageRef = libraryImageRef(toy, "toy_library_card_render");
   const development = showDevelopment ? renderDevelopmentFeedback(toy) : "";
-  const use = challengeDecision(store.state, catalog, toy, childAgeMonths2(), store.state.profile?.developmentProfile || {})?.decision;
-  const useLabel = use?.primaryStatus === TOY_USE_PRIMARY_STATUS.FAMILIARIZATION ? t("toyUseFamiliarization") : use?.primaryStatus === TOY_USE_PRIMARY_STATUS.OWNER_CONFIRMED_USE ? t("toyUseExploring") : "";
-  return `<article class="card" data-toy-id="${escape(toy.id)}" data-toy-use="${escape(use?.primaryStatus || "")}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes || []).join("|"))}" data-mechanics="${escape((toy.playMechanics || []).join("|"))}" data-status="${toy.archived ? "archived" : toy.hidden ? "hidden" : paused ? "paused" : customPermanent ? "permanent" : onShelf ? "active" : "stored"}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t("permanentBadge")}</span>` : ""}${useLabel ? ` <span class="challenge-chip">${useLabel}</span>` : ""}</h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map((code) => `<span>${t(`skill.${code}`)}</span>`).join("")}</div><p>${toy.minAgeMonths ?? "?"}\u2013${toy.maxAgeMonths ?? "?"} ${ageUnit} \xB7 ${t(paused ? "paused" : customPermanent ? "customPermanent" : onShelf ? "onShelf" : "stored")}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === "like" ? "selected" : ""}">${t("liked")}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === "neutral" ? "selected" : ""}">${t("neutral")}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === "dislike" ? "selected" : ""}">${t("disliked")}</button>${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t("edit")}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t("remove")}</button></div></div></article>`;
-}
-function currentChallengeRows() {
-  return challengeCandidates(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
-}
-function currentFamiliarizationRows() {
-  return familiarizationCandidates(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
+  const model = toyUseViewModel(toy, developmentContext());
+  const useLabel = developmentModeLabel(model.primaryUseMode);
+  const ladder = model.playLadder?.[model.currentPlayLevel - 1];
+  return `<article class="card" data-toy-id="${escape(toy.id)}" data-toy-use="${escape(model.primaryUseMode)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes || []).join("|"))}" data-mechanics="${escape((toy.playMechanics || []).join("|"))}" data-status="${toy.archived ? "archived" : toy.hidden ? "hidden" : paused ? "paused" : customPermanent ? "permanent" : onShelf ? "active" : "stored"}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t("permanentBadge")}</span>` : ""}<span class="challenge-chip">${escape(useLabel)}</span></h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map((code) => `<span>${t(`skill.${code}`)}</span>`).join("")}</div><p>${escape(developmentReasonLabel(model.displayReason))}</p>${ladder ? `<p><small>${escape(ladder.title)}: ${escape(ladder.instruction)}</small></p>` : ""}<p>${toy.minAgeMonths ?? "?"}\u2013${toy.maxAgeMonths ?? "?"} ${ageUnit} \xB7 ${t(paused ? "paused" : customPermanent ? "customPermanent" : onShelf ? "onShelf" : "stored")}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === "like" ? "selected" : ""}">${t("liked")}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === "neutral" ? "selected" : ""}">${t("neutral")}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === "dislike" ? "selected" : ""}">${t("disliked")}</button>${model.availableActions.includes("CONFIRM_CURRENT_PLAY") ? `<button data-action="development-confirm-playing" data-id="${toy.id}">${developmentText("ownerConfirmed")}</button>` : ""}${model.availableActions.includes("ENABLE_EXPLORATION_ROTATION") ? `<button data-action="development-enable-exploration" data-id="${toy.id}">${developmentText("exploring")}</button>` : ""}${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t("edit")}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t("remove")}</button></div></div></article>`;
 }
 function renderChallengeBadges() {
   if (view !== "library") return;
-  const byId = new Map([...currentChallengeRows(), ...currentFamiliarizationRows()].map((row) => [row.toy.id, row]));
+  const byId = new Map(developmentSurfaceModel(developmentContext()).toyModels.map((model) => [model.toy.id, model]));
   root.querySelectorAll("#library-list [data-toy-id]").forEach((card) => {
-    const row = byId.get(card.dataset.toyId);
-    if (!row) return;
+    const model = byId.get(card.dataset.toyId);
+    if (!model || !["DEVELOPMENT_CHALLENGE", "FAMILIARIZATION", "OWNER_CONFIRMED_PLAY"].includes(model.primaryUseMode)) return;
     const badge = document.createElement("span");
     badge.className = "challenge-chip";
-    badge.dataset.challengeSource = row.source;
-    badge.textContent = t(row.source === "familiarization" ? "toyUseFamiliarization" : row.source === "auto" ? "challengeBadgeAuto" : "challengeBadgeSupervised");
+    badge.dataset.challengeSource = model.primaryUseMode;
+    badge.textContent = developmentModeLabel(model.primaryUseMode);
     card.querySelector("h3")?.append(" ", badge);
   });
 }
@@ -10996,27 +11354,31 @@ function openWishlistFilters({ sortOnly = false } = {}) {
 }
 function renderRotation() {
   const shelf = currentShelfCollections(store.state);
+  const surface = developmentSurfaceModel(developmentContext());
   const pausedCount = (store.state.toys || []).filter(isRotationPaused).length;
   const collapsed = store.state.settings?.permanentSectionCollapsed === true;
   const latest2 = store.state.rotationHistory?.[0]?.rotationDiagnostics;
   const shortage = latest2?.shortageCount ? `<p class="panel">${t("rotationShortage", { selected: latest2.selectedRotationCount ?? latest2.selectedCount, requested: latest2.requestedRotationCount ?? latest2.requestedCount })}</p>` : "";
   const manual = shelf.manual.length ? `<section class="rotation-section"><h3>${t("manuallyOnShelf")} \xB7 ${shelf.manual.length}</h3><div class="list">${shelf.manual.map(renderToyCard).join("")}</div></section>` : "";
-  return `<section class="head"><h2>${t("rotation")}</h2><button class="primary" data-action="generate">${t("generate")}</button></section><section class="panel shelf-total"><b>${t("currentShelfTotal", { count: shelf.totalShelfCount })}</b><p>${t("thisRotation")} ${shelf.rotation.length} \xB7 ${t("customPermanent")} ${shelf.permanent.length} \xB7 ${t("paused")} ${pausedCount}</p><p>${t("permanentTargetHint")}</p></section>${shortage}<section class="rotation-section"><h3>${t("customPermanent")} \xB7 ${shelf.permanent.length} <button data-action="toggle-permanent-collapse" aria-expanded="${!collapsed}">${collapsed ? "\u25B8" : "\u25BE"}</button></h3>${collapsed ? "" : `<div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div>`}</section>${manual}<section class="rotation-section"><h3>${t("thisRotation")} \xB7 ${shelf.rotation.length}</h3><div class="list">${shelf.rotation.length ? shelf.rotation.map((toy) => renderToyCard(toy, { showDevelopment: true })).join("") : renderEmpty()}</div></section>`;
+  const coverage2 = Object.values(surface.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).slice(0, 6).map((row) => `<span>${escape(row.skill)} \u2713</span>`).join("") || "\u2014";
+  const reasons = shelf.rotation.map((toy) => surface.byToyId.get(toy.id)).filter(Boolean).map((model) => `<li><b>${escape(displayName(model.toy))}</b> \u2014 ${escape(developmentReasonLabel(model.displayReason))}</li>`).join("");
+  return `<section class="head"><h2>${t("rotation")}</h2><button class="primary" data-action="generate">${t("generate")}</button></section><section class="panel shelf-total"><b>${t("currentShelfTotal", { count: shelf.totalShelfCount })}</b><p>${t("thisRotation")} ${shelf.rotation.length} \xB7 ${t("customPermanent")} ${shelf.permanent.length} \xB7 ${t("paused")} ${pausedCount}</p><p>${t("permanentTargetHint")}</p></section><section class="panel"><h3>${developmentText("coverage")}</h3><div class="chips">${coverage2}</div><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button>${reasons ? `<h3>${developmentText("rotationPurpose")}</h3><ul>${reasons}</ul>` : ""}</section>${shortage}<section class="rotation-section"><h3>${t("customPermanent")} \xB7 ${shelf.permanent.length} <button data-action="toggle-permanent-collapse" aria-expanded="${!collapsed}">${collapsed ? "\u25B8" : "\u25BE"}</button></h3>${collapsed ? "" : `<div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div>`}</section>${manual}<section class="rotation-section"><h3>${t("thisRotation")} \xB7 ${shelf.rotation.length}</h3><div class="list">${shelf.rotation.length ? shelf.rotation.map((toy) => renderToyCard(toy, { showDevelopment: true })).join("") : renderEmpty()}</div></section>`;
 }
 function renderChallengeEntry() {
   if (view !== "rotation") return;
-  const rows = currentChallengeRows();
+  const surface = developmentSurfaceModel(developmentContext());
+  const rows = surface.toyModels.filter((model) => ["DEVELOPMENT_CHALLENGE", "FAMILIARIZATION"].includes(model.primaryUseMode));
   if (!rows.length) return;
-  const auto = rows.filter((row) => row.source === "auto").length;
-  const supervised = rows.filter((row) => row.source === "supervised").length;
-  const pending = rows.filter((row) => row.source === "parent" && row.choice === "pending").length;
+  const challenge = rows.filter((row) => row.primaryUseMode === "DEVELOPMENT_CHALLENGE").length;
+  const familiarization = rows.filter((row) => row.primaryUseMode === "FAMILIARIZATION").length;
   const entry = document.createElement("section");
   entry.className = "panel challenge-entry";
-  entry.innerHTML = `<div><h3>${t("challengeEntryTitle")}</h3><p>${t("challengeEntrySummary", { count: rows.length, auto, supervised, pending })}</p></div><button type="button" data-action="challenge-settings">${t("challengeOpenSettings")}</button>`;
+  entry.innerHTML = `<div><h3>${developmentText("nextChallenge")}</h3><p>${challenge} ${developmentText("nextChallenge").toLowerCase()} \xB7 ${familiarization} ${developmentText("exploring").toLowerCase()}</p></div><button type="button" data-action="challenge-settings">${t("challengeOpenSettings")}</button>`;
   root.querySelector(".shelf-total")?.before(entry);
 }
 function renderWishlist() {
   const age = childAgeMonths2();
+  const development = developmentSurfaceModel(developmentContext());
   const unresolved = [];
   const entries2 = store.state.wishlist.map((item) => {
     const candidate = catalog.resolve(item) || item.catalogSnapshot;
@@ -11036,10 +11398,31 @@ function renderWishlist() {
     const realSummary = high.length ? `<p class="overlap-summary"><b>${t("realHighOverlap", { count: high.length })}</b>${medium.length ? ` \xB7 ${t("partialPlaySimilarity", { count: medium.length })}` : ""}</p>` : medium.length ? `<p class="overlap-summary"><b>${t("partialPlaySimilarity", { count: medium.length })}</b></p>` : `<p class="overlap-summary">${t("noPurchaseImpactOverlap")}</p>`;
     const skillVisible = result2.skillRelationships.slice(0, 3);
     const skillOnly = result2.skillRelationships.length ? `<details class="skill-only"><summary>${t("skillOnlyDisclosure", { count: result2.skillRelationships.length })}</summary><p>${t("skillOnlyExplanation")}</p><div class="overlap-list">${skillVisible.map(renderOverlap).join("")}</div>${result2.skillRelationships.length > skillVisible.length ? `<button data-action="all-skill-overlaps" data-id="${item.id}">${t("viewAll", { count: result2.skillRelationships.length })}</button>` : ""}</details>` : "";
-    return `<article class="panel wishlist-card"><div class="wishlist-title"><img data-image='${escapedJson(candidate.imageRef || { kind: "placeholder" })}' alt=""><div><h3>${escape(displayName(candidate))}</h3><p>${escape(brandLabel(candidate.brand))}</p>${ageRange}</div><span class="status-chip">${t(`wishlistStatus.${item.status || "want"}`)}</span></div><section class="priority-summary"><b>${t("purchasePriority")}</b><span class="priority-${item.priority || result2.purchaseImpact.priority}">${t(item.priority || result2.purchaseImpact.priority)}</span></section>${item.notes ? `<p>${escape(item.notes)}</p>` : ""}${realSummary}<div class="overlap-list"><h4>${t("realSubstitutes")}</h4>${visible.map(renderOverlap).join("") || `<p>${t("noOverlap")}</p>`}</div>${result2.relationships.length > visible.length ? `<button data-action="all-overlaps" data-id="${item.id}">${t("viewAll", { count: result2.relationships.length })}</button>` : ""}${skillOnly}<div class="actions">${item.status === "purchased" ? "" : `<button class="primary" data-action="wishlist-purchased" data-id="${item.id}">${t("purchased")}</button>`}<button class="primary" data-action="wishlist-add-library" data-id="${item.id}">${t("addToToyLibrary")}</button><button data-action="wishlist-remove" data-id="${item.id}">${t("removeFromWishlist")}</button></div></article>`;
+    const model = toyUseViewModel(candidate, developmentContext());
+    const skills = model.matchedSkills.map((skill) => development.coverage.bySkill[skill]?.status).filter(Boolean);
+    const gap = skills.some((status) => ["CLEAR_GAP", "LOW"].includes(status));
+    const sourceLabel = item.recommendationSource && item.recommendationSource !== "MANUAL" ? `<p><small>${i18n.language === "zh" ? "\u63A8\u8350\u6765\u6E90\uFF1A" : "Recommendation source: "}${escape(item.recommendationSource.replaceAll("_", " ").toLowerCase())}</small></p>` : "";
+    const developmentSummary = model.primaryUseMode === "SAFETY_BLOCKED" || model.primaryUseMode === "EVIDENCE_BLOCKED" ? `<p>${escape(developmentModeLabel(model.primaryUseMode))}</p>` : `<p>${gap ? i18n.language === "zh" ? "\u53EF\u80FD\u8865\u5145\u5F53\u524D\u8F83\u5C11\u7684\u73A9\u6CD5\u673A\u4F1A\u3002" : "May add a currently less-covered play opportunity." : i18n.language === "zh" ? "\u4E0E\u73B0\u6709\u73A9\u5177\u7684\u73A9\u6CD5\u8986\u76D6\u53EF\u80FD\u8F83\u91CD\u590D\u3002" : "May overlap with existing play opportunities."}</p>`;
+    return `<article class="panel wishlist-card"><div class="wishlist-title"><img data-image='${escapedJson(candidate.imageRef || { kind: "placeholder" })}' alt=""><div><h3>${escape(displayName(candidate))}</h3><p>${escape(brandLabel(candidate.brand))}</p>${ageRange}</div><span class="status-chip">${t(`wishlistStatus.${item.status || "want"}`)}</span></div><section class="priority-summary"><b>${t("purchasePriority")}</b><span class="priority-${item.systemRecommendationPriority || item.priority || result2.purchaseImpact.priority}">${t(item.systemRecommendationPriority || item.priority || result2.purchaseImpact.priority)}</span></section>${developmentSummary}${sourceLabel}${item.notes ? `<p>${escape(item.notes)}</p>` : ""}${realSummary}<div class="overlap-list"><h4>${t("realSubstitutes")}</h4>${visible.map(renderOverlap).join("") || `<p>${t("noOverlap")}</p>`}</div>${result2.relationships.length > visible.length ? `<button data-action="all-overlaps" data-id="${item.id}">${t("viewAll", { count: result2.relationships.length })}</button>` : ""}${skillOnly}<div class="actions">${item.status === "purchased" ? "" : `<button class="primary" data-action="wishlist-purchased" data-id="${item.id}">${t("purchased")}</button>`}<button class="primary" data-action="wishlist-add-library" data-id="${item.id}">${t("addToToyLibrary")}</button><button data-action="wishlist-remove" data-id="${item.id}">${t("removeFromWishlist")}</button></div></article>`;
   });
   const diagnostic = unresolved.length && admin.enabled ? `<p class="diagnostic">${t("wishlistMigrationDiagnostic", { count: unresolved.length })}</p>` : "";
-  return `<section class="head"><h2>${t("wishlist")}</h2><button class="primary" data-action="add-wishlist-item">${t("addWishlistItem")}</button><button data-action="catalog">${t("standardCatalog")}</button></section>${renderCompactFilterBar({ id: "wishlist", searchLabel: t("searchWishlist"), placeholder: t("searchWishlistPlaceholder"), filters: wishlistFilters, includeSort: true })}${diagnostic}<section class="list">${rows.join("") || renderEmpty()}</section>`;
+  const gapCount = development.coverage.priorityGaps.length;
+  const recommendations = developmentWishlistRecommendations();
+  const developmentHeader = `<section class="panel"><b>${gapCount ? i18n.language === "zh" ? `\u5F53\u524D\u6709 ${gapCount} \u4E2A\u73A9\u6CD5\u673A\u4F1A\u504F\u5C11` : `${gapCount} play opportunities are currently lighter` : developmentText("noPurchase")}</b><p>${i18n.language === "zh" ? "\u7CFB\u7EDF\u4F1A\u4F18\u5148\u8003\u8651\u73B0\u6709\u73A9\u5177\u7684\u4E0D\u540C\u73A9\u6CD5\uFF0C\u518D\u63D0\u793A\u53EF\u80FD\u503C\u5F97\u8865\u5145\u7684\u673A\u5236\u3002" : "Existing toys are considered first; Wishlist context highlights only meaningful additional play opportunities."}</p><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button></section>`;
+  const recommendedRows = recommendations.map(({ toy, skill, priority: priority3, reasons }) => `<article class="panel wishlist-card development-recommendation"><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${i18n.language === "zh" ? `\u5EFA\u8BAE\u8865\u5145\uFF1A${escape(skill)}` : `Suggested for: ${escape(skill)}`}</p><p><small>${i18n.language === "zh" ? "\u6765\u6E90\uFF1A\u53D1\u5C55\u8986\u76D6\u7F3A\u53E3" : "Source: development coverage gap"} \xB7 ${escape(reasons.join(" \xB7 ").replaceAll("_", " ").toLowerCase())}</small></p><section class="priority-summary"><b>${t("purchasePriority")}</b><span class="priority-${priority3}">${t(priority3)}</span></section><button class="primary" data-action="wishlist-add-development" data-key="${escape(toy.canonicalKey)}">${i18n.language === "zh" ? "\u52A0\u5165\u5FC3\u613F\u5355" : "Add to Wishlist"}</button></article>`).join("");
+  const recommendationSection = recommendedRows ? `<section class="panel"><h3>${i18n.language === "zh" ? "\u53D1\u5C55\u5EFA\u8BAE" : "Development suggestions"}</h3><div class="list">${recommendedRows}</div></section>` : "";
+  return `<section class="head"><h2>${t("wishlist")}</h2><button class="primary" data-action="add-wishlist-item">${t("addWishlistItem")}</button><button data-action="catalog">${t("standardCatalog")}</button></section>${developmentHeader}${recommendationSection}${renderCompactFilterBar({ id: "wishlist", searchLabel: t("searchWishlist"), placeholder: t("searchWishlistPlaceholder"), filters: wishlistFilters, includeSort: true })}${diagnostic}<section class="list">${rows.join("") || renderEmpty()}</section>`;
+}
+function developmentWishlistRecommendations() {
+  const context = developmentContext();
+  const plan = buildDevelopmentPlan({ ownedToys: store.state.toys, catalogToys: catalog.active, ...context });
+  const unavailable = new Set([...store.state.toys, ...store.state.wishlist].map((item) => item.canonicalKey));
+  return plan.purchaseRecommendation.suggestions.filter((item) => !unavailable.has(item.toy.canonicalKey)).map((item) => ({
+    toy: item.toy,
+    skill: item.skill,
+    reasons: item.reasonCodes,
+    priority: plan.coverage.bySkill[item.skill]?.status === "CLEAR_GAP" ? "high" : "medium"
+  }));
 }
 function wishlistMatches({ item, candidate, result: result2 }) {
   const query = wishlistFilters.query.normalize("NFKC").trim().toLowerCase();
@@ -11049,12 +11432,12 @@ function wishlistSearchText(toy) {
   return librarySearchText(toy);
 }
 function compareWishlistEntries(a, b) {
-  const priority2 = { high: 3, medium: 2, low: 1 };
+  const priority3 = { high: 3, medium: 2, low: 1 };
   const ageFit = { appropriate: 4, unknown: 3, tooYoung: 2, outgrown: 1 };
-  if (wishlistFilters.sort === "ageFit") return ageFit[toyAgeFit(b.candidate)] - ageFit[toyAgeFit(a.candidate)] || priority2[b.result.purchaseImpact.priority] - priority2[a.result.purchaseImpact.priority];
+  if (wishlistFilters.sort === "ageFit") return ageFit[toyAgeFit(b.candidate)] - ageFit[toyAgeFit(a.candidate)] || priority3[b.result.purchaseImpact.priority] - priority3[a.result.purchaseImpact.priority];
   if (wishlistFilters.sort === "addedAt") return new Date(b.item.addedAt || 0) - new Date(a.item.addedAt || 0);
   if (wishlistFilters.sort === "brand") return brandLabel(a.candidate.brand).localeCompare(brandLabel(b.candidate.brand));
-  return priority2[b.result.purchaseImpact.priority] - priority2[a.result.purchaseImpact.priority] || new Date(b.item.addedAt || 0) - new Date(a.item.addedAt || 0);
+  return priority3[b.result.purchaseImpact.priority] - priority3[a.result.purchaseImpact.priority] || new Date(b.item.addedAt || 0) - new Date(a.item.addedAt || 0);
 }
 function wireWishlistFilters() {
   const input = root.querySelector("#wishlist-search");
@@ -11090,7 +11473,7 @@ async function action(name, data) {
   }
   if (name === "library-duplicates") return openLibraryDuplicateScan();
   if (name === "settings") return openSettings();
-  if (name === "challenge-settings") return openChallengeSettings();
+  if (name === "challenge-settings") return openDevelopmentUseModes();
   if (name === "persistence-diagnostic") return exportPersistenceDiagnostic();
   if (name === "persistence-recovery") return applyPersistenceRecovery();
   if (name === "persistence-quota-retry") return retryQuotaStorageRecovery();
@@ -11100,6 +11483,8 @@ async function action(name, data) {
   if (name === "edit") return editToy(data.id);
   if (name === "interest") return setToyInterest(store, data.id, data.value);
   if (name === "development-feedback") return openDevelopmentFeedback(data.id);
+  if (name === "development-confirm-playing") return confirmDevelopmentPlaying(data.id);
+  if (name === "development-enable-exploration") return enableExplorationRotation(data.id);
   if (name === "remove-toy") return removeToy(data.id);
   if (name === "toggle-permanent") return togglePermanentToy(data.id);
   if (name === "manual-shelf") return setManualShelf(data.id, data.mode);
@@ -11110,10 +11495,34 @@ async function action(name, data) {
   if (name === "generate") return generateNewRotation();
   if (name === "all-overlaps") return openAllOverlaps(data.id);
   if (name === "all-skill-overlaps") return openAllSkillOverlaps(data.id);
+  if (name === "coverage-details") return openCoverageDetails();
+  if (name === "wishlist-add-development") return addDevelopmentWishlist(data.key);
   if (name === "wishlist-purchased") return setWishlistStatus(data.id, "purchased");
   if (name === "wishlist-add-library") return addWishlistToLibrary(data.id);
   if (name === "add-wishlist-item") return openWishlistItem();
   if (name === "wishlist-remove") return removeWishlist(data.id);
+}
+function confirmDevelopmentPlaying(id) {
+  const toy = store.state.toys.find((item) => item.id === id);
+  if (!toy) return;
+  store.update((state) => {
+    setOwnerUseState(state, toy, "CURRENTLY_PLAYING", { source: "development_centered_surface" });
+  }, "development-owner-confirmed-playing");
+}
+function enableExplorationRotation(id) {
+  const toy = store.state.toys.find((item) => item.id === id);
+  if (!toy) return;
+  store.update((state) => {
+    state.explorationRotation ||= {};
+    state.explorationRotation[toy.canonicalKey] = { enabled: true, enabledAt: (/* @__PURE__ */ new Date()).toISOString(), source: "development_centered_surface" };
+  }, "development-exploration-rotation-enabled");
+}
+function addDevelopmentWishlist(key) {
+  const suggestion = developmentWishlistRecommendations().find((item) => item.toy.canonicalKey === key);
+  if (!suggestion || findWishlistItem(suggestion.toy, store.state.wishlist) || findOwnedToy(suggestion.toy, store.state.toys)) return;
+  store.update((state) => {
+    state.wishlist.push(normalizeWishlistItem({ id: crypto.randomUUID(), canonicalKey: suggestion.toy.canonicalKey, catalogId: suggestion.toy.id, catalogSnapshot: suggestion.toy, status: "want", recommendationSource: "DEVELOPMENT_GAP", recommendationReasons: suggestion.reasons, systemRecommendationPriority: suggestion.priority, addedAt: (/* @__PURE__ */ new Date()).toISOString() }));
+  }, "wishlist-development-gap-add");
 }
 function startFresh() {
   if (!confirm(t("confirmStartFresh"))) return;
@@ -11165,7 +11574,10 @@ function openDevelopmentFeedback(id) {
       try {
         const cycle = store.state.rotationHistory?.[0]?.id || null;
         store.update((state) => {
-          recordDevelopmentFeedback(state, toy, { [button.dataset.feedbackField]: button.dataset.feedbackValue, rotationCycleId: cycle });
+          const value = button.dataset.feedbackValue;
+          recordDevelopmentFeedback(state, toy, { [button.dataset.feedbackField]: value, rotationCycleId: cycle });
+          const outcome = { too_easy: "TOO_EASY", just_right: "JUST_RIGHT", good_challenge: "JUST_RIGHT", too_hard: "A_LITTLE_HARD" }[value];
+          if (outcome) (toy.skillCodes || []).forEach((skill) => recordPlayObservation(state, { toy, skill, outcome }));
         }, "development-feedback");
         refreshDevelopmentFeedbackCard(id);
         dialog.close();
@@ -11278,6 +11690,17 @@ function openAllOverlaps(wishlistId) {
   const dialog = openModal(`<section class="sheet"><header><h2>${t("overlaps")}</h2><button type="button" data-close>\xD7</button></header><p>${escape(displayName(candidate))}</p><div class="list">${result2.relationships.map(renderOverlap).join("") || `<p>${t("noOverlap")}</p>`}</div></section>`);
   bindImages(dialog);
 }
+function openCoverageDetails() {
+  const surface = developmentSurfaceModel(developmentContext());
+  const rows = Object.values(surface.coverage.bySkill).sort((a, b) => a.status.localeCompare(b.status) || a.skill.localeCompare(b.skill));
+  const statusLabel = (status) => ({ CLEAR_GAP: i18n.language === "zh" ? "\u7F3A\u53E3" : "Gap", LOW: i18n.language === "zh" ? "\u504F\u5C11" : "Light", MODERATE: i18n.language === "zh" ? "\u5DF2\u6709\u8986\u76D6" : "Covered", SUFFICIENT: i18n.language === "zh" ? "\u8986\u76D6\u5145\u8DB3" : "Well covered" })[status] || status;
+  const row = (entry) => {
+    const contributions = entry.toys.map((item) => `<li><b>${escape(item.productName || item.canonicalKey)}</b><br><small>${escape(developmentModeLabel(toyUseViewModel(store.state.toys.find((toy) => toy.canonicalKey === item.canonicalKey) || { canonicalKey: item.canonicalKey }, developmentContext()).primaryUseMode))}</small></li>`).join("");
+    return `<article class="panel coverage-detail"><h3>${escape(entry.skill)} <span class="status-chip">${escape(statusLabel(entry.status))}</span></h3><p>${i18n.language === "zh" ? `\u6309\u903B\u8F91\u73A9\u5177\u53BB\u91CD\uFF1A${entry.logicalToyCount}\uFF1B\u73A9\u6CD5\u673A\u5236\uFF1A${entry.mechanismDiversity}\uFF1B\u96BE\u5EA6\u5C42\u7EA7\uFF1A${entry.difficultyLevels.join(", ") || "\u2014"}` : `Logical toys: ${entry.logicalToyCount}; mechanisms: ${entry.mechanismDiversity}; play levels: ${entry.difficultyLevels.join(", ") || "\u2014"}`}</p>${contributions ? `<details><summary>${i18n.language === "zh" ? "\u6BCF\u4EF6\u73A9\u5177\u7684\u8D21\u732E" : "Toy contributions"}</summary><ul>${contributions}</ul></details>` : `<p>${i18n.language === "zh" ? "\u5F53\u524D\u6CA1\u6709\u5BF9\u5E94\u7684\u5DF2\u62E5\u6709\u73A9\u5177\u3002" : "No owned toy currently contributes here."}</p>`}</article>`;
+  };
+  const dialog = openModal(`<section class="sheet coverage-details"><header><h2>${i18n.language === "zh" ? "\u53D1\u5C55\u8986\u76D6\u8BE6\u60C5" : "Development coverage details"}</h2><button type="button" data-close>\xD7</button></header><p>${i18n.language === "zh" ? "\u8986\u76D6\u6309\u903B\u8F91\u73A9\u5177\u8BA1\u7B97\uFF1A\u540C\u4E00\u5957\u88C5\u6216\u91CD\u590D\u8BB0\u5F55\u4E0D\u4F1A\u91CD\u590D\u63D0\u9AD8\u8986\u76D6\u3002" : "Coverage is counted by logical toy, so duplicate records and set children do not inflate it."}</p><div class="list">${rows.map(row).join("")}</div></section>`);
+  bindImages(dialog);
+}
 function openAllSkillOverlaps(wishlistId) {
   const item = store.state.wishlist.find((entry) => entry.id === wishlistId);
   const candidate = item && (catalog.resolve(item) || item.catalogSnapshot);
@@ -11346,184 +11769,43 @@ function installScrollTopButton(scroller, modal = false) {
   scroller.addEventListener("scroll", update, { passive: true });
   update();
 }
-function challengeSkillSummary(row) {
-  const mechanicForSkill = { matching: "matching_sorting", sorting: "color_pattern", visualSpatial: "blocks_build", fineMotor: "fine_motor_general", attentionPersistence: "puzzle", problemSolving: "puzzle", earlyMath: "counting_quantity", pretendPlay: "pretend_role", language: "pretend_role", causeEffect: "cause_effect", grossMotor: "balance", toolUse: "screw_bolt_tool", handStrength: "screw_bolt_tool", bilateralCoordination: "threading_lacing" };
-  const labels = (skills) => [...new Set((skills || []).map((skill) => mechanicLabel(mechanicForSkill[skill] || skill)))];
-  const state = row.skillState || { confirmed: Object.keys(row.projected?.prerequisiteSkills || {}), unknown: [] };
-  const confirmed = labels(state.confirmed);
-  const unknown = labels(state.unknown);
-  return `${confirmed.length ? `<p>${t("challengeSkillsConfirmed", { skills: escape(confirmed.join(" \xB7 ")) })}</p>` : ""}${unknown.length ? `<p>${t("challengeSkillsObserve", { skills: escape(unknown.join(" \xB7 ")) })}</p>` : ""}${!confirmed.length && !unknown.length ? `<p>${t("challengeSkillsReadyGeneric")}</p>` : ""}`;
-}
-function challengeSourceLabel(source) {
-  return t(source === "auto" ? "challengeSourceAuto" : source === "supervised" ? "challengeSourceSupervised" : "challengeSourceParent");
-}
-function supervisedChallengeActions(row) {
-  if (row.choice === "allowed") return `<button type="button" data-challenge-action="revoke-supervised">${t("crossAgeRevoke")}</button>`;
-  if (row.attempt?.outcome === "started") return `<button type="button" class="primary" data-challenge-action="approve-supervised">${t("challengeMarkSuccess")}</button><button type="button" data-challenge-action="later-supervised">${t("challengeLater")}</button>`;
-  return `<button type="button" class="primary" data-challenge-action="try-supervised">${t("challengeTry")}</button><button type="button" data-challenge-action="later-supervised">${t("challengeLater")}</button>`;
-}
-function challengeStatusKey(row) {
-  if (row.source === "auto") return "challengeStatusAuto";
-  if (row.source === "supervised") return row.choice === "allowed" ? "challengeStatusAllowed" : row.attempt?.outcome === "started" ? "challengeStatusTrying" : "challengeStatusSupervised";
-  return row.choice === "allowed" ? "challengeStatusAllowed" : row.choice === "declined" ? "challengeStatusDeclined" : "challengeStatusPending";
-}
-function challengeDiagnosticReason(row) {
-  if (row.primaryStatus === TOY_USE_PRIMARY_STATUS.SAFETY_BLOCKED) return t("challengeDiagnosticReasonHard");
-  if (row.primaryStatus === TOY_USE_PRIMARY_STATUS.EVIDENCE_BLOCKED) return t("challengeDiagnosticReasonEvidence");
-  if (row.primaryStatus === TOY_USE_PRIMARY_STATUS.FAMILIARIZATION) return t("toyUseFamiliarization");
-  return t("challengeDiagnosticReasonAge");
-}
-function challengeDiagnosticList(bucket, rows) {
-  const titleKey = { hard: "challengeDiagnosticHard", insufficient: "challengeDiagnosticInsufficient", familiarization: "challengeDiagnosticFamiliarization" }[bucket];
-  const exportButton = bucket === "insufficient" && rows.length ? `<button type="button" data-copy-owner-evidence>${t("challengeCopyEvidenceList")}</button><p class="challenge-copy-status" data-copy-owner-evidence-status aria-live="polite"></p>` : "";
-  const groups = groupChallengeDiagnosticRows(rows);
-  const item = (row) => `<li><b>${escape(row.productName)}</b><span>${escape(row.brand || "\u2014")} \xB7 ${t("challengeDiagnosticRecommendedAge", { months: row.recommendedAgeMin ?? "\u2014" })}</span><span>${t("challengeDiagnosticReasonLabel")}: ${escape(challengeDiagnosticReason(row))}</span></li>`;
-  const group = (entry) => entry.kind === "standalone" ? item(entry.rows[0]) : `<li class="challenge-diagnostic-group"><b>${escape(entry.productName)}</b><span>${t("challengeDiagnosticCompositeChildren", { count: entry.rows.length })}</span><details><summary>${t("challengeDiagnosticShowChildren")}</summary><ol>${entry.rows.map(item).join("")}</ol></details></li>`;
-  return `<details class="challenge-diagnostic-list" ${bucket === "insufficient" ? "open" : ""}><summary>${t(titleKey, { count: rows.length })}</summary>${rows.length ? `${exportButton}<ol>${groups.map(group).join("")}</ol>` : `<p>${t("challengeDiagnosticNone")}</p>`}</details>`;
-}
-async function copyOwnerEvidenceList(rows, status) {
-  const text2 = ownerEvidencePriorityText(rows);
-  try {
-    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text2);
-    else {
-      const temporary = document.createElement("textarea");
-      temporary.value = text2;
-      temporary.setAttribute("readonly", "");
-      temporary.style.position = "fixed";
-      temporary.style.opacity = "0";
-      document.body.append(temporary);
-      temporary.select();
-      document.execCommand("copy");
-      temporary.remove();
-    }
-    status.textContent = t("challengeCopyEvidenceDone", { count: rows.length });
-  } catch {
-    status.textContent = t("challengeCopyEvidenceFailed");
-  }
-}
-function openChallengeSettings() {
-  const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${t("challengeSettingsTitle")}</h2><button type="button" data-close>\xD7</button></header><p>${t("challengeSettingsIntro")}</p><p data-challenge-summary></p><div class="challenge-list" data-challenge-list></div><section data-familiarization-list></section><section class="challenge-diagnostics" data-challenge-diagnostics></section></section>`);
-  const redraw = () => {
-    const rows = currentChallengeRows();
-    const ownerDiagnostics = ownerChallengeDiagnostics(store.state, catalog, childAgeMonths2(), store.state.profile?.developmentProfile || {});
-    const diagnostics = ownerDiagnostics.counts;
-    const diagnosticRows = ownerDiagnostics.buckets;
-    dialog.querySelector("[data-challenge-summary]").textContent = t("challengeEntrySummary", {
-      count: rows.length,
-      auto: rows.filter((row) => row.source === "auto").length,
-      supervised: rows.filter((row) => row.source === "supervised").length,
-      pending: rows.filter((row) => row.source === "supervised" && row.choice === "pending").length
-    });
-    const list = dialog.querySelector("[data-challenge-list]");
-    list.innerHTML = rows.map((item) => {
-      const { toy, row, source, monthsEarly } = item;
-      const actions2 = source === "auto" ? `<p class="challenge-explanation">${t("challengeAutoExplanation")}</p>` : supervisedChallengeActions(item);
-      return `<article class="challenge-item" data-challenge-key="${escape(row.canonicalKey)}" data-challenge-source="${source}"><img data-image='${escapedJson(libraryImageRef(toy, "challenge_settings"))}' alt=""><div><p class="challenge-kind">${challengeSourceLabel(source)}</p><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${t("challengeAges", { recommended: row.minAgeMonths, current: childAgeMonths2() })}</p>${monthsEarly > 0 ? `<p>${t("challengeMonthsEarly", { count: monthsEarly })}</p>` : ""}${challengeSkillSummary(item)}${source === "supervised" ? `<p>${t("challengeAgeGuidance")}</p>` : ""}<p class="challenge-status">${t(challengeStatusKey(item))}</p><div class="actions">${actions2}</div></div></article>`;
-    }).join("");
-    const familiar = currentFamiliarizationRows();
-    const familiarHost = dialog.querySelector("[data-familiarization-list]");
-    familiarHost.innerHTML = `<h3>${t("familiarizationTitle")}</h3><p>${t("familiarizationIntro")}</p>${familiar.length ? `<div class="challenge-list">${familiar.map((item) => `<article class="challenge-item" data-familiarization-key="${escape(item.row.canonicalKey)}"><img data-image='${escapedJson(libraryImageRef(item.toy, "familiarization_settings"))}' alt=""><div><h3>${escape(displayName(item.toy))}</h3><p>${escape(brandLabel(item.toy.brand))}</p><p>${t("challengeAges", { recommended: item.row.minAgeMonths, current: childAgeMonths2() })}</p><p>${t("toyUseFamiliarization")}</p><div class="actions"><button data-familiarization-action="exploring">${t("familiarizationExplore")}</button><button class="primary" data-familiarization-action="playing">${t("familiarizationPlaying")}</button><button data-familiarization-action="defer">${t("familiarizationDefer")}</button></div></div></article>`).join("")}</div>` : `<p>${t("challengeDiagnosticNone")}</p>`}`;
-    const diagnosticsHost = dialog.querySelector("[data-challenge-diagnostics]");
-    diagnosticsHost.innerHTML = `<h3>${t("challengeStatsTitle")}</h3><p>${t("challengeStats", diagnostics)}</p>${["insufficient", "hard"].map((bucket) => challengeDiagnosticList(bucket, diagnosticRows[bucket])).join("")}`;
-    diagnosticsHost.querySelector("[data-copy-owner-evidence]")?.addEventListener("click", (event) => {
-      const status = diagnosticsHost.querySelector("[data-copy-owner-evidence-status]");
-      copyOwnerEvidenceList(diagnosticRows.insufficient, status);
-    });
-    list.querySelectorAll("[data-challenge-action]").forEach((button) => {
-      button.onclick = () => {
-        const parent = button.closest("[data-challenge-key]");
-        const selected = rows.find((item) => item.row.canonicalKey === parent?.dataset.challengeKey);
-        if (!selected) return;
-        const action2 = button.dataset.challengeAction;
-        if (action2 === "try-supervised") store.update((state) => {
-          recordSupervisedChallengeAttempt(state, selected.projected, "started");
-        }, "supervised-challenge-started");
-        else if (action2 === "later-supervised") store.update((state) => {
-          recordSupervisedChallengeAttempt(state, selected.projected, "later");
-        }, "supervised-challenge-later");
-        else if (action2 === "approve-supervised") store.update((state) => {
-          approveSupervisedChallenge(state, selected.projected);
-        }, "supervised-challenge-approved");
-        else if (action2 === "revoke-supervised") store.update((state) => {
-          setOwnerUseState(state, selected.projected, "DEFAULT");
-        }, "supervised-challenge-revoked");
-        redraw();
-      };
-    });
-    familiarHost.querySelectorAll("[data-familiarization-action]").forEach((button) => button.onclick = () => {
-      const parent = button.closest("[data-familiarization-key]");
-      const selected = familiar.find((item) => item.row.canonicalKey === parent?.dataset.familiarizationKey);
-      if (!selected) return;
-      const next = { exploring: "EXPLORING", playing: "CURRENTLY_PLAYING", defer: "DEFERRED" }[button.dataset.familiarizationAction];
-      store.update((state) => {
-        setOwnerUseState(state, selected.projected, next);
-      }, "owner-use-state");
-      redraw();
-    });
-    bindImages(dialog);
-  };
-  redraw();
+function openDevelopmentUseModes() {
+  const surface = developmentSurfaceModel(developmentContext());
+  const rows = surface.toyModels.filter((model) => ["DEVELOPMENT_CHALLENGE", "FAMILIARIZATION"].includes(model.primaryUseMode));
+  const dialog = openModal(`<section class="sheet challenge-settings"><header><h2>${developmentText("nextChallenge")}</h2><button type="button" data-close>\xD7</button></header><p>${developmentText("exploreReason")}</p><div class="challenge-list">${rows.length ? rows.map((model) => {
+    const level = model.playLadder?.[model.currentPlayLevel - 1];
+    return `<article class="challenge-item"><img data-image='${escapedJson(libraryImageRef(model.toy, "development_use_modes"))}' alt=""><div><p class="challenge-kind">${escape(developmentModeLabel(model.primaryUseMode))}</p><h3>${escape(displayName(model.toy))}</h3><p>${escape(developmentReasonLabel(model.displayReason))}</p>${level ? `<p><b>${escape(level.title)}</b><br>${escape(level.instruction)}</p><p><small>${escape(level.observation)}</small></p>` : ""}<div class="actions">${model.availableActions.includes("CONFIRM_CURRENT_PLAY") ? `<button class="primary" data-development-playing="${escape(model.toy.id)}">${developmentText("ownerConfirmed")}</button>` : ""}${model.availableActions.includes("ENABLE_EXPLORATION_ROTATION") ? `<button data-development-explore="${escape(model.toy.id)}">${developmentText("exploring")}</button>` : ""}</div></div></article>`;
+  }).join("") : `<p>${t("noData")}</p>`}</div></section>`);
+  dialog.querySelectorAll("[data-development-playing]").forEach((button) => button.onclick = () => {
+    confirmDevelopmentPlaying(button.dataset.developmentPlaying);
+    dialog.close();
+  });
+  dialog.querySelectorAll("[data-development-explore]").forEach((button) => button.onclick = () => {
+    enableExplorationRotation(button.dataset.developmentExplore);
+    dialog.close();
+  });
 }
 function attachCrossAgeApprovalControl(form, toy) {
   const host = document.createElement("section");
-  host.className = "panel cross-age-approval";
+  host.className = "panel cross-age-approval development-use-control";
   form.querySelector(".form-error").before(host);
   const redraw = () => {
-    const age = childAgeMonths2();
-    const review = challengeDecision(store.state, catalog, toy, age, store.state.profile?.developmentProfile || {});
-    if (!review || review.row.minAgeMonths == null || age >= review.row.minAgeMonths) {
+    const model = toyUseViewModel(toy, developmentContext());
+    if (model.primaryUseMode === "NORMAL_PLAY") {
       host.remove();
       return;
     }
-    const candidate = currentChallengeRows().find((item) => item.row.canonicalKey === review.row.canonicalKey && item.source === "supervised");
-    const familiar = currentFamiliarizationRows().find((item) => item.row.canonicalKey === review.row.canonicalKey);
-    const blocked = review.decision.primaryStatus === TOY_USE_PRIMARY_STATUS.SAFETY_BLOCKED ? "challengeHardBlocked" : review.decision.primaryStatus === TOY_USE_PRIMARY_STATUS.EVIDENCE_BLOCKED ? "challengeUnknownBlocked" : null;
-    if (!candidate && !familiar && !blocked) {
-      host.remove();
-      return;
-    }
-    if (candidate) {
-      host.hidden = false;
-      host.innerHTML = `<h3>${t("challengeSettingsTitle")}</h3><p>${t("challengeAges", { recommended: review.row.minAgeMonths, current: age })}</p><p>${t("challengeAgeGuidance")}</p>${challengeSkillSummary(candidate)}<p class="challenge-status">${t(challengeStatusKey(candidate))}</p><div class="actions">${supervisedChallengeActions(candidate)}</div>`;
-      host.querySelector('[data-challenge-action="try-supervised"]')?.addEventListener("click", () => {
-        store.update((state) => {
-          recordSupervisedChallengeAttempt(state, candidate.projected, "started");
-        }, "supervised-challenge-started");
-        redraw();
-      });
-      host.querySelector('[data-challenge-action="later-supervised"]')?.addEventListener("click", () => {
-        store.update((state) => {
-          recordSupervisedChallengeAttempt(state, candidate.projected, "later");
-        }, "supervised-challenge-later");
-        redraw();
-      });
-      host.querySelector('[data-challenge-action="approve-supervised"]')?.addEventListener("click", () => {
-        store.update((state) => {
-          approveSupervisedChallenge(state, candidate.projected);
-        }, "supervised-challenge-approved");
-        redraw();
-      });
-      host.querySelector('[data-challenge-action="revoke-supervised"]')?.addEventListener("click", () => {
-        store.update((state) => {
-          setOwnerUseState(state, candidate.projected, "DEFAULT");
-        }, "supervised-challenge-revoked");
-        redraw();
-      });
-      return;
-    }
-    if (familiar) {
-      host.hidden = false;
-      host.innerHTML = `<h3>${t("familiarizationTitle")}</h3><p>${t("challengeAges", { recommended: review.row.minAgeMonths, current: age })}</p><p>${t("familiarizationIntro")}</p><div class="actions"><button data-owner-use="EXPLORING">${t("familiarizationExplore")}</button><button class="primary" data-owner-use="CURRENTLY_PLAYING">${t("familiarizationPlaying")}</button><button data-owner-use="DEFERRED">${t("familiarizationDefer")}</button></div>`;
-      host.querySelectorAll("[data-owner-use]").forEach((button) => button.addEventListener("click", () => {
-        store.update((state) => {
-          setOwnerUseState(state, review.projected, button.dataset.ownerUse);
-        }, "owner-use-state");
-        redraw();
-      }));
-      return;
-    }
+    const level = model.playLadder?.[model.currentPlayLevel - 1];
     host.hidden = false;
-    host.innerHTML = `<h3>${t("challengeSettingsTitle")}</h3><p>${t("challengeAges", { recommended: review.row.minAgeMonths, current: age })}</p><p>${t(blocked || "challengeUnknownBlocked")}</p>`;
+    host.innerHTML = `<h3>${developmentModeLabel(model.primaryUseMode)}</h3><p>${escape(developmentReasonLabel(model.displayReason))}</p>${level ? `<p><b>${escape(level.title)}</b><br>${escape(level.instruction)}</p>` : ""}<div class="actions">${model.availableActions.includes("CONFIRM_CURRENT_PLAY") ? `<button class="primary" data-development-owner-play>${developmentText("ownerConfirmed")}</button>` : ""}${model.availableActions.includes("ENABLE_EXPLORATION_ROTATION") ? `<button data-development-owner-explore>${developmentText("exploring")}</button>` : ""}</div>`;
+    host.querySelector("[data-development-owner-play]")?.addEventListener("click", () => {
+      confirmDevelopmentPlaying(toy.id);
+      redraw();
+    });
+    host.querySelector("[data-development-owner-explore]")?.addEventListener("click", () => {
+      enableExplorationRotation(toy.id);
+      redraw();
+    });
   };
   redraw();
 }
@@ -11645,10 +11927,11 @@ function generateNewRotation() {
   clearManualShelfOverrides(planning);
   planning.toys = planning.toys.map((toy) => {
     const row = catalog.resolve(toy);
-    const projected = { ...withCatalogSafety(toy, row), minAgeMonths: row?.minAgeMonths ?? toy.minAgeMonths };
-    return { ...projected, crossAgeApproval: crossAgeApprovalFor(planning, projected) };
+    return { ...withCatalogSafety(toy, row), minAgeMonths: row?.minAgeMonths ?? toy.minAgeMonths };
   });
-  const result2 = selectRotation({ toys: planning.toys, history: planning.rotationHistory, childAgeMonths: childAgeMonths2(), size: planning.settings.rotationSize, childDevelopmentProfile: planning.profile?.developmentProfile || {}, developmentFeedbackHistory: planning.developmentFeedbackHistory || [] });
+  const age = childAgeMonths2();
+  const purposeResult = selectPurposeBasedRotation({ toys: planning.toys, state: planning, childAgeMonths: age, skillProfile: planning.profile?.skillProfile || {}, parentGoals: planning.profile?.parentDevelopmentGoals || [], interests: planning.profile?.interestProfile || [], size: planning.settings.rotationSize });
+  const result2 = { selected: purposeResult.selected, diagnostics: { requestedRotationCount: planning.settings.rotationSize, selectedRotationCount: purposeResult.selected.length, eligibleRotationCount: purposeResult.candidates.length, shortageCount: Math.max(0, Number(planning.settings.rotationSize) - purposeResult.selected.length), selectedCandidateScores: purposeResult.selectedReasons, purposeDriven: true } };
   store.update((state) => {
     persistRotationSelection(state, { selected: result2.selected, diagnostics: result2.diagnostics });
   }, "rotation");
@@ -11822,7 +12105,7 @@ function addWishlist(key) {
   const source = catalog.getByKey(key);
   if (!source) return;
   store.update((state) => {
-    if (!findOwnedToy(source, state.toys) && !findWishlistItem(source, state.wishlist)) state.wishlist.push({ id: crypto.randomUUID(), canonicalKey: source.canonicalKey, catalogId: source.id, catalogSnapshot: source, status: "want", addedAt: (/* @__PURE__ */ new Date()).toISOString() });
+    if (!findOwnedToy(source, state.toys) && !findWishlistItem(source, state.wishlist)) state.wishlist.push(normalizeWishlistItem({ id: crypto.randomUUID(), canonicalKey: source.canonicalKey, catalogId: source.id, catalogSnapshot: source, status: "want", recommendationSource: "MANUAL", addedAt: (/* @__PURE__ */ new Date()).toISOString() }));
   }, "wishlist-add");
 }
 function openCatalogManager(key, { dialog: workspaceDialog = null, onReturn = null } = {}) {
@@ -12109,7 +12392,18 @@ function profileSettingsFields() {
     const options = [["", t("abilityProfile.auto")], ["1", t("abilityProfile.level.intro")], ["2", t("abilityProfile.level.basic")], ["3", t("abilityProfile.level.fluent")], ["5", t("abilityProfile.level.challenge")]];
     return `<label>${t(`abilityProfile.mechanism.${mechanic}`)}<select data-ability-mechanic="${mechanic}">${options.map(([value, label]) => `<option value="${value}" ${String(manual ?? "") === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>`;
   }).join("")}</details>`).join("");
-  return `<h3>${t("childProfile")}</h3><label>${t("childName")}<input name="childName" value="${escape(profile.childName || "")}"></label><label>${t("birthDate")}<input name="childBirthDate" type="date" value="${escape(profile.childBirthDate || "")}" required></label><details class="panel"><summary>${t("abilityProfile.title")}</summary><p>${t("abilityProfile.hint")}</p>${abilities}</details><h3>${t("rotationSettings")}</h3><label>${t("targetShelfCount")}<input name="rotationSize" type="number" min="1" max="50" value="${store.state.settings.rotationSize}"></label><label>${t("rotationInterval")}<select name="rotationDays"><option value="7">7 ${t("dayUnit")}</option><option value="10">10 ${t("dayUnit")}</option><option value="14">14 ${t("dayUnit")}</option><option value="custom">${t("custom")}</option></select></label><label class="rotation-custom ${preset === "custom" ? "" : "hidden"}">${t("customRotationDays")}<input name="rotationDaysCustom" type="number" min="1" max="90" value="${preset === "custom" ? days : ""}"></label>`;
+  const questionLabels = { matching: ["Matches familiar items", "\u4F1A\u628A\u719F\u6089\u7684\u7269\u54C1\u914D\u5230\u4E00\u8D77"], visualSpatial: ["Tries fitting and turning pieces", "\u4F1A\u5C1D\u8BD5\u628A\u73A9\u5177\u653E\u8FDB\u5BF9\u5E94\u4F4D\u7F6E\u6216\u8F6C\u4E00\u8F6C"], bilateralCoordination: ["Uses two hands together", "\u4F1A\u5C1D\u8BD5\u53CC\u624B\u4E00\u8D77\u64CD\u4F5C"], fineMotor: ["Uses small hand movements", "\u4F1A\u5C1D\u8BD5\u66F4\u7CBE\u7EC6\u7684\u6293\u3001\u653E\u3001\u634F\u52A8\u4F5C"], pretendPlay: ["Acts out simple pretend play", "\u4F1A\u505A\u7B80\u5355\u7684\u5047\u88C5\u6E38\u620F"], attentionPersistence: ["Stays with a play idea", "\u4F1A\u5728\u4E00\u4E2A\u73A9\u6CD5\u4E0A\u591A\u5C1D\u8BD5\u4E00\u4F1A\u513F"], sorting: ["Sorts familiar things", "\u4F1A\u628A\u719F\u6089\u7269\u54C1\u6309\u4E00\u79CD\u65B9\u5F0F\u5206\u4E00\u5206"], causeEffect: ["Repeats cause-and-effect actions", "\u4F1A\u91CD\u590D\u5C1D\u8BD5\u6709\u53CD\u5E94\u7684\u64CD\u4F5C"] };
+  const answerLabels = i18n.language === "zh" ? [["OFTEN", "\u6700\u8FD1\u7ECF\u5E38\u81EA\u5DF1\u5B8C\u6210"], ["SOMETIMES", "\u6B63\u5728\u5C1D\u8BD5 / \u5076\u5C14\u4F1A"], ["NOT_OBSERVED", "\u8FD8\u6CA1\u600E\u4E48\u89C2\u5BDF\u5230"], ["UNSURE", "\u4E0D\u786E\u5B9A"]] : [["OFTEN", "Often does this"], ["SOMETIMES", "Starting / sometimes"], ["NOT_OBSERVED", "Not observed yet"], ["UNSURE", "Not sure"]];
+  const questions = DEVELOPMENT_QUESTIONNAIRE.map((question) => {
+    const label = questionLabels[question.skill]?.[i18n.language === "zh" ? 1 : 0] || question.skill;
+    const selected = profile.skillProfile?.[question.skill]?.observation;
+    const byObservation = { MASTERED: "OFTEN", EMERGING: "SOMETIMES", NOT_OBSERVED: "NOT_OBSERVED", UNKNOWN: "UNSURE" };
+    return `<label>${escape(label)}<select name="development-question-${question.id}">${answerLabels.map(([value, text2]) => `<option value="${value}" ${byObservation[selected] === value ? "selected" : ""}>${escape(text2)}</option>`).join("")}</select></label>`;
+  }).join("");
+  const goalOptions = [["fineMotor", "Fine-motor / \u624B\u90E8\u64CD\u4F5C"], ["language", "Language / \u8BED\u8A00\u4E92\u52A8"], ["pretendPlay", "Pretend play / \u5047\u88C5\u6E38\u620F"], ["visualSpatial", "Puzzles / space / \u62FC\u56FE\u4E0E\u7A7A\u95F4"], ["grossMotor", "Gross motor / \u5927\u8FD0\u52A8"], ["bilateralCoordination", "Two-hand coordination / \u53CC\u624B\u534F\u4F5C"]];
+  const interestOptions = [["vehicles", "Vehicles / \u8F66\u8F86"], ["animals", "Animals / \u52A8\u7269"], ["music", "Music / \u97F3\u4E50"], ["pretend_kitchen", "Pretend kitchen / \u5047\u88C5\u53A8\u623F"], ["dolls", "Dolls / \u5A03\u5A03"], ["puzzles", "Puzzles / \u62FC\u56FE"], ["building", "Building / \u642D\u5EFA"], ["books", "Books / \u56FE\u4E66"], ["sensory", "Sensory play / \u611F\u5B98\u63A2\u7D22"], ["water_play", "Water play / \u73A9\u6C34"]];
+  const goals = `<details class="panel"><summary>${developmentText("profile")}</summary><p>${i18n.language === "zh" ? "\u8FD9\u4E9B\u662F\u5BB6\u957F\u89C2\u5BDF\uFF0C\u4E0D\u662F\u53D1\u5C55\u8BCA\u65AD\u3002" : "These are parent observations, not a diagnosis."}</p>${questions}<fieldset><legend>${i18n.language === "zh" ? "\u8FD1\u671F\u60F3\u591A\u63D0\u4F9B\u4EC0\u4E48\u4F53\u9A8C\uFF08\u6700\u591A 3 \u9879\uFF09" : "Current goals (up to 3)"}</legend>${goalOptions.map(([value, label]) => `<label><input type="checkbox" name="development-goal" value="${value}" ${(profile.parentDevelopmentGoals || []).includes(value) ? "checked" : ""}>${escape(label)}</label>`).join("")}</fieldset><fieldset><legend>${i18n.language === "zh" ? "\u6700\u8FD1\u559C\u6B22\u4EC0\u4E48\uFF1F" : "Current interests"}</legend>${interestOptions.map(([value, label]) => `<label><input type="checkbox" name="development-interest" value="${value}" ${(profile.interestProfile || []).includes(value) ? "checked" : ""}>${escape(label)}</label>`).join("")}</fieldset><label>${i18n.language === "zh" ? "\u63A8\u8350\u8282\u594F" : "Recommendation style"}<select name="development-play-preference"><option value="gentle" ${profile.playPreference === "gentle" ? "selected" : ""}>${i18n.language === "zh" ? "\u6E29\u548C\u719F\u6089" : "Gentle and familiar"}</option><option value="balanced" ${!profile.playPreference || profile.playPreference === "balanced" ? "selected" : ""}>${i18n.language === "zh" ? "\u9002\u5EA6\u6311\u6218" : "Balanced"}</option><option value="stretch" ${profile.playPreference === "stretch" ? "selected" : ""}>${i18n.language === "zh" ? "\u559C\u6B22\u5C1D\u8BD5\u7A0D\u96BE\u73A9\u6CD5" : "More stretch"}</option></select></label></details>`;
+  return `<h3>${t("childProfile")}</h3><label>${t("childName")}<input name="childName" value="${escape(profile.childName || "")}"></label><label>${t("birthDate")}<input name="childBirthDate" type="date" value="${escape(profile.childBirthDate || "")}" required></label>${goals}<details class="panel"><summary>${t("abilityProfile.title")}</summary><p>${t("abilityProfile.hint")}</p>${abilities}</details><h3>${t("rotationSettings")}</h3><label>${t("targetShelfCount")}<input name="rotationSize" type="number" min="1" max="50" value="${store.state.settings.rotationSize}"></label><label>${t("rotationInterval")}<select name="rotationDays"><option value="7">7 ${t("dayUnit")}</option><option value="10">10 ${t("dayUnit")}</option><option value="14">14 ${t("dayUnit")}</option><option value="custom">${t("custom")}</option></select></label><label class="rotation-custom ${preset === "custom" ? "" : "hidden"}">${t("customRotationDays")}<input name="rotationDaysCustom" type="number" min="1" max="90" value="${preset === "custom" ? days : ""}"></label>`;
 }
 function wireProfileSettingsForm(dialog, { onboarding = false } = {}) {
   const form = dialog.querySelector("form");
@@ -12126,6 +12420,12 @@ function saveProfileSettingsFromForm(form) {
   const selectedDays = form.rotationDays.value === "custom" ? form.rotationDaysCustom.value : form.rotationDays.value;
   const edits = [...form.querySelectorAll("[data-ability-mechanic]")].map((select) => [select.dataset.abilityMechanic, select.value]).filter(([mechanic, value]) => String(store.state.profile.developmentProfile?.[mechanic]?.manualLevel ?? "") !== value);
   saveProfileAndRotationSettings(store, { childName: form.childName.value, childBirthDate: form.childBirthDate.value, rotationSize: form.rotationSize.value, rotationDays: selectedDays, manualAbilities: edits });
+  const answers = Object.fromEntries(DEVELOPMENT_QUESTIONNAIRE.map((question) => [question.id, form.elements[`development-question-${question.id}`]?.value]).filter(([, value]) => Boolean(value)));
+  const goals = [...form.querySelectorAll('[name="development-goal"]:checked')].map((input) => input.value);
+  const interests = [...form.querySelectorAll('[name="development-interest"]:checked')].map((input) => input.value);
+  store.update((state) => {
+    applyQuestionnaire(state, { answers, parentGoals: goals, interests, playPreference: form.elements["development-play-preference"]?.value });
+  }, "development-profile-questionnaire");
 }
 async function openManagerDashboard({ repairMessage = "", returnToSettings = false } = {}) {
   if (!admin.enabled) return;
