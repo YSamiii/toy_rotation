@@ -9229,20 +9229,25 @@ function buildRotationCandidates({ toys = [], state = {}, childAgeMonths: childA
     return { toy, recommendation, eligible, purpose: purpose(recommendation, state, toy), reasonCodes: [...new Set(reasons)] };
   });
 }
-function selectPurposeBasedRotation({ toys = [], state = {}, childAgeMonths: childAgeMonths3, skillProfile = {}, parentGoals = [], interests = [], size = 6 } = {}) {
+function selectPurposeBasedRotation({ toys = [], state = {}, childAgeMonths: childAgeMonths3, skillProfile = {}, parentGoals = [], interests = [], size = 6, seed = 0 } = {}) {
   const allCandidates = buildRotationCandidates({ toys, state, childAgeMonths: childAgeMonths3, skillProfile, parentGoals, interests });
   const candidates = allCandidates.filter((item) => item.eligible);
   const target = Math.max(1, Number(size) || 6);
-  const recentIds = new Set((state.rotationHistory || []).slice(0, 2).flatMap((entry) => entry.toyIds || []));
-  const remaining = candidates.map((item) => ({ ...item, baseScore: priority2(item), score: priority2(item) }));
+  const history = state.rotationHistory || [], previousIds = new Set(history[0]?.toyIds || []), recentIds = new Set(history.slice(0, 3).flatMap((entry) => entry.toyIds || []));
+  const random = seeded(seed || history.length + 1);
+  const stats = historyStats(history);
+  const replacements = candidates.filter((item) => !previousIds.has(item.toy.id)).length;
+  const minimumTurnover = previousIds.size === target && replacements >= 3 ? 3 : 0;
+  const remaining = candidates.map((item) => ({ ...item, baseScore: priority2(item) + fairnessAdjustment(item.toy, stats), score: priority2(item), noise: random() }));
   const selected = [];
   const selectedIdentity = /* @__PURE__ */ new Set();
   const selectedMechanics = /* @__PURE__ */ new Map();
   while (remaining.length && selected.length < target) {
     remaining.forEach((item) => {
-      item.score = item.baseScore + diversityAdjustment2(item, selectedMechanics, recentIds);
+      const mustPreferNew = selected.length < minimumTurnover && previousIds.has(item.toy.id);
+      item.score = item.baseScore + diversityAdjustment2(item, selectedMechanics, recentIds) + (mustPreferNew ? -1e3 : 0) + item.noise;
     });
-    remaining.sort((a, b) => b.score - a.score || String(a.toy.productName).localeCompare(String(b.toy.productName)));
+    remaining.sort((a, b) => b.score - a.score || String(a.toy.canonicalKey).localeCompare(String(b.toy.canonicalKey)));
     const next = remaining.shift();
     const identity = next.toy.canonicalKey || next.toy.catalogId || next.toy.id;
     if (selectedIdentity.has(identity)) continue;
@@ -9255,7 +9260,7 @@ function selectPurposeBasedRotation({ toys = [], state = {}, childAgeMonths: chi
     selectedReasons: selected.map((item) => ({ canonicalKey: item.toy.canonicalKey, purpose: item.purpose, reasonCodes: item.reasonCodes, score: item.score })),
     candidates,
     allCandidates,
-    diagnostics: { selectedMechanics: Object.fromEntries(selectedMechanics), recentAvoided: [...recentIds], eligibleNonpermanentCount: candidates.length, firstPassSelectedCount: selected.length, finalSelectedCount: selected.length, exclusionSummary: countExclusions(allCandidates) }
+    diagnostics: { selectedMechanics: Object.fromEntries(selectedMechanics), recentAvoided: [...recentIds], eligibleNonpermanentCount: candidates.length, firstPassSelectedCount: selected.length, finalSelectedCount: selected.length, previousRoundOverlap: selected.filter((item) => previousIds.has(item.toy.id)).length, newToRoundCount: selected.filter((item) => !previousIds.has(item.toy.id)).length, minimumTurnover, seed, exclusionSummary: countExclusions(allCandidates) }
   };
 }
 function countExclusions(allCandidates) {
@@ -9273,9 +9278,34 @@ function purpose(recommendation, state, toy) {
   return "CORE_CURRENT_PLAY";
 }
 function priority2(item) {
-  const base = { OWNER_CONFIRMED_PENDING: 100, FAMILIARIZATION: 85, NEXT_MILESTONE_PRACTICE: 75, PARENT_GOAL: 65, CURRENT_INTEREST: 55, CORE_CURRENT_PLAY: 40 }[item.purpose] || 0;
-  const pending = item.recommendation.owner.ownerConfirmedPlaying || item.recommendation.owner.explorationRotationEnabled;
-  return base + (pending ? 40 : 0);
+  const base = { OWNER_CONFIRMED_PENDING: 58, FAMILIARIZATION: 54, NEXT_MILESTONE_PRACTICE: 62, PARENT_GOAL: 58, CURRENT_INTEREST: 52, CORE_CURRENT_PLAY: 50 }[item.purpose] || 0;
+  return base + (item.toy.interest === "like" ? 6 : 0);
+}
+function historyStats(history) {
+  const counts = /* @__PURE__ */ new Map(), consecutive = /* @__PURE__ */ new Map();
+  for (const round of history) {
+    for (const id of round.toyIds || []) counts.set(id, (counts.get(id) || 0) + 1);
+  }
+  for (const id of history[0]?.toyIds || []) {
+    let run = 0;
+    for (const round of history) {
+      if (!(round.toyIds || []).includes(id)) break;
+      run++;
+    }
+    consecutive.set(id, run);
+  }
+  return { counts, consecutive };
+}
+function fairnessAdjustment(toy, stats) {
+  const count4 = stats.counts.get(toy.id) || 0, run = stats.consecutive.get(toy.id) || 0;
+  return Math.min(28, count4 * 0 + stats.counts.size ? 28 : 28) - count4 * 7 - run * 24;
+}
+function seeded(seed) {
+  let value = (Number(seed) || 1) >>> 0;
+  return () => {
+    value = value * 1664525 + 1013904223 >>> 0;
+    return (value / 4294967295 - 0.5) * 4;
+  };
 }
 function mechanicsOf(toy) {
   return [...new Set([...toy.playMechanics || [], ...toy.skillCodes || []].filter(Boolean))];
@@ -10953,6 +10983,14 @@ function escapeAttribute(value) {
 
 // src/main.js
 var root = document.querySelector("#app");
+var lastContentTap = null;
+root?.addEventListener("touchend", (event) => {
+  if (event.touches.length || event.changedTouches.length !== 1) return;
+  if (event.target.closest('button,a,input,select,textarea,label,[contenteditable="true"]')) return;
+  const now3 = Date.now(), touch = event.changedTouches[0];
+  if (lastContentTap && now3 - lastContentTap.at < 280 && Math.hypot(touch.clientX - lastContentTap.x, touch.clientY - lastContentTap.y) < 24) event.preventDefault();
+  lastContentTap = { at: now3, x: touch.clientX, y: touch.clientY };
+}, { passive: false });
 var STARTUP_DIAGNOSTIC_KEY = "toyRotation.startupDiagnostic";
 var earlyStartup = window.__TOY_ROTATION_EARLY_STARTUP__;
 earlyStartup?.mark("main_loaded");
@@ -11236,7 +11274,7 @@ function renderHome() {
   const childLabel = store.state.profile.childName || t("childProfile");
   const context = developmentContext();
   const plan = buildDevelopmentPlan({ ownedToys: toys, catalogToys: catalog.active, ...context });
-  const goals = plan.targetSkills.slice(0, 4).map((skill) => `<span>${escape(skill)}</span>`).join("") || "\u2014";
+  const goals = plan.targetSkills.slice(0, 4).map((skill) => `<span>${escape(resolveDisplay(skill, i18n.language))}</span>`).join("") || "\u2014";
   const selected = shelf.rotation.map((toy) => toyUseViewModel(toy, context));
   const purposes = [...new Set(selected.map((model) => model.rotationPurpose))].slice(0, 4).map((value) => `<span>${escape(resolveDisplay(value, i18n.language))}</span>`).join("") || "\u2014";
   const covered = Object.values(plan.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).length;
@@ -11385,10 +11423,15 @@ function renderRotation() {
   const collapsed = store.state.settings?.permanentSectionCollapsed === true;
   const latest2 = store.state.rotationHistory?.[0]?.rotationDiagnostics;
   const shortage = latest2?.shortageCount ? `<p class="panel">${t("rotationShortage", { selected: latest2.selectedRotationCount ?? latest2.selectedCount, requested: latest2.requestedRotationCount ?? latest2.requestedCount })}</p>` : "";
-  const manual = shelf.manual.length ? `<section class="rotation-section"><h3>${t("manuallyOnShelf")} \xB7 ${shelf.manual.length}</h3><div class="list">${shelf.manual.map(renderToyCard).join("")}</div></section>` : "";
+  const manual = shelf.manual.length ? `<section class="rotation-section"><details><summary>${t("manuallyOnShelf")} \xB7 ${shelf.manual.length}</summary><div class="list">${shelf.manual.map(renderToyCard).join("")}</div></details></section>` : "";
   const coverage2 = Object.values(surface.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).slice(0, 6).map((row) => `<span>${escape(resolveDisplay(row.skill, i18n.language))} \u2713</span>`).join("") || "\u2014";
   const reasons = shelf.rotation.map((toy) => surface.byToyId.get(toy.id)).filter(Boolean).map((model) => `<li><b>${escape(displayName(model.toy))}</b> \u2014 ${escape(developmentReasonLabel(model.displayReason))}</li>`).join("");
-  return `<section class="head"><h2>${t("rotation")}</h2><button class="primary" data-action="generate">${t("generate")}</button></section><section class="panel shelf-total"><b>${t("currentShelfTotal", { count: shelf.totalShelfCount })}</b><p>${t("thisRotation")} ${shelf.rotation.length} \xB7 ${t("customPermanent")} ${shelf.permanent.length} \xB7 ${t("paused")} ${pausedCount}</p><p>${t("permanentTargetHint")}</p></section><section class="panel"><h3>${developmentText("coverage")}</h3><div class="chips">${coverage2}</div><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button>${reasons ? `<h3>${developmentText("rotationPurpose")}</h3><ul>${reasons}</ul>` : ""}</section>${shortage}<section class="rotation-section"><h3>${t("customPermanent")} \xB7 ${shelf.permanent.length} <button data-action="toggle-permanent-collapse" aria-expanded="${!collapsed}">${collapsed ? "\u25B8" : "\u25BE"}</button></h3>${collapsed ? "" : `<div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div>`}</section>${manual}<section class="rotation-section"><h3>${t("thisRotation")} \xB7 ${shelf.rotation.length}</h3><div class="list">${shelf.rotation.length ? shelf.rotation.map((toy) => renderToyCard(toy, { showDevelopment: true })).join("") : renderEmpty()}</div></section>`;
+  const cards = shelf.rotation.map(renderRotationCard).join("") || renderEmpty();
+  return `<section class="head"><h2>${t("rotation")}</h2></section><section class="panel shelf-total"><b>${t("thisRotation")} ${shelf.rotation.length} \uFF5C ${t("customPermanent")} ${shelf.permanent.length}</b></section><section class="rotation-grid" aria-label="${t("thisRotation")}">${cards}</section><div class="rotation-generate"><button class="primary" data-action="generate">${t("generate")}</button></div>${shortage}<section class="rotation-section"><details><summary>${t("customPermanent")} \xB7 ${shelf.permanent.length}</summary><div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div></details></section>${manual}<section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u672C\u8F6E\u4E3A\u4EC0\u4E48\u8FD9\u6837\u9009" : "Why this round"}</summary><ul>${reasons || "<li>\u2014</li>"}</ul></details></section><section class="rotation-section"><details><summary>${developmentText("coverage")}</summary><div class="chips">${coverage2}</div><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button></details></section><section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u9AD8\u7EA7\u8BCA\u65AD" : "Advanced diagnostics"}</summary><p>${t("currentShelfTotal", { count: shelf.totalShelfCount })} \xB7 ${t("paused")} ${pausedCount}</p><button data-action="copy-rotation-audit">${i18n.language === "zh" ? "\u590D\u5236\u8F6E\u6362\u8BCA\u65AD" : "Copy rotation audit"}</button></details></section>`;
+}
+function renderRotationCard(toy) {
+  const model = toyUseViewModel(toy, developmentContext());
+  return `<button class="rotation-toy-card" data-action="edit" data-id="${escape(toy.id)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(libraryImageRef(toy, "rotation_grid"))}' alt=""><span>${escape(displayName(toy))}</span><small>${escape(developmentModeLabel(model.primaryUseMode))}</small></button>`;
 }
 function renderChallengeEntry() {
   if (view !== "rotation") return;
@@ -11519,6 +11562,7 @@ async function action(name, data) {
     state.settings.permanentSectionCollapsed = !state.settings.permanentSectionCollapsed;
   }, "permanent-section-collapse");
   if (name === "generate") return generateNewRotation();
+  if (name === "copy-rotation-audit") return copyRotationAudit();
   if (name === "all-overlaps") return openAllOverlaps(data.id);
   if (name === "all-skill-overlaps") return openAllSkillOverlaps(data.id);
   if (name === "coverage-details") return openCoverageDetails();
@@ -11527,6 +11571,17 @@ async function action(name, data) {
   if (name === "wishlist-add-library") return addWishlistToLibrary(data.id);
   if (name === "add-wishlist-item") return openWishlistItem();
   if (name === "wishlist-remove") return removeWishlist(data.id);
+}
+async function copyRotationAudit() {
+  const history = store.state.rotationHistory || [], latest2 = history[0]?.rotationDiagnostics || {}, candidates = buildRotationCandidates({ toys: store.state.toys, state: store.state, childAgeMonths: childAgeMonths2(), skillProfile: store.state.profile?.skillProfile || {}, parentGoals: store.state.profile?.parentDevelopmentGoals || [], interests: store.state.profile?.interestProfile || [] });
+  const count4 = (code) => candidates.filter((item) => item.reasonCodes.includes(code)).length;
+  const text2 = JSON.stringify({ ownedLogicalToys: store.state.toys.filter((toy) => toy.set?.kind !== "parent").length, permanentToys: currentShelfCollections(store.state).permanent.length, rotationTarget: store.state.settings.rotationSize, eligibleNonPermanent: candidates.filter((item) => item.eligible).length, safetyBlocked: count4("HARD_SAFETY_BLOCK"), evidenceOrIdentityBlocked: candidates.filter((item) => item.reasonCodes.some((reason2) => /EVIDENCE|IDENTITY/.test(reason2))).length, ownerExcluded: count4("OWNER_EXCLUDED") + count4("OWNER_PAUSED"), previousRoundOverlap: latest2.previousRoundOverlap || 0, newToRound: latest2.newToRoundCount || 0, selectedCount: latest2.selectedRotationCount || 0, underfillReason: latest2.shortageReason || null }, null, 2);
+  try {
+    await navigator.clipboard.writeText(text2);
+    alert(i18n.language === "zh" ? "\u8F6E\u6362\u8BCA\u65AD\u5DF2\u590D\u5236\u3002" : "Rotation audit copied.");
+  } catch {
+    downloadJson(JSON.parse(text2), "rotation-candidate-audit.json");
+  }
 }
 function confirmDevelopmentPlaying(id) {
   const toy = store.state.toys.find((item) => item.id === id);
@@ -11957,7 +12012,8 @@ function generateNewRotation() {
     return { ...withCatalogSafety(toy, row), minAgeMonths: row?.minAgeMonths ?? toy.minAgeMonths };
   });
   const age = childAgeMonths2();
-  const purposeResult = selectPurposeBasedRotation({ toys: planning.toys, state: planning, childAgeMonths: age, skillProfile: planning.profile?.skillProfile || {}, parentGoals: planning.profile?.parentDevelopmentGoals || [], interests: planning.profile?.interestProfile || [], size: planning.settings.rotationSize });
+  const selectionSeed = Date.now();
+  const purposeResult = selectPurposeBasedRotation({ toys: planning.toys, state: planning, childAgeMonths: age, skillProfile: planning.profile?.skillProfile || {}, parentGoals: planning.profile?.parentDevelopmentGoals || [], interests: planning.profile?.interestProfile || [], size: planning.settings.rotationSize, seed: selectionSeed });
   const result2 = { selected: purposeResult.selected, diagnostics: { requestedRotationCount: planning.settings.rotationSize, selectedRotationCount: purposeResult.selected.length, eligibleRotationCount: purposeResult.candidates.length, shortageCount: Math.max(0, Number(planning.settings.rotationSize) - purposeResult.selected.length), selectedCandidateScores: purposeResult.selectedReasons, purposeDriven: true, ...purposeResult.diagnostics } };
   store.update((state) => {
     persistRotationSelection(state, { selected: result2.selected, diagnostics: result2.diagnostics });

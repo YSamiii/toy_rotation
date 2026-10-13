@@ -4,6 +4,7 @@
   padding: max(16px, env(safe-area-inset-top)) 16px calc(36px + env(safe-area-inset-bottom));
   touch-action: manipulation;
 }
+.rotation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.rotation-toy-card{display:grid;grid-template-rows:112px auto auto;gap:6px;min-width:0;padding:8px;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:14px}.rotation-toy-card img{width:100%;height:112px;object-fit:cover;border-radius:10px}.rotation-toy-card span{font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.rotation-toy-card small{color:var(--text-secondary)}.rotation-generate{display:flex;justify-content:center;margin:12px 0}.rotation-section details{padding:12px 0;border-top:1px solid var(--border)}.rotation-section summary{cursor:pointer;font-weight:700}
 
 button, a, input, select, textarea { touch-action: manipulation; }
 input, select, textarea { font-size: max(16px, 1rem); }
@@ -238,10 +239,17 @@ dialog::backdrop { background: var(--overlay); }
 .form header,
 .sheet header {
   position: sticky;
-  top: -18px;
+  top: 0;
   background: var(--surface-elevated);
   padding: 10px 0;
   z-index: 1;
+}
+
+/* Shared mobile chrome boundary: content and sticky headers never enter the
+   sensor/status-area inset, while dialogs retain an accessible scroll region. */
+@supports (padding: max(0px)) {
+  #app { padding-top:max(16px, env(safe-area-inset-top)); }
+  dialog { padding:max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
 }
 
 .form label { display: grid; gap: 6px; font-weight: 700; }

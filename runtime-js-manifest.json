@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-10-13T17:16:45.802Z",
+  "generatedAt": "2026-10-13T20:18:27.809Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.13.0",
-    "buildName": "Toy Rotation v0.13.0 Development-Centered QA3 Fix2",
+    "buildName": "Toy Rotation v0.13.0 Development-Centered QA4 Fix3",
     "buildDate": "20261013",
-    "buildId": "v0.13.0-development-centered-qa3-fix2-20261013"
+    "buildId": "v0.13.0-development-centered-qa4-fix3-20261013"
   },
   "entries": [
     "index.html",
@@ -17,10 +17,10 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 1122026,
-      "sha256": "02f28812fd96c3ac63d774ac0a6fa9b083344dbfaf3ca405848c9c6b9500600f",
+      "bytes": 1126553,
+      "sha256": "0b641f1f34058cbde577ac3044bccfb8fe0ab018668642638954f468070e5ff8",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -32,10 +32,10 @@
     {
       "path": "app.css",
       "resolvedDeployPath": "./app.css",
-      "bytes": 21802,
-      "sha256": "e97a8091d380702a026f2cc20af99921b0067b0aabef93e8cd5cbdfb5da50848",
+      "bytes": 22972,
+      "sha256": "c14dcb8184063717e5c672c5a6932fcf9f2a88016cd754da592c5939082b8e8a",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -50,7 +50,7 @@
       "bytes": 41674,
       "sha256": "dd8d8a0503709001d51df3929570b2d1897e8d25b26c49a0cbc95e04f49aa664",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -65,7 +65,7 @@
       "bytes": 23977,
       "sha256": "3c0a08b8bdce7a4bed2065f3050fd63b6058a9b599cc00fc36de50d5a9e5ba70",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -80,7 +80,7 @@
       "bytes": 31634,
       "sha256": "f7dbc7585e1dec66dfb620b8a19a86e2f198a8bb4a4abd59b3344054b62a7fa5",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -95,7 +95,7 @@
       "bytes": 65681,
       "sha256": "49c4ef0ede77ba62d5c8ff385deb84005a5a05fac32c6cd45b96215785e097a3",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -110,7 +110,7 @@
       "bytes": 30365,
       "sha256": "3c3fbf7c25b1c94c3e6879213d771f18bc1ead0903b2aa4f90b38ac95a4a8ad3",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -125,7 +125,7 @@
       "bytes": 546707,
       "sha256": "3e22ad2e37d1db06612ecefda6e99301a68383c3a212a22e769ab7bf06e26a5b",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -140,7 +140,7 @@
       "bytes": 483741,
       "sha256": "ee54e47301030181df08d936e6437b276c4d1e82cf052f88136f4c79a874ba1b",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -155,7 +155,7 @@
       "bytes": 337931,
       "sha256": "d6e2024358fcc018fea9b2419ae01fb133cd15668d85b2df18d505f6dba91735",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -170,7 +170,7 @@
       "bytes": 120435,
       "sha256": "510aa25bcf9f1abd6385364236972e96c1673fb52044fd44ca9a8b1f5aa572d0",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -185,7 +185,7 @@
       "bytes": 90764,
       "sha256": "3736cac2185ac843f8ceed04a9ab7d4c042ef5afffb54ff1a09d0b7301de8ccd",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -200,7 +200,7 @@
       "bytes": 100919,
       "sha256": "ad876feeb6209405527d7e3813de4aedc9509053471b6c9f59b874b741c0d174",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -215,7 +215,7 @@
       "bytes": 56769,
       "sha256": "e062bf4ff7b9136ce15263bd994abf587b26a1c9bfa896c4ff87975c89998e90",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -230,7 +230,7 @@
       "bytes": 34353,
       "sha256": "40cd9bdc31b537c6497cd502ea6d51a1777eb3384ef93782a92b892cfba39237",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -245,7 +245,7 @@
       "bytes": 38212,
       "sha256": "1485fec9f9ea652b748d22cb854d87f415140201d01de567b2a0dfa5b2127eda",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -260,7 +260,7 @@
       "bytes": 39716,
       "sha256": "13a3ebe749f7a7f71915e1fbc6f97cd9502c52ebe1c2cdfcd628cb01ef86069e",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -275,7 +275,7 @@
       "bytes": 30662,
       "sha256": "972db788aadd40c8ca58c0be17d2e3b774875f758581dad8ac7fe24e05381dfe",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -290,7 +290,7 @@
       "bytes": 30036,
       "sha256": "98ae82eead9d904f1e122384232dcd962da970262b93b33836faa15764bdadbd",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -305,7 +305,7 @@
       "bytes": 38489,
       "sha256": "f038a4549bdb351ff2860cec47ced960c926b58dbf32ee4d5d7ee397e296e49b",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -320,7 +320,7 @@
       "bytes": 32941,
       "sha256": "50a37b75207f08231087fd2ca946ecd8677110922a6de906f7d8db293c7f707b",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -335,7 +335,7 @@
       "bytes": 33261,
       "sha256": "2f56da3269e237f87c4c24699271b74b4ac78d1197a028b5e9d7a55a5ee55825",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -350,7 +350,7 @@
       "bytes": 41614,
       "sha256": "cb0a06968a763966e5f1122a2a50602f9b304b44792d879209d347552d62f7ef",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -365,7 +365,7 @@
       "bytes": 31803,
       "sha256": "b528639f61013f52334c4089c2a8291e5d01a1b6e5b4846cc23b1e508cee2976",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -380,7 +380,7 @@
       "bytes": 30923,
       "sha256": "1790aa814c576ef9ff42cbb969af90c2d0f50a921eb8bc6bb5ed97ee289e0f3b",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -395,7 +395,7 @@
       "bytes": 38875,
       "sha256": "28f1c34e738d981870f6b08343fbe26d66c4907c3ec4b6d74270084c31fb0f49",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -410,7 +410,7 @@
       "bytes": 83570,
       "sha256": "280ee412ad66d05a50987b8e45746e5bb6647c2fdff42c41a4eb869fa489cd8f",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -425,7 +425,7 @@
       "bytes": 21308,
       "sha256": "41b2a4ae3a622fb2685ad1bfac66acf2bcf1d924254ab960666355f374a398ed",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -440,7 +440,7 @@
       "bytes": 153,
       "sha256": "90329fe73f8e3be77ba895c0a522add8b2cb60004bb50ad881a9d39de763f761",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -455,7 +455,7 @@
       "bytes": 17903,
       "sha256": "4c873c64155dda52f579e36657938fca8274f53357dd78ba848fb6166ac773a3",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -470,7 +470,7 @@
       "bytes": 153,
       "sha256": "38e2201f9fec8fce5f33c23f82da5a7de5abfe61070628ddea312206dbb29687",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -485,7 +485,7 @@
       "bytes": 17377,
       "sha256": "7eca507ad5b4f69fa7632a6c2686cfa9a4f24c6b480c055ba18cad80490c326e",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -500,7 +500,7 @@
       "bytes": 154,
       "sha256": "ae9cb92eca854e2dab88a0dc63cd195784a7e5f25945214a0f9d9e692b44ab49",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -515,7 +515,7 @@
       "bytes": 15824,
       "sha256": "9a84e514d49ea6d59a892d3ae9cff76bae3e8d72709191dd68edf2b87e6f4e5a",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -530,7 +530,7 @@
       "bytes": 154,
       "sha256": "fb8129e0c273d3b3a49bb9514dd3fe44c58d4dba06825f323face1a039eb3bcf",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -545,7 +545,7 @@
       "bytes": 21941,
       "sha256": "68ab8dae2db702d24573db5597aa11d4b2bf806de2160dd128d75ef6f1c7682f",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -560,7 +560,7 @@
       "bytes": 154,
       "sha256": "da2e18726d6a72693c45bec7f43192ef2622611c40eb3b77c90a0e897d628b5d",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -575,7 +575,7 @@
       "bytes": 21830,
       "sha256": "1686ada094067eeec498ebc63bda9111177ce6a655765ebb921f7ae5bf6076e0",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -590,7 +590,7 @@
       "bytes": 154,
       "sha256": "e245041a498d0b1c3f448689da11d2908e95121f4102e9d63e827f379693b491",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -605,7 +605,7 @@
       "bytes": 24794,
       "sha256": "8ea3272fdd61f64c7cc3622f08fda57331a5922b6897d6044d722a1007165ceb",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -620,7 +620,7 @@
       "bytes": 154,
       "sha256": "5b394c735ec486c2eeb35622a7964639f93a3b9b6cbb7c65283ac11e9bcfa4a6",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -635,7 +635,7 @@
       "bytes": 22971,
       "sha256": "ed96a2c6ca4f4c6f4697cad7b6fe0b2110f384d237627e36e6952aeb99db3f77",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -650,7 +650,7 @@
       "bytes": 154,
       "sha256": "8b3f71bee7a3fe721a5bcddbff89627f988d525a0cd7c4852e1ae06c1537ac5c",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -665,7 +665,7 @@
       "bytes": 60320,
       "sha256": "b926afe91148eccc63e9ea4367482f0833d566a5b6b55fd09020b6d8466cd98b",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -680,7 +680,7 @@
       "bytes": 32238,
       "sha256": "e5fe90815379cd197aa58f5aeaaa5bb3cde546a2fb35882c2d2cbe9074043432",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -695,7 +695,7 @@
       "bytes": 612,
       "sha256": "1b0eee6bf4ccc5b028a8036097ff732ff2b06e55eb12e378dd3283d8b9504940",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -710,7 +710,7 @@
       "bytes": 189033,
       "sha256": "383931a359dca748e531e8ec6f9a88e45d9db8eebb1f4c64d7dbe2d08920d79e",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -725,7 +725,7 @@
       "bytes": 386520,
       "sha256": "6f36acb5730d40f286b7d9c4c3d4c201564b248c35f2623b5c302faf291f4d65",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -740,7 +740,7 @@
       "bytes": 87,
       "sha256": "146ee5b4f0f289f45da61da784e45b175fb88b79080402aced0904544d091b1e",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -755,7 +755,7 @@
       "bytes": 55494,
       "sha256": "84b8c00b3eb8327a53e1a387079754b69df64aee969ae5cb5857e84dfc6bce82",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -768,9 +768,9 @@
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
       "bytes": 368,
-      "sha256": "8f317b7cda4003a368f2f19a985204d1d13a112ddb17234b537b259e627f9490",
+      "sha256": "45719c12d98093e10d658d348d5048acfcc746fba440388069772ef8baae1644",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -785,7 +785,7 @@
       "bytes": 4516,
       "sha256": "7a627f6b0b40811f903269b91a6f0ae7d7f2266539e51d86762141372941f395",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -800,7 +800,7 @@
       "bytes": 14541,
       "sha256": "cb018143c3b261061e975214ca827db3e62613dff4318f5625b0d0dba7c8249c",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -815,7 +815,7 @@
       "bytes": 69653,
       "sha256": "45af07e9c8d1a87077145fb4c72358a2575e9f98564488240977071c7f6981f7",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -830,7 +830,7 @@
       "bytes": 52836,
       "sha256": "642f3780339f7665fa5943d53cf5682e58064d947121f47722018a92adf1d853",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -845,7 +845,7 @@
       "bytes": 5329,
       "sha256": "b326150a12e1617706acab9fcbb8b39bf22c7bf793cc02d5a740482272892d87",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -858,9 +858,9 @@
       "path": "manifest.webmanifest",
       "resolvedDeployPath": "./manifest.webmanifest",
       "bytes": 342,
-      "sha256": "14607f514f703e2ff25258c52698d62529ece832517f9f0c85e69983bd196524",
+      "sha256": "c6cf13e08e12ffe7e179a3d916dc352f02660350de1157d676006ab31edde96d",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -875,7 +875,7 @@
       "bytes": 5280,
       "sha256": "116f6cb940a69d07b437848e4169b9ca46196b025d65efa91495a56c3acbfc13",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -890,7 +890,7 @@
       "bytes": 1856,
       "sha256": "63a9a30074b551f352f239124005c091abd5290814da4b5ea926bca6b8808a2d",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -905,7 +905,7 @@
       "bytes": 10781,
       "sha256": "10924d548c3445b05f63f7df4e694b9d05bd6bce45c0eb4e4533a308b01232a5",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -920,7 +920,7 @@
       "bytes": 2492,
       "sha256": "d20fc1ab586d64c4e9ad8f49d8b58de432842496cc31c51792d9755ebee918a8",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -935,7 +935,7 @@
       "bytes": 2655,
       "sha256": "d405ef867fa37e946dd4a5aa80ff938fcd84299118665834c28017620161fe12",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -948,9 +948,9 @@
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
       "bytes": 2690,
-      "sha256": "e0137ef9bfc5c5b417efc3509f030663f241e413386d280ec570614e33713750",
+      "sha256": "92fe0e00ed273b9bb3baeed6bde8b496973aa8f6bb3f03ca8f35d5b215ce5ac6",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
@@ -965,7 +965,7 @@
       "bytes": 1462,
       "sha256": "59aa726cc388f39b80577c5e2d73feb243ec7ebd7b06a6b8d393daf40ea9cac9",
       "importedBy": [
-        "streaming-qa3-package"
+        "streaming-qa4-package"
       ],
       "staticImports": [],
       "dynamicImports": [],
