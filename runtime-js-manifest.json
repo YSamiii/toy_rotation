@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-10-14T12:40:01.429Z",
+  "generatedAt": "2026-10-14T13:16:35.307Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.13.0",
-    "buildName": "Toy Rotation v0.13.0 iOS Zoom Diagnostic QA6",
+    "buildName": "Toy Rotation v0.13.0 iOS Zoom QA6 Fix5",
     "buildDate": "20261014",
-    "buildId": "v0.13.0-ios-zoom-diagnostic-qa6-20261014"
+    "buildId": "v0.13.0-ios-zoom-qa6-fix5-20261014"
   },
   "entries": [
     "index.html",
@@ -17,8 +17,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 1134169,
-      "sha256": "4870174283e5f927e9bd6eac8a514fc7319413d8c9ea0e3d8735d06f4f2c1478",
+      "bytes": 1135738,
+      "sha256": "76fc0d26b7efebd3df2584eafe163efc76fe9e34b3fdd5fcd978eb3a72dceccb",
       "importedBy": [
         "streaming-package"
       ],
@@ -32,8 +32,8 @@
     {
       "path": "app.css",
       "resolvedDeployPath": "./app.css",
-      "bytes": 22972,
-      "sha256": "c14dcb8184063717e5c672c5a6932fcf9f2a88016cd754da592c5939082b8e8a",
+      "bytes": 23464,
+      "sha256": "169930067ebe9fd3b9656ae6f47c58ad930c612e852bd8a03778af895c6786ed",
       "importedBy": [
         "streaming-package"
       ],
@@ -767,8 +767,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 350,
-      "sha256": "657d4c12c2a6422f9266111c94d38ccad7e93fe49247f67a883d73522498e738",
+      "bytes": 332,
+      "sha256": "e104cc3f9642ac40fc3e09bdfd380682c08cbe956355cbe25f9186659e920020",
       "importedBy": [
         "streaming-package"
       ],
@@ -857,8 +857,8 @@
     {
       "path": "manifest.webmanifest",
       "resolvedDeployPath": "./manifest.webmanifest",
-      "bytes": 336,
-      "sha256": "a9fd9d062de9aa2e0a2f1693fb87cb5bee4f8d26b854c9b2ad8c279c9d929a7f",
+      "bytes": 330,
+      "sha256": "9abfdd60e83695d96b61ea3aa60d6b1f2d1131789802c7f4f9fb3a94a9ef1b8d",
       "importedBy": [
         "streaming-package"
       ],
@@ -947,8 +947,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2684,
-      "sha256": "075e7642b5a5ffa5ca1d573373468c058396e597a61b3eac3cb8b93595700d6d",
+      "bytes": 2678,
+      "sha256": "f2a89990cea85847d6bf96f73877585643a779f06f6c907b7a4f878365563d6c",
       "importedBy": [
         "streaming-package"
       ],

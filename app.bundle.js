@@ -8449,6 +8449,8 @@ var IosTouchZoomDiagnostic = class {
   #listeners = [];
   #viewportListener = null;
   #startedAt = null;
+  #lastTouchEnd = null;
+  #sequences = [];
   get active() {
     return this.#active;
   }
@@ -8456,12 +8458,14 @@ var IosTouchZoomDiagnostic = class {
     return this.#events.length > 0;
   }
   get listenerStatus() {
-    return { armed: this.#active, capturePhase: true, eventTypes: ["touchstart", "touchend", "click", "dblclick"], visualViewport: Boolean(window.visualViewport), fallbackListener: "app-root touchend (application)" };
+    return { recordingActive: this.#active, capturePhase: true, eventTypes: ["touchstart", "touchend", "click", "dblclick"], visualViewport: Boolean(window.visualViewport), applicationZoomPrevention: "css touch-action: manipulation", applicationTouchendFallback: false };
   }
   start() {
     if (this.#active) return;
     this.#active = true;
     this.#startedAt = (/* @__PURE__ */ new Date()).toISOString();
+    this.#lastTouchEnd = null;
+    this.#sequences = [];
     this.record("diagnostic_started");
     for (const name of ["touchstart", "touchend", "click", "dblclick"]) {
       const handler = (event) => this.record(name, event);
@@ -8486,11 +8490,10 @@ var IosTouchZoomDiagnostic = class {
     const wasActive = this.#active;
     this.stop();
     this.#events = [];
+    this.#sequences = [];
+    this.#lastTouchEnd = null;
     this.#startedAt = null;
     if (wasActive) this.start();
-  }
-  recordFallbackDecision(event, decision) {
-    if (this.#active) this.record("app_touchend_fallback", event, { decision });
   }
   record(name, event = null, extra = {}) {
     if (!this.#active && name !== "diagnostic_started") return;
@@ -8498,12 +8501,27 @@ var IosTouchZoomDiagnostic = class {
     const target = event?.target instanceof Element ? event.target : null;
     const touch = event?.changedTouches?.[0] || event?.touches?.[0] || null;
     const appTransform = document.querySelector("#app") ? getComputedStyle(document.querySelector("#app")).transform : null;
-    const row = { name, at: Date.now(), timeStamp: event?.timeStamp ?? null, eventPhase: event?.eventPhase ?? null, cancelable: event?.cancelable ?? null, defaultPrevented: event?.defaultPrevented ?? null, isTrusted: event?.isTrusted ?? null, touches: event?.touches?.length ?? 0, changedTouches: event?.changedTouches?.length ?? 0, touch: touch ? { identifier: touch.identifier, clientX: Math.round(touch.clientX), clientY: Math.round(touch.clientY), pageX: Math.round(touch.pageX), pageY: Math.round(touch.pageY) } : null, target: target ? { tag: target.tagName, role: target.getAttribute("role"), type: target.getAttribute("type"), component: target.dataset.component || target.dataset.action || null, touchAction: getComputedStyle(target).touchAction } : null, viewport: { scale: viewport?.scale ?? 1, width: viewport?.width ?? innerWidth, height: viewport?.height ?? innerHeight, offsetLeft: viewport?.offsetLeft ?? 0, offsetTop: viewport?.offsetTop ?? 0, innerWidth, innerHeight, scrollX, scrollY }, render: { appTransform, documentScrollWidth: document.documentElement.scrollWidth, documentClientWidth: document.documentElement.clientWidth, horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth }, ...extra };
+    const ancestors = [];
+    for (let node = target; node instanceof Element; node = node.parentElement) {
+      ancestors.push({ tag: node.tagName, id: node.id || null, role: node.getAttribute("role"), touchAction: getComputedStyle(node).touchAction });
+      if (node === document.body) break;
+    }
+    const row = { name, at: Date.now(), performanceNow: performance.now(), timeStamp: event?.timeStamp ?? null, eventPhase: event?.eventPhase ?? null, cancelable: event?.cancelable ?? null, defaultPrevented: event?.defaultPrevented ?? null, isTrusted: event?.isTrusted ?? null, touches: event?.touches?.length ?? 0, changedTouches: event?.changedTouches?.length ?? 0, touch: touch ? { identifier: touch.identifier, clientX: Math.round(touch.clientX), clientY: Math.round(touch.clientY), pageX: Math.round(touch.pageX), pageY: Math.round(touch.pageY) } : null, target: target ? { tag: target.tagName, role: target.getAttribute("role"), type: target.getAttribute("type"), component: target.dataset.component || target.dataset.action || null, touchAction: getComputedStyle(target).touchAction } : null, ancestors, viewport: { scale: viewport?.scale ?? 1, width: viewport?.width ?? innerWidth, height: viewport?.height ?? innerHeight, offsetLeft: viewport?.offsetLeft ?? 0, offsetTop: viewport?.offsetTop ?? 0, innerWidth, innerHeight, scrollX, scrollY }, render: { appTransform, documentScrollWidth: document.documentElement.scrollWidth, documentClientWidth: document.documentElement.clientWidth, horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth }, ...extra };
     this.#events.push(row);
     if (this.#events.length > LIMIT) this.#events.splice(0, this.#events.length - LIMIT);
+    if (name === "touchend" && row.touches === 0 && row.changedTouches === 1) {
+      const prior = this.#lastTouchEnd, eventDelta = prior && row.timeStamp != null && prior.timeStamp != null ? row.timeStamp - prior.timeStamp : null, distance = prior && row.touch && prior.touch ? Math.hypot(row.touch.clientX - prior.touch.clientX, row.touch.clientY - prior.touch.clientY) : null;
+      if (prior && (eventDelta ?? row.at - prior.at) < 600 && (distance == null || distance < 48)) {
+        const sequence = { kind: "single_finger_double_tap_candidate", first: { at: prior.at, timeStamp: prior.timeStamp, performanceNow: prior.performanceNow, point: prior.touch }, second: { at: row.at, timeStamp: row.timeStamp, performanceNow: row.performanceNow, point: row.touch }, delta: { eventTimeStamp: eventDelta, recordedEpoch: row.at - prior.at, performance: row.performanceNow - prior.performanceNow, distance }, startScale: prior.viewport.scale, maximumScale: Math.max(prior.viewport.scale, row.viewport.scale), multiTouch: false };
+        this.#sequences.push(sequence);
+        if (this.#sequences.length > 24) this.#sequences.shift();
+      }
+      this.#lastTouchEnd = row;
+    }
+    if (name === "visualviewport_change") for (const sequence of this.#sequences) sequence.maximumScale = Math.max(sequence.maximumScale, row.viewport.scale);
   }
   export() {
-    return { diagnosticVersion: 1, kind: "ios_touch_zoom_qa6", startedAt: this.#startedAt, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), environment: { standalone: matchMedia?.("(display-mode: standalone)").matches === true || navigator.standalone === true, viewport: { innerWidth, innerHeight, devicePixelRatio }, listenerStatus: this.listenerStatus }, privacy: { ownerNotes: false, childProfile: false, toyHistory: false, inputValues: false, networkTransmission: false }, events: this.#events.map((event) => ({ ...event })) };
+    return { diagnosticVersion: 2, kind: "ios_touch_zoom_qa6", startedAt: this.#startedAt, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), environment: { standalone: matchMedia?.("(display-mode: standalone)").matches === true || navigator.standalone === true, viewport: { innerWidth, innerHeight, devicePixelRatio }, listenerStatus: this.listenerStatus }, privacy: { ownerNotes: false, childProfile: false, toyHistory: false, inputValues: false, networkTransmission: false }, doubleTapSequences: this.#sequences.map((sequence) => ({ ...sequence })), events: this.#events.map((event) => ({ ...event })) };
   }
 };
 
@@ -10628,13 +10646,37 @@ function createI18n(store2) {
 
 // src/ui/display-resolver.js
 var ZH = Object.freeze({ fineMotor: "\u7CBE\u7EC6\u52A8\u4F5C", grossMotor: "\u5927\u8FD0\u52A8", problemSolving: "\u89E3\u51B3\u95EE\u9898", visualSpatial: "\u89C6\u89C9\u7A7A\u95F4", matching: "\u914D\u5BF9", sorting: "\u5206\u7C7B", causeEffect: "\u56E0\u679C\u5173\u7CFB", bilateralCoordination: "\u53CC\u624B\u534F\u8C03", handStrength: "\u624B\u90E8\u529B\u91CF", toolUse: "\u5DE5\u5177\u4F7F\u7528", language: "\u8BED\u8A00\u6C9F\u901A", pretendPlay: "\u5047\u88C5\u6E38\u620F", earlyMath: "\u65E9\u671F\u6570\u5B66", attentionPersistence: "\u4E13\u6CE8\u4E0E\u575A\u6301", fine_motor: "\u7CBE\u7EC6\u52A8\u4F5C", gross_motor: "\u5927\u8FD0\u52A8", problem_solving: "\u89E3\u51B3\u95EE\u9898", visual_spatial: "\u89C6\u89C9\u7A7A\u95F4", cause_effect: "\u56E0\u679C\u5173\u7CFB", pretend_play: "\u5047\u88C5\u6E38\u620F", attention_persistence: "\u4E13\u6CE8\u4E0E\u575A\u6301", OWNER_CONFIRMED_PENDING: "\u5BB6\u957F\u786E\u8BA4\u6B63\u5728\u73A9", CORE_CURRENT_PLAY: "\u5F53\u524D\u6838\u5FC3\u73A9\u6CD5", FAMILIARIZATION: "\u966A\u4F34\u63A2\u7D22", NEXT_MILESTONE_PRACTICE: "\u4E0B\u4E00\u9636\u6BB5\u7EC3\u4E60", PARENT_GOAL: "\u5BB6\u5EAD\u76EE\u6807", CURRENT_INTEREST: "\u5F53\u524D\u5174\u8DA3", OWNER_CONFIRMED: "\u5BB6\u957F\u5DF2\u786E\u8BA4\u6B63\u5728\u4F7F\u7528", NORMAL_PLAY_AVAILABLE: "\u9002\u5408\u65E5\u5E38\u73A9", PARENT_GOAL_MATCH: "\u7B26\u5408\u5BB6\u5EAD\u76EE\u6807", NEXT_MILESTONE_MATCH: "\u5339\u914D\u4E0B\u4E00\u9636\u6BB5\u80FD\u529B", FAMILIARIZATION_FIT: "\u9002\u5408\u966A\u4F34\u63A2\u7D22", NORMAL_PLAY: "\u6B63\u5E38\u73A9", OWNER_CONFIRMED_PLAY: "\u5BB6\u957F\u786E\u8BA4\u6B63\u5728\u73A9", DEVELOPMENT_CHALLENGE: "\u4E0B\u4E00\u6B65\u6311\u6218", SAFETY_BLOCKED: "\u5B89\u5168\u9650\u5236", EVIDENCE_BLOCKED: "\u4EA7\u54C1\u4FE1\u606F\u4E0D\u8DB3", "Explore pieces": "\u63A2\u7D22\u62FC\u56FE\u7247", "Match one or two": "\u914D\u5BF9\u4E00\u4E24\u5757", "Complete a section": "\u5B8C\u6210\u4E00\u90E8\u5206", "Complete the full puzzle": "\u5B8C\u6210\u6574\u5E45\u62FC\u56FE", "Explore materials": "\u63A2\u7D22\u6750\u6599", "Copy a simple idea": "\u6A21\u4EFF\u4E00\u4E2A\u7B80\u5355\u73A9\u6CD5", "Plan together": "\u4E00\u8D77\u89C4\u5212", "Create independently": "\u81EA\u4E3B\u521B\u4F5C", "Name and handle": "\u8BA4\u8BC6\u5E76\u64CD\u4F5C", "Copy a simple action": "\u6A21\u4EFF\u4E00\u4E2A\u7B80\u5355\u52A8\u4F5C", "Link two actions": "\u8FDE\u63A5\u4E24\u4E2A\u52A8\u4F5C", "Create a story": "\u521B\u7F16\u4E00\u4E2A\u6545\u4E8B", "Explore": "\u63A2\u7D22", "Try together": "\u4E00\u8D77\u8BD5\u8BD5", "Build independence": "\u7EC3\u4E60\u72EC\u7ACB\u5B8C\u6210", "Name or notice pictures; let the child handle one piece at a time.": "\u8BF4\u8BF4\u6216\u770B\u770B\u56FE\u7247\uFF1B\u6BCF\u6B21\u8BA9\u5B69\u5B50\u62FF\u4E00\u5757\u3002", "Offer one or two likely matches and pause before helping.": "\u63D0\u4F9B\u4E00\u4E24\u5757\u53EF\u80FD\u5339\u914D\u7684\u62FC\u7247\uFF0C\u5148\u505C\u4E00\u505C\u518D\u5E2E\u5FD9\u3002", "Let the child choose and turn pieces for part of the board.": "\u8BA9\u5B69\u5B50\u9009\u62E9\u5E76\u8F6C\u52A8\u62FC\u7247\uFF0C\u5B8C\u6210\u68CB\u76D8\u7684\u4E00\u90E8\u5206\u3002", "Use the full set with only the support the child requests.": "\u4F7F\u7528\u6574\u5957\u62FC\u56FE\uFF0C\u53EA\u5728\u5B69\u5B50\u9700\u8981\u65F6\u63D0\u4F9B\u5E2E\u52A9\u3002", "Stack, connect or separate pieces freely.": "\u81EA\u7531\u5806\u53E0\u3001\u8FDE\u63A5\u6216\u62C6\u5F00\u6750\u6599\u3002", "Model one small structure for the child to extend.": "\u793A\u8303\u4E00\u4E2A\u5C0F\u7ED3\u6784\uFF0C\u8BA9\u5B69\u5B50\u7EE7\u7EED\u642D\u5EFA\u3002", "Use spatial words such as on, under and beside.": "\u4F7F\u7528\u201C\u4E0A\u9762\u3001\u4E0B\u9762\u3001\u65C1\u8FB9\u201D\u7B49\u7A7A\u95F4\u8BCD\u3002", "Invite the child to explain or reuse their own construction.": "\u9080\u8BF7\u5B69\u5B50\u8BB2\u8BB2\u6216\u518D\u6B21\u4F7F\u7528\u81EA\u5DF1\u7684\u642D\u5EFA\u3002", "Let the child choose familiar objects and name actions.": "\u8BA9\u5B69\u5B50\u9009\u62E9\u719F\u6089\u7269\u54C1\uFF0C\u5E76\u8BF4\u8BF4\u52A8\u4F5C\u3002", "Model one short routine such as feeding or washing.": "\u793A\u8303\u4E00\u4E2A\u7B80\u77ED\u52A8\u4F5C\uFF0C\u4F8B\u5982\u5582\u98DF\u6216\u6E05\u6D17\u3002", "Invite a short sequence with a familiar story.": "\u7ED3\u5408\u719F\u6089\u6545\u4E8B\u9080\u8BF7\u5B69\u5B50\u5B8C\u6210\u77ED\u6B65\u9AA4\u3002", "Follow the child\u2019s ideas and add language only when welcome.": "\u8DDF\u968F\u5B69\u5B50\u7684\u60F3\u6CD5\uFF0C\u53EA\u5728\u5408\u9002\u65F6\u8865\u5145\u8BED\u8A00\u3002", "Offer one simple action with no completion expectation.": "\u63D0\u4F9B\u4E00\u4E2A\u7B80\u5355\u52A8\u4F5C\uFF0C\u4E0D\u8981\u6C42\u5B8C\u6210\u3002", "Model a short action, then pause for the child\u2019s turn.": "\u793A\u8303\u4E00\u4E2A\u7B80\u77ED\u52A8\u4F5C\uFF0C\u7136\u540E\u505C\u4E0B\u6765\u7B49\u5B69\u5B50\u5C1D\u8BD5\u3002", "Reduce help while keeping the goal small and achievable.": "\u5728\u76EE\u6807\u4FDD\u6301\u5C0F\u800C\u53EF\u5B8C\u6210\u7684\u540C\u65F6\u9010\u6B65\u51CF\u5C11\u5E2E\u52A9\u3002", "What draws the child\u2019s attention?": "\u4EC0\u4E48\u6700\u5438\u5F15\u5B69\u5B50\u7684\u6CE8\u610F\uFF1F", "Does the child try a new step before asking for help?": "\u5B69\u5B50\u4F1A\u5148\u5C1D\u8BD5\u65B0\u4E00\u6B65\u518D\u6C42\u52A9\u5417\uFF1F" });
-var EXTRA_ZH = Object.freeze({ PRODUCT_INFORMATION_NEEDED: "\u4EA7\u54C1\u4FE1\u606F\u5F85\u6838\u5B9E" });
+var EXTRA_ZH = Object.freeze({ PRODUCT_INFORMATION_NEEDED: "\u4EA7\u54C1\u4FE1\u606F\u5F85\u6838\u5B9E", SAFETY_LIMIT: "\u5B89\u5168\u9650\u5236", PERMANENT_SHELF: "\u5E38\u9A7B\u73A9\u5177" });
 function resolveDisplay(value, locale = "en") {
   const text2 = String(value ?? "");
   return locale === "zh" ? ZH[text2] || EXTRA_ZH[text2] || text2 : text2;
 }
 function displayPlayLadder(level, locale = "en") {
   return !level ? null : { ...level, title: resolveDisplay(level.title, locale), instruction: resolveDisplay(level.instruction, locale), observation: resolveDisplay(level.observation, locale) };
+}
+
+// src/ui/toy-library-status-resolver.js
+function resolveToyLibraryStatusBadges({ model, isPermanent = false, locale = "en" } = {}) {
+  const badges = [];
+  const seen = /* @__PURE__ */ new Set();
+  const add = (semantic, key) => {
+    if (!seen.has(semantic)) {
+      seen.add(semantic);
+      badges.push({ semantic, key, label: resolveDisplay(key, locale) });
+    }
+  };
+  const primary = model?.primaryUseMode || "NORMAL_PLAY";
+  const modes = new Set(model?.recommendation?.modes || []);
+  if (primary === "SAFETY_BLOCKED") add("safety-blocked", "SAFETY_BLOCKED");
+  else if (primary === "EVIDENCE_BLOCKED") add("evidence-blocked", "EVIDENCE_BLOCKED");
+  else {
+    if (model?.ownerUseStatus === "CURRENTLY_PLAYING" || modes.has("OWNER_CONFIRMED_PLAY")) add("owner-playing", "OWNER_CONFIRMED_PLAY");
+    if (modes.has("NEXT_STEP_CHALLENGE") || primary === "DEVELOPMENT_CHALLENGE") add("next-challenge", "DEVELOPMENT_CHALLENGE");
+    if (model?.ownerUseStatus === "EXPLORING" || modes.has("FAMILIARIZATION") || primary === "FAMILIARIZATION") add("exploring", "FAMILIARIZATION");
+    if (!badges.length) add("normal-play", "NORMAL_PLAY");
+  }
+  if (isPermanent) add("permanent-shelf", "PERMANENT_SHELF");
+  return badges;
 }
 
 // src/ui/modal-manager.js
@@ -11054,22 +11096,6 @@ function escapeAttribute(value) {
 
 // src/main.js
 var root = document.querySelector("#app");
-var lastContentTap = null;
-root?.addEventListener("touchend", (event) => {
-  if (event.touches.length || event.changedTouches.length !== 1) {
-    touchZoomDiagnostic?.recordFallbackDecision(event, "ignored_multitouch");
-    return;
-  }
-  if (event.target instanceof Element && event.target.closest('input,select,textarea,[contenteditable="true"]')) {
-    touchZoomDiagnostic?.recordFallbackDecision(event, "ignored_editable");
-    return;
-  }
-  const now3 = Date.now(), touch = event.changedTouches[0];
-  const suppress = Boolean(lastContentTap && now3 - lastContentTap.at < 280 && Math.hypot(touch.clientX - lastContentTap.x, touch.clientY - lastContentTap.y) < 24);
-  if (suppress) event.preventDefault();
-  touchZoomDiagnostic?.recordFallbackDecision(event, suppress ? "prevented_rapid_same_location_second_tap" : "allowed");
-  lastContentTap = { at: now3, x: touch.clientX, y: touch.clientY };
-}, { passive: false });
 var STARTUP_DIAGNOSTIC_KEY = "toyRotation.startupDiagnostic";
 var earlyStartup = window.__TOY_ROTATION_EARLY_STARTUP__;
 earlyStartup?.mark("main_loaded");
@@ -11240,7 +11266,6 @@ function render() {
   root.querySelectorAll("[data-action]").forEach((button) => {
     button.onclick = () => action(button.dataset.action, button.dataset);
   });
-  renderChallengeBadges();
   root.querySelectorAll("[data-draft-edit]").forEach((button) => {
     button.onclick = () => openRecognitionReview(button.dataset.draftEdit);
   });
@@ -11390,22 +11415,9 @@ function renderToyCard(toy, { showDevelopment = false } = {}) {
   const runtimeImageRef = libraryImageRef(toy, "toy_library_card_render");
   const development = showDevelopment ? renderDevelopmentFeedback(toy) : "";
   const model = toyUseViewModel(toy, developmentContext());
-  const useLabel = developmentModeLabel(model.primaryUseMode);
+  const statusBadges = resolveToyLibraryStatusBadges({ model, isPermanent: customPermanent, locale: i18n.language }).map((badge) => `<span class="challenge-chip toy-status-chip" data-status-semantic="${badge.semantic}">${escape(badge.label)}</span>`).join("");
   const ladder = displayLadder(model.playLadder?.[model.currentPlayLevel - 1]);
-  return `<article class="card" data-toy-id="${escape(toy.id)}" data-toy-use="${escape(model.primaryUseMode)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes || []).join("|"))}" data-mechanics="${escape((toy.playMechanics || []).join("|"))}" data-status="${toy.archived ? "archived" : toy.hidden ? "hidden" : paused ? "paused" : customPermanent ? "permanent" : onShelf ? "active" : "stored"}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))}${customPermanent ? ` <span class="permanent-chip">${t("permanentBadge")}</span>` : ""}<span class="challenge-chip">${escape(useLabel)}</span></h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map((code) => `<span>${t(`skill.${code}`)}</span>`).join("")}</div><p>${escape(developmentReasonLabel(model.displayReason))}</p>${ladder ? `<p><small>${escape(ladder.title)}: ${escape(ladder.instruction)}</small></p>` : ""}<p>${toy.minAgeMonths ?? "?"}\u2013${toy.maxAgeMonths ?? "?"} ${ageUnit} \xB7 ${t(paused ? "paused" : customPermanent ? "customPermanent" : onShelf ? "onShelf" : "stored")}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === "like" ? "selected" : ""}">${t("liked")}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === "neutral" ? "selected" : ""}">${t("neutral")}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === "dislike" ? "selected" : ""}">${t("disliked")}</button>${model.availableActions.includes("CONFIRM_CURRENT_PLAY") ? `<button data-action="development-confirm-playing" data-id="${toy.id}">${developmentText("ownerConfirmed")}</button>` : ""}${model.availableActions.includes("ENABLE_EXPLORATION_ROTATION") ? `<button data-action="development-enable-exploration" data-id="${toy.id}">${developmentText("exploring")}</button>` : ""}${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t("edit")}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t("remove")}</button></div></div></article>`;
-}
-function renderChallengeBadges() {
-  if (view !== "library") return;
-  const byId = new Map(developmentSurfaceModel(developmentContext()).toyModels.map((model) => [model.toy.id, model]));
-  root.querySelectorAll("#library-list [data-toy-id]").forEach((card) => {
-    const model = byId.get(card.dataset.toyId);
-    if (!model || !["DEVELOPMENT_CHALLENGE", "FAMILIARIZATION", "OWNER_CONFIRMED_PLAY"].includes(model.primaryUseMode)) return;
-    const badge = document.createElement("span");
-    badge.className = "challenge-chip";
-    badge.dataset.challengeSource = model.primaryUseMode;
-    badge.textContent = developmentModeLabel(model.primaryUseMode);
-    card.querySelector("h3")?.append(" ", badge);
-  });
+  return `<article class="card" data-toy-id="${escape(toy.id)}" data-toy-use="${escape(model.primaryUseMode)}" data-library-search="${escape(librarySearchText(toy))}" data-brand="${escape(toy.brand)}" data-category="${toy.categoryCode}" data-skills="${escape((toy.skillCodes || []).join("|"))}" data-mechanics="${escape((toy.playMechanics || []).join("|"))}" data-status="${toy.archived ? "archived" : toy.hidden ? "hidden" : paused ? "paused" : customPermanent ? "permanent" : onShelf ? "active" : "stored"}" data-age-fit="${toyAgeFit(toy)}"><img data-runtime-image-toy-id="${escape(toy.id)}" data-image='${escapedJson(runtimeImageRef)}' alt=""><div><h3>${escape(displayName(toy))} ${statusBadges}</h3><p>${escape(brandLabel(toy.brand))} \xB7 ${t(`category.${toy.categoryCode}`)}</p><div class="chips">${toy.skillCodes.map((code) => `<span>${t(`skill.${code}`)}</span>`).join("")}</div><p>${escape(developmentReasonLabel(model.displayReason))}</p>${ladder ? `<p><small>${escape(ladder.title)}: ${escape(ladder.instruction)}</small></p>` : ""}<p>${toy.minAgeMonths ?? "?"}\u2013${toy.maxAgeMonths ?? "?"} ${ageUnit} \xB7 ${t(paused ? "paused" : customPermanent ? "customPermanent" : onShelf ? "onShelf" : "stored")}</p>${development}<div class="actions"><button data-action="interest" data-id="${toy.id}" data-value="like" class="${toy.interest === "like" ? "selected" : ""}">${t("liked")}</button><button data-action="interest" data-id="${toy.id}" data-value="neutral" class="${toy.interest === "neutral" ? "selected" : ""}">${t("neutral")}</button><button data-action="interest" data-id="${toy.id}" data-value="dislike" class="${toy.interest === "dislike" ? "selected" : ""}">${t("disliked")}</button>${model.availableActions.includes("CONFIRM_CURRENT_PLAY") ? `<button data-action="development-confirm-playing" data-id="${toy.id}">${developmentText("ownerConfirmed")}</button>` : ""}${model.availableActions.includes("ENABLE_EXPLORATION_ROTATION") ? `<button data-action="development-enable-exploration" data-id="${toy.id}">${developmentText("exploring")}</button>` : ""}${manualControl}${permanentControl}${pauseControl}<button data-action="edit" data-id="${toy.id}">${t("edit")}</button><button data-action="remove-toy" data-id="${toy.id}" class="danger">${t("remove")}</button></div></div></article>`;
 }
 function renderDevelopmentFeedback(toy) {
   const cycle = store.state.rotationHistory?.[0]?.id || null;
