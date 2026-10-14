@@ -652,9 +652,9 @@ function buildMD1460SemanticFingerprint(state, { snapshots: snapshots2 = [] } = 
 }
 function buildMD1460OwnerFingerprint(state, { snapshots: snapshots2 = [] } = {}) {
   const withoutMarker = (value) => {
-    const copy = structuredClone(value);
-    if (copy?.catalogState?.syncMetadata) delete copy.catalogState.syncMetadata[MD1460_IDENTITY_MIGRATION_MARKER];
-    return copy;
+    const copy2 = structuredClone(value);
+    if (copy2?.catalogState?.syncMetadata) delete copy2.catalogState.syncMetadata[MD1460_IDENTITY_MIGRATION_MARKER];
+    return copy2;
   };
   return buildMD1460SemanticFingerprint(withoutMarker(state), { snapshots: snapshotStates(snapshots2).map(withoutMarker) });
 }
@@ -9353,8 +9353,16 @@ function countExclusions(allCandidates) {
   return summary3;
 }
 function explainSelection(item, selectedMechanics, recentIds) {
-  const mechanics = mechanicsOf(item.toy), skills = [...item.toy.skillCodes || []];
-  return { mechanics, skills, selectionSignals: [...mechanics.some((value) => (selectedMechanics.get(value) || 0) === 1) ? ["MECHANISM_VARIETY"] : [], ...recentIds.has(item.toy.id) ? [] : ["LESS_RECENT"], ...item.purpose === "PARENT_GOAL" ? ["PARENT_GOAL"] : [], ...item.purpose === "CURRENT_INTEREST" ? ["CURRENT_INTEREST"] : []] };
+  const mechanics = mechanicsOf(item.toy), uniqueMechanics = mechanics.filter((value) => (selectedMechanics.get(value) || 0) === 1);
+  const recencyAvoided = recentIds.size > 0 && !recentIds.has(item.toy.id);
+  const selectionSignals = [
+    ...uniqueMechanics.length ? ["MECHANISM_VARIETY"] : [],
+    ...recencyAvoided ? ["RECENCY_AVOIDANCE"] : [],
+    ...item.purpose === "PARENT_GOAL" ? ["PARENT_GOAL_PRIORITY"] : [],
+    ...item.purpose === "CURRENT_INTEREST" ? ["CURRENT_INTEREST_PRIORITY"] : [],
+    ...item.purpose === "NEXT_MILESTONE_PRACTICE" ? ["NEXT_MILESTONE_PRIORITY"] : []
+  ];
+  return { version: 2, selectionSignals, evidence: { uniqueMechanics, recentHistoryPresent: recentIds.size > 0, recencyAvoided } };
 }
 function purpose(recommendation, state, toy) {
   const modes = new Set(recommendation.modes);
@@ -9642,15 +9650,15 @@ function markStartupError(trace, stage, error) {
 }
 function renderStartupShell(root2, language) {
   if (!root2) return;
-  const copy = startupCopy(language);
-  root2.innerHTML = `<section class="startup-shell" role="status" aria-live="polite"><div class="startup-spinner" aria-hidden="true"></div><div><h1>${copy.title}</h1><p data-startup-detail>${copy.detail}</p></div></section>`;
+  const copy2 = startupCopy(language);
+  root2.innerHTML = `<section class="startup-shell" role="status" aria-live="polite"><div class="startup-spinner" aria-hidden="true"></div><div><h1>${copy2.title}</h1><p data-startup-detail>${copy2.detail}</p></div></section>`;
 }
 function installStartupWatchdog(root2, trace, { delayMs = WATCHDOG_DELAY_MS, language = globalThis.navigator?.language } = {}) {
   return setTimeout(() => {
     if (trace?.stages?.first_meaningful_paint) return;
-    const copy = startupCopy(language);
+    const copy2 = startupCopy(language);
     const stage = trace?.latestStage || "starting";
-    if (root2) root2.innerHTML = `<section class="startup-shell startup-safe-mode" role="alert"><div><h1>${copy.title}</h1><p>${copy.detail}</p><p><b>Startup phase:</b> ${String(stage)}</p><p>${trace?.errors?.[0]?.message ? String(trace.errors[0].message) : "The app is still loading. You can retry or open the read-only storage diagnostic."}</p><div class="actions"><button type="button" data-startup-retry>Retry</button><button type="button" data-startup-diagnostic>Diagnostic</button></div></div></section>`;
+    if (root2) root2.innerHTML = `<section class="startup-shell startup-safe-mode" role="alert"><div><h1>${copy2.title}</h1><p>${copy2.detail}</p><p><b>Startup phase:</b> ${String(stage)}</p><p>${trace?.errors?.[0]?.message ? String(trace.errors[0].message) : "The app is still loading. You can retry or open the read-only storage diagnostic."}</p><div class="actions"><button type="button" data-startup-retry>Retry</button><button type="button" data-startup-diagnostic>Diagnostic</button></div></div></section>`;
     root2?.querySelector?.("[data-startup-retry]")?.addEventListener("click", () => location.reload());
     root2?.querySelector?.("[data-startup-diagnostic]")?.addEventListener("click", () => location.assign("./storage-recovery-diagnostic.html"));
     markStartupStage(trace, "startup_watchdog_visible");
@@ -10646,7 +10654,7 @@ function createI18n(store2) {
 
 // src/ui/display-resolver.js
 var ZH = Object.freeze({ fineMotor: "\u7CBE\u7EC6\u52A8\u4F5C", grossMotor: "\u5927\u8FD0\u52A8", problemSolving: "\u89E3\u51B3\u95EE\u9898", visualSpatial: "\u89C6\u89C9\u7A7A\u95F4", matching: "\u914D\u5BF9", sorting: "\u5206\u7C7B", causeEffect: "\u56E0\u679C\u5173\u7CFB", bilateralCoordination: "\u53CC\u624B\u534F\u8C03", handStrength: "\u624B\u90E8\u529B\u91CF", toolUse: "\u5DE5\u5177\u4F7F\u7528", language: "\u8BED\u8A00\u6C9F\u901A", pretendPlay: "\u5047\u88C5\u6E38\u620F", earlyMath: "\u65E9\u671F\u6570\u5B66", attentionPersistence: "\u4E13\u6CE8\u4E0E\u575A\u6301", fine_motor: "\u7CBE\u7EC6\u52A8\u4F5C", gross_motor: "\u5927\u8FD0\u52A8", problem_solving: "\u89E3\u51B3\u95EE\u9898", visual_spatial: "\u89C6\u89C9\u7A7A\u95F4", cause_effect: "\u56E0\u679C\u5173\u7CFB", pretend_play: "\u5047\u88C5\u6E38\u620F", attention_persistence: "\u4E13\u6CE8\u4E0E\u575A\u6301", OWNER_CONFIRMED_PENDING: "\u5BB6\u957F\u786E\u8BA4\u6B63\u5728\u73A9", CORE_CURRENT_PLAY: "\u5F53\u524D\u6838\u5FC3\u73A9\u6CD5", FAMILIARIZATION: "\u966A\u4F34\u63A2\u7D22", NEXT_MILESTONE_PRACTICE: "\u4E0B\u4E00\u9636\u6BB5\u7EC3\u4E60", PARENT_GOAL: "\u5BB6\u5EAD\u76EE\u6807", CURRENT_INTEREST: "\u5F53\u524D\u5174\u8DA3", OWNER_CONFIRMED: "\u5BB6\u957F\u5DF2\u786E\u8BA4\u6B63\u5728\u4F7F\u7528", NORMAL_PLAY_AVAILABLE: "\u9002\u5408\u65E5\u5E38\u73A9", PARENT_GOAL_MATCH: "\u7B26\u5408\u5BB6\u5EAD\u76EE\u6807", NEXT_MILESTONE_MATCH: "\u5339\u914D\u4E0B\u4E00\u9636\u6BB5\u80FD\u529B", FAMILIARIZATION_FIT: "\u9002\u5408\u966A\u4F34\u63A2\u7D22", NORMAL_PLAY: "\u6B63\u5E38\u73A9", OWNER_CONFIRMED_PLAY: "\u5BB6\u957F\u786E\u8BA4\u6B63\u5728\u73A9", DEVELOPMENT_CHALLENGE: "\u4E0B\u4E00\u6B65\u6311\u6218", SAFETY_BLOCKED: "\u5B89\u5168\u9650\u5236", EVIDENCE_BLOCKED: "\u4EA7\u54C1\u4FE1\u606F\u4E0D\u8DB3", "Explore pieces": "\u63A2\u7D22\u62FC\u56FE\u7247", "Match one or two": "\u914D\u5BF9\u4E00\u4E24\u5757", "Complete a section": "\u5B8C\u6210\u4E00\u90E8\u5206", "Complete the full puzzle": "\u5B8C\u6210\u6574\u5E45\u62FC\u56FE", "Explore materials": "\u63A2\u7D22\u6750\u6599", "Copy a simple idea": "\u6A21\u4EFF\u4E00\u4E2A\u7B80\u5355\u73A9\u6CD5", "Plan together": "\u4E00\u8D77\u89C4\u5212", "Create independently": "\u81EA\u4E3B\u521B\u4F5C", "Name and handle": "\u8BA4\u8BC6\u5E76\u64CD\u4F5C", "Copy a simple action": "\u6A21\u4EFF\u4E00\u4E2A\u7B80\u5355\u52A8\u4F5C", "Link two actions": "\u8FDE\u63A5\u4E24\u4E2A\u52A8\u4F5C", "Create a story": "\u521B\u7F16\u4E00\u4E2A\u6545\u4E8B", "Explore": "\u63A2\u7D22", "Try together": "\u4E00\u8D77\u8BD5\u8BD5", "Build independence": "\u7EC3\u4E60\u72EC\u7ACB\u5B8C\u6210", "Name or notice pictures; let the child handle one piece at a time.": "\u8BF4\u8BF4\u6216\u770B\u770B\u56FE\u7247\uFF1B\u6BCF\u6B21\u8BA9\u5B69\u5B50\u62FF\u4E00\u5757\u3002", "Offer one or two likely matches and pause before helping.": "\u63D0\u4F9B\u4E00\u4E24\u5757\u53EF\u80FD\u5339\u914D\u7684\u62FC\u7247\uFF0C\u5148\u505C\u4E00\u505C\u518D\u5E2E\u5FD9\u3002", "Let the child choose and turn pieces for part of the board.": "\u8BA9\u5B69\u5B50\u9009\u62E9\u5E76\u8F6C\u52A8\u62FC\u7247\uFF0C\u5B8C\u6210\u68CB\u76D8\u7684\u4E00\u90E8\u5206\u3002", "Use the full set with only the support the child requests.": "\u4F7F\u7528\u6574\u5957\u62FC\u56FE\uFF0C\u53EA\u5728\u5B69\u5B50\u9700\u8981\u65F6\u63D0\u4F9B\u5E2E\u52A9\u3002", "Stack, connect or separate pieces freely.": "\u81EA\u7531\u5806\u53E0\u3001\u8FDE\u63A5\u6216\u62C6\u5F00\u6750\u6599\u3002", "Model one small structure for the child to extend.": "\u793A\u8303\u4E00\u4E2A\u5C0F\u7ED3\u6784\uFF0C\u8BA9\u5B69\u5B50\u7EE7\u7EED\u642D\u5EFA\u3002", "Use spatial words such as on, under and beside.": "\u4F7F\u7528\u201C\u4E0A\u9762\u3001\u4E0B\u9762\u3001\u65C1\u8FB9\u201D\u7B49\u7A7A\u95F4\u8BCD\u3002", "Invite the child to explain or reuse their own construction.": "\u9080\u8BF7\u5B69\u5B50\u8BB2\u8BB2\u6216\u518D\u6B21\u4F7F\u7528\u81EA\u5DF1\u7684\u642D\u5EFA\u3002", "Let the child choose familiar objects and name actions.": "\u8BA9\u5B69\u5B50\u9009\u62E9\u719F\u6089\u7269\u54C1\uFF0C\u5E76\u8BF4\u8BF4\u52A8\u4F5C\u3002", "Model one short routine such as feeding or washing.": "\u793A\u8303\u4E00\u4E2A\u7B80\u77ED\u52A8\u4F5C\uFF0C\u4F8B\u5982\u5582\u98DF\u6216\u6E05\u6D17\u3002", "Invite a short sequence with a familiar story.": "\u7ED3\u5408\u719F\u6089\u6545\u4E8B\u9080\u8BF7\u5B69\u5B50\u5B8C\u6210\u77ED\u6B65\u9AA4\u3002", "Follow the child\u2019s ideas and add language only when welcome.": "\u8DDF\u968F\u5B69\u5B50\u7684\u60F3\u6CD5\uFF0C\u53EA\u5728\u5408\u9002\u65F6\u8865\u5145\u8BED\u8A00\u3002", "Offer one simple action with no completion expectation.": "\u63D0\u4F9B\u4E00\u4E2A\u7B80\u5355\u52A8\u4F5C\uFF0C\u4E0D\u8981\u6C42\u5B8C\u6210\u3002", "Model a short action, then pause for the child\u2019s turn.": "\u793A\u8303\u4E00\u4E2A\u7B80\u77ED\u52A8\u4F5C\uFF0C\u7136\u540E\u505C\u4E0B\u6765\u7B49\u5B69\u5B50\u5C1D\u8BD5\u3002", "Reduce help while keeping the goal small and achievable.": "\u5728\u76EE\u6807\u4FDD\u6301\u5C0F\u800C\u53EF\u5B8C\u6210\u7684\u540C\u65F6\u9010\u6B65\u51CF\u5C11\u5E2E\u52A9\u3002", "What draws the child\u2019s attention?": "\u4EC0\u4E48\u6700\u5438\u5F15\u5B69\u5B50\u7684\u6CE8\u610F\uFF1F", "Does the child try a new step before asking for help?": "\u5B69\u5B50\u4F1A\u5148\u5C1D\u8BD5\u65B0\u4E00\u6B65\u518D\u6C42\u52A9\u5417\uFF1F" });
-var EXTRA_ZH = Object.freeze({ PRODUCT_INFORMATION_NEEDED: "\u4EA7\u54C1\u4FE1\u606F\u5F85\u6838\u5B9E", SAFETY_LIMIT: "\u5B89\u5168\u9650\u5236", PERMANENT_SHELF: "\u5E38\u9A7B\u73A9\u5177" });
+var EXTRA_ZH = Object.freeze({ PRODUCT_INFORMATION_NEEDED: "\u4EA7\u54C1\u4FE1\u606F\u5F85\u6838\u5B9E", SAFETY_LIMIT: "\u5B89\u5168\u9650\u5236", PERMANENT_SHELF: "\u5E38\u9A7B\u73A9\u5177", LOW_LIBRARY_COVERAGE: "\u5F53\u524D\u8986\u76D6\u8F83\u5C11", NORMAL_AGE_USE: "\u5F53\u524D\u6708\u9F84\u53EF\u7528", NORMAL_PLAY_AVAILABLE: "\u9002\u5408\u65E5\u5E38\u73A9", PARENT_GOAL_MATCH: "\u7B26\u5408\u5BB6\u5EAD\u76EE\u6807", NEXT_MILESTONE_MATCH: "\u5339\u914D\u4E0B\u4E00\u9636\u6BB5\u80FD\u529B", FAMILIARIZATION_FIT: "\u9002\u5408\u966A\u4F34\u63A2\u7D22" });
 function resolveDisplay(value, locale = "en") {
   const text2 = String(value ?? "");
   return locale === "zh" ? ZH[text2] || EXTRA_ZH[text2] || text2 : text2;
@@ -10677,6 +10685,44 @@ function resolveToyLibraryStatusBadges({ model, isPermanent = false, locale = "e
   }
   if (isPermanent) add("permanent-shelf", "PERMANENT_SHELF");
   return badges;
+}
+
+// src/ui/rotation-selection-explanation-resolver.js
+var COPY = {
+  zh: {
+    mechanism: "\u8865\u5145\u672C\u8F6E\u4E0D\u540C\u7684\u73A9\u6CD5\u673A\u5236",
+    lessRecent: "\u8FD1\u671F\u672A\u5728\u6700\u8FD1\u8F6E\u6B21\u4E0A\u67B6",
+    parentGoal: "\u5339\u914D\u5F53\u524D\u5BB6\u5EAD\u7684\u53D1\u5C55\u76EE\u6807",
+    interest: "\u8D34\u5408\u5F53\u524D\u5174\u8DA3",
+    nextMilestone: "\u652F\u6301\u4E0B\u4E00\u9636\u6BB5\u7EC3\u4E60",
+    unavailable: "\u672C\u8F6E\u672A\u4FDD\u5B58\u53EF\u7528\u7684\u9009\u54C1\u8BF4\u660E"
+  },
+  en: {
+    mechanism: "Adds a different play mechanism to this round",
+    lessRecent: "Did not appear in the recent rounds",
+    parentGoal: "Matches the current family development goal",
+    interest: "Matches the current interest",
+    nextMilestone: "Supports practice toward the next milestone",
+    unavailable: "No saved selection explanation is available for this round"
+  }
+};
+function copy(locale) {
+  return COPY[locale === "zh" ? "zh" : "en"];
+}
+function resolveRotationSelectionExplanation(selection, locale = "en") {
+  const text2 = copy(locale);
+  if (selection?.explanation?.version !== 2) return { selected: [text2.unavailable], available: false };
+  const signals = new Set(selection.explanation?.selectionSignals || []);
+  const reasons = [];
+  const add = (value) => {
+    if (value && !reasons.includes(value) && reasons.length < 2) reasons.push(value);
+  };
+  if (signals.has("PARENT_GOAL_PRIORITY")) add(text2.parentGoal);
+  if (signals.has("CURRENT_INTEREST_PRIORITY")) add(text2.interest);
+  if (signals.has("NEXT_MILESTONE_PRIORITY")) add(text2.nextMilestone);
+  if (signals.has("MECHANISM_VARIETY")) add(text2.mechanism);
+  if (signals.has("RECENCY_AVOIDANCE")) add(text2.lessRecent);
+  return reasons.length ? { selected: reasons, available: true } : { selected: [text2.unavailable], available: false };
 }
 
 // src/ui/modal-manager.js
@@ -11340,7 +11386,7 @@ function developmentContext() {
 }
 function developmentText(key) {
   const zh = i18n.language === "zh";
-  const copy = {
+  const copy2 = {
     developmentFocus: ["Current development focus", "\u6700\u8FD1\u7684\u53D1\u5C55\u91CD\u70B9"],
     rotationPurpose: ["Why this rotation", "\u672C\u8F6E\u4E3A\u4EC0\u4E48\u8FD9\u6837\u9009"],
     exploring: ["Exploring now", "\u6B63\u5728\u63A2\u7D22"],
@@ -11360,7 +11406,7 @@ function developmentText(key) {
     noPurchase: ["No purchase needed right now.", "\u76EE\u524D\u4E0D\u9700\u8981\u8865\u5145\u65B0\u73A9\u5177\u3002"],
     profile: ["Development profile", "\u53D1\u5C55\u6863\u6848"]
   };
-  return copy[key]?.[zh ? 1 : 0] || key;
+  return copy2[key]?.[zh ? 1 : 0] || key;
 }
 function developmentModeLabel(mode) {
   return resolveDisplay(mode, i18n.language);
@@ -11517,7 +11563,11 @@ function renderRotation() {
   const shortage = latest2?.shortageCount ? `<p class="panel">${t("rotationShortage", { selected: latest2.selectedRotationCount ?? latest2.selectedCount, requested: latest2.requestedRotationCount ?? latest2.requestedCount })}</p>` : "";
   const manual = shelf.manual.length ? `<section class="rotation-section"><details><summary>${t("manuallyOnShelf")} \xB7 ${shelf.manual.length}</summary><div class="list">${shelf.manual.map(renderToyCard).join("")}</div></details></section>` : "";
   const coverage2 = Object.values(surface.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).slice(0, 6).map((row) => `<span>${escape(resolveDisplay(row.skill, i18n.language))} \u2713</span>`).join("") || "\u2014";
-  const reasons = shelf.rotation.map((toy) => surface.byToyId.get(toy.id)).filter(Boolean).map((model) => `<li><b>${escape(displayName(model.toy))}</b> \u2014 ${escape(developmentReasonLabel(model.displayReason))}</li>`).join("");
+  const selectionByCanonical = new Map((latest2?.selectedCandidateScores || []).map((row) => [row.canonicalKey, row]));
+  const reasons = shelf.rotation.map((toy) => {
+    const explanation = resolveRotationSelectionExplanation(selectionByCanonical.get(toy.canonicalKey), i18n.language);
+    return `<li class="rotation-selection-reason"><b>${escape(displayName(toy))}</b><span>${explanation.selected.map((reason2) => `<span class="rotation-reason-chip">${escape(reason2)}</span>`).join("")}</span></li>`;
+  }).join("");
   const cards = shelf.rotation.map(renderRotationCard).join("") || renderEmpty();
   const touchStatus = touchZoomDiagnostic.active ? i18n.language === "zh" ? "\u8BB0\u5F55\u4E2D" : "Recording" : i18n.language === "zh" ? "\u5DF2\u5173\u95ED" : "Off";
   return `<section class="head"><h2>${t("rotation")}</h2></section><section class="panel shelf-total"><b>${t("thisRotation")} ${shelf.rotation.length} \uFF5C ${t("customPermanent")} ${shelf.permanent.length}</b></section><section class="rotation-grid" aria-label="${t("thisRotation")}">${cards}</section><div class="rotation-generate"><button class="primary" data-action="generate">${t("generate")}</button></div>${shortage}<section class="rotation-section"><details><summary>${t("customPermanent")} \xB7 ${shelf.permanent.length}</summary><div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div></details></section>${manual}<section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u672C\u8F6E\u4E3A\u4EC0\u4E48\u8FD9\u6837\u9009" : "Why this round"}</summary><ul>${reasons || "<li>\u2014</li>"}</ul></details></section><section class="rotation-section"><details><summary>${developmentText("coverage")}</summary><div class="chips">${coverage2}</div><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button></details></section><section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u9AD8\u7EA7\u8BCA\u65AD" : "Advanced diagnostics"}</summary><p>${t("currentShelfTotal", { count: shelf.totalShelfCount })} \xB7 ${t("paused")} ${pausedCount}</p><button data-action="copy-rotation-audit">${i18n.language === "zh" ? "\u590D\u5236\u8F6E\u6362\u8BCA\u65AD" : "Copy rotation audit"}</button><section class="touch-zoom-diagnostic"><h3>iOS Touch / Zoom Diagnostics <small>${touchStatus}</small></h3><p>${i18n.language === "zh" ? "QA6 \u4E34\u65F6\u8BCA\u65AD\uFF1A\u9ED8\u8BA4\u5173\u95ED\uFF1B\u4EC5\u8BB0\u5F55\u672C\u6B21\u4F1A\u8BDD\u7684\u89E6\u63A7\u4E0E\u89C6\u53E3\u6280\u672F\u6570\u636E\u3002" : "QA6 temporary diagnostic: off by default; records only this session\u2019s touch and viewport technical data."}</p><div class="actions"><button data-action="toggle-touch-zoom-diagnostic">${touchZoomDiagnostic.active ? i18n.language === "zh" ? "\u505C\u6B62\u8BB0\u5F55" : "Stop recording" : i18n.language === "zh" ? "\u5F00\u59CB\u8BB0\u5F55" : "Start recording"}</button><button data-action="copy-touch-zoom-diagnostic" ${touchZoomDiagnostic.hasEvents ? "" : "disabled"}>${i18n.language === "zh" ? "\u590D\u5236\u89E6\u63A7\u8BCA\u65AD" : "Copy touch diagnostic"}</button></div></section></details></section>`;
@@ -11571,7 +11621,11 @@ function renderWishlist() {
   const gapCount = development.coverage.priorityGaps.length;
   const recommendations = developmentWishlistRecommendations();
   const developmentHeader = `<section class="panel"><b>${gapCount ? i18n.language === "zh" ? `\u5F53\u524D\u6709 ${gapCount} \u4E2A\u73A9\u6CD5\u673A\u4F1A\u504F\u5C11` : `${gapCount} play opportunities are currently lighter` : developmentText("noPurchase")}</b><p>${i18n.language === "zh" ? "\u7CFB\u7EDF\u4F1A\u4F18\u5148\u8003\u8651\u73B0\u6709\u73A9\u5177\u7684\u4E0D\u540C\u73A9\u6CD5\uFF0C\u518D\u63D0\u793A\u53EF\u80FD\u503C\u5F97\u8865\u5145\u7684\u673A\u5236\u3002" : "Existing toys are considered first; Wishlist context highlights only meaningful additional play opportunities."}</p><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button></section>`;
-  const recommendedRows = recommendations.map(({ toy, skill, priority: priority3, reasons }) => `<article class="panel wishlist-card development-recommendation"><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${i18n.language === "zh" ? `\u5EFA\u8BAE\u8865\u5145\uFF1A${escape(skill)}` : `Suggested for: ${escape(skill)}`}</p><p><small>${i18n.language === "zh" ? "\u6765\u6E90\uFF1A\u53D1\u5C55\u8986\u76D6\u7F3A\u53E3" : "Source: development coverage gap"} \xB7 ${escape(reasons.join(" \xB7 ").replaceAll("_", " ").toLowerCase())}</small></p><section class="priority-summary"><b>${t("purchasePriority")}</b><span class="priority-${priority3}">${t(priority3)}</span></section><button class="primary" data-action="wishlist-add-development" data-key="${escape(toy.canonicalKey)}">${i18n.language === "zh" ? "\u52A0\u5165\u5FC3\u613F\u5355" : "Add to Wishlist"}</button></article>`).join("");
+  const recommendedRows = recommendations.map(({ toy, skill, priority: priority3, reasons }) => {
+    const displaySkill = resolveDisplay(skill, i18n.language);
+    const displayReasons = reasons.map((reason2) => resolveDisplay(reason2, i18n.language)).join(" \xB7 ");
+    return `<article class="panel wishlist-card development-recommendation"><h3>${escape(displayName(toy))}</h3><p>${escape(brandLabel(toy.brand))}</p><p>${i18n.language === "zh" ? `\u5EFA\u8BAE\u8865\u5145\uFF1A${escape(displaySkill)}` : `Suggested for: ${escape(displaySkill)}`}</p><p><small>${i18n.language === "zh" ? "\u6765\u6E90\uFF1A\u53D1\u5C55\u8986\u76D6\u7F3A\u53E3" : "Source: development coverage gap"} \xB7 ${escape(displayReasons)}</small></p><section class="priority-summary"><b>${t("purchasePriority")}</b><span class="priority-${priority3}">${t(priority3)}</span></section><button class="primary" data-action="wishlist-add-development" data-key="${escape(toy.canonicalKey)}">${i18n.language === "zh" ? "\u52A0\u5165\u5FC3\u613F\u5355" : "Add to Wishlist"}</button></article>`;
+  }).join("");
   const recommendationSection = recommendedRows ? `<section class="panel"><h3>${i18n.language === "zh" ? "\u53D1\u5C55\u5EFA\u8BAE" : "Development suggestions"}</h3><div class="list">${recommendedRows}</div></section>` : "";
   return `<section class="head"><h2>${t("wishlist")}</h2><button class="primary" data-action="add-wishlist-item">${t("addWishlistItem")}</button><button data-action="catalog">${t("standardCatalog")}</button></section>${developmentHeader}${recommendationSection}${renderCompactFilterBar({ id: "wishlist", searchLabel: t("searchWishlist"), placeholder: t("searchWishlistPlaceholder"), filters: wishlistFilters, includeSort: true })}${diagnostic}<section class="list">${rows.join("") || renderEmpty()}</section>`;
 }

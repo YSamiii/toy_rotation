@@ -1,24 +1,25 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-10-14T13:16:35.307Z",
+  "generatedAt": "2026-10-14T14:59:36.166Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.13.0",
-    "buildName": "Toy Rotation v0.13.0 iOS Zoom QA6 Fix5",
+    "buildName": "Toy Rotation v0.13.0 Development-Centered QA7 Explanation Fix1",
     "buildDate": "20261014",
-    "buildId": "v0.13.0-ios-zoom-qa6-fix5-20261014"
+    "buildId": "v0.13.0-development-centered-qa7-explanation-fix1-20261014"
   },
   "entries": [
     "index.html",
     "storage-recovery-diagnostic.html",
-    "startup-diagnostic.html"
+    "startup-diagnostic.html",
+    "ios-touch-action-lab.html"
   ],
   "files": [
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 1135738,
-      "sha256": "76fc0d26b7efebd3df2584eafe163efc76fe9e34b3fdd5fcd978eb3a72dceccb",
+      "bytes": 1138758,
+      "sha256": "c92bbdfa1ee2c8a66e74af075c052c0d8161b93285a3af52b1562e0db57d55bd",
       "importedBy": [
         "streaming-package"
       ],
@@ -32,8 +33,8 @@
     {
       "path": "app.css",
       "resolvedDeployPath": "./app.css",
-      "bytes": 23464,
-      "sha256": "169930067ebe9fd3b9656ae6f47c58ad930c612e852bd8a03778af895c6786ed",
+      "bytes": 23893,
+      "sha256": "3eb9c1acfca3df7509036c568c4daa3930fc7b119bb9cdf637aba4c228a12eb8",
       "importedBy": [
         "streaming-package"
       ],
@@ -767,8 +768,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 332,
-      "sha256": "e104cc3f9642ac40fc3e09bdfd380682c08cbe956355cbe25f9186659e920020",
+      "bytes": 404,
+      "sha256": "6cfed7ff84a08e60a997be0fb69a76971b835f7ab9bb09af674445425e7898f2",
       "importedBy": [
         "streaming-package"
       ],
@@ -855,10 +856,55 @@
       }
     },
     {
+      "path": "ios-touch-action-lab.bundle.js",
+      "resolvedDeployPath": "./ios-touch-action-lab.bundle.js",
+      "bytes": 4332,
+      "sha256": "c95ae4759202bf8fd0d4b5566d396f99b5a2fed297ceec3f9ec6e2ee3cdbb346",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "ios-touch-action-lab.html",
+      "resolvedDeployPath": "./ios-touch-action-lab.html",
+      "bytes": 3135,
+      "sha256": "ac6ac5e7e6a7c2d1d9e0a3f38cb0b5dbd9afece9659e8a5e105b05acb15ea0f3",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "ios-touch-action-lab.webmanifest",
+      "resolvedDeployPath": "./ios-touch-action-lab.webmanifest",
+      "bytes": 347,
+      "sha256": "b16d3237e3d9e249461a7d59a75e665d915669e548fa1e8b197cc0c241cc68a8",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "manifest.webmanifest",
       "resolvedDeployPath": "./manifest.webmanifest",
-      "bytes": 330,
-      "sha256": "9abfdd60e83695d96b61ea3aa60d6b1f2d1131789802c7f4f9fb3a94a9ef1b8d",
+      "bytes": 354,
+      "sha256": "3dad3f3e13c23cf4b242788eac73f1228778325e562e19c7c3896427fb92b688",
       "importedBy": [
         "streaming-package"
       ],
@@ -947,8 +993,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2678,
-      "sha256": "f2a89990cea85847d6bf96f73877585643a779f06f6c907b7a4f878365563d6c",
+      "bytes": 2903,
+      "sha256": "80bec70fa439a9ab3aa8ebd681102ecb016aa6aa51fce34b7b575ba608659ab5",
       "importedBy": [
         "streaming-package"
       ],
@@ -978,6 +1024,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 64
+    "checkedInputs": 67
   }
 }

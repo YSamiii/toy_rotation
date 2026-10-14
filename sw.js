@@ -1,11 +1,12 @@
 // Offline enhancement only. The page starts without this worker: failed
 // install/activation/cache work must never gate first paint or startup.
 importScripts('./sw-precache-assets.js');
-const CACHE = 'toy-rotation-v0.13.0-ios-zoom-qa6-fix5-20261014';
+const CACHE = 'toy-rotation-v0.13.0-development-centered-qa7-explanation-fix1-20261014';
 const FALLBACK_ASSETS = [
   './index.html', './config.js', './app.bundle.js', './theme.css', './app.css',
   './manifest.webmanifest', './storage-recovery-diagnostic.html', './storage-recovery-diagnostic.bundle.js',
-  './startup-diagnostic.html', './startup-diagnostic.bundle.js'
+  './startup-diagnostic.html', './startup-diagnostic.bundle.js',
+  './ios-touch-action-lab.html', './ios-touch-action-lab.bundle.js', './ios-touch-action-lab.webmanifest'
 ];
 const PACKAGED_ASSETS = Array.isArray(self.TOY_ROTATION_PACKAGED_ASSETS) ? self.TOY_ROTATION_PACKAGED_ASSETS : [];
 const PRECACHE_ASSETS = [...new Set([...FALLBACK_ASSETS, ...PACKAGED_ASSETS])];
@@ -24,7 +25,7 @@ self.addEventListener('fetch', event => {
   const url=new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
   const navigation=event.request.mode === 'navigate';
-  const bootAsset=/\/(index\.html|config\.js|app\.bundle\.js|src\/ui\/(?:theme|app)\.css|manifest\.webmanifest|startup-diagnostic\.html|startup-diagnostic\.bundle\.js|storage-recovery-diagnostic\.html|storage-recovery-diagnostic\.bundle\.js)$/.test(url.pathname);
+  const bootAsset=/\/(index\.html|config\.js|app\.bundle\.js|src\/ui\/(?:theme|app)\.css|manifest\.webmanifest|startup-diagnostic\.html|startup-diagnostic\.bundle\.js|storage-recovery-diagnostic\.html|storage-recovery-diagnostic\.bundle\.js|ios-touch-action-lab\.html|ios-touch-action-lab\.bundle\.js|ios-touch-action-lab\.webmanifest)$/.test(url.pathname);
   const packagedAsset=/\/catalog-assets\//.test(url.pathname);
   if (!navigation && !bootAsset && !packagedAsset) return;
   if (packagedAsset) {
