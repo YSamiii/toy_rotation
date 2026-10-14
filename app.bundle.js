@@ -8441,6 +8441,72 @@ function resolveFromRows(reference, rows) {
   return rows.find((row) => keys.includes(String(row.canonicalKey)) || keys.includes(String(row.id))) || null;
 }
 
+// src/features/ios-touch-zoom-diagnostic.js
+var LIMIT = 240;
+var IosTouchZoomDiagnostic = class {
+  #events = [];
+  #active = false;
+  #listeners = [];
+  #viewportListener = null;
+  #startedAt = null;
+  get active() {
+    return this.#active;
+  }
+  get hasEvents() {
+    return this.#events.length > 0;
+  }
+  get listenerStatus() {
+    return { armed: this.#active, capturePhase: true, eventTypes: ["touchstart", "touchend", "click", "dblclick"], visualViewport: Boolean(window.visualViewport), fallbackListener: "app-root touchend (application)" };
+  }
+  start() {
+    if (this.#active) return;
+    this.#active = true;
+    this.#startedAt = (/* @__PURE__ */ new Date()).toISOString();
+    this.record("diagnostic_started");
+    for (const name of ["touchstart", "touchend", "click", "dblclick"]) {
+      const handler = (event) => this.record(name, event);
+      document.addEventListener(name, handler, { capture: true, passive: true });
+      this.#listeners.push([name, handler]);
+    }
+    this.#viewportListener = () => this.record("visualviewport_change");
+    window.visualViewport?.addEventListener("resize", this.#viewportListener, { passive: true });
+    window.visualViewport?.addEventListener("scroll", this.#viewportListener, { passive: true });
+  }
+  stop() {
+    if (!this.#active) return;
+    this.record("diagnostic_stopped");
+    for (const [name, handler] of this.#listeners) document.removeEventListener(name, handler, true);
+    this.#listeners = [];
+    window.visualViewport?.removeEventListener("resize", this.#viewportListener);
+    window.visualViewport?.removeEventListener("scroll", this.#viewportListener);
+    this.#viewportListener = null;
+    this.#active = false;
+  }
+  clear() {
+    const wasActive = this.#active;
+    this.stop();
+    this.#events = [];
+    this.#startedAt = null;
+    if (wasActive) this.start();
+  }
+  recordFallbackDecision(event, decision) {
+    if (this.#active) this.record("app_touchend_fallback", event, { decision });
+  }
+  record(name, event = null, extra = {}) {
+    if (!this.#active && name !== "diagnostic_started") return;
+    const viewport = window.visualViewport;
+    const target = event?.target instanceof Element ? event.target : null;
+    const touch = event?.changedTouches?.[0] || event?.touches?.[0] || null;
+    const appTransform = document.querySelector("#app") ? getComputedStyle(document.querySelector("#app")).transform : null;
+    const row = { name, at: Date.now(), timeStamp: event?.timeStamp ?? null, eventPhase: event?.eventPhase ?? null, cancelable: event?.cancelable ?? null, defaultPrevented: event?.defaultPrevented ?? null, isTrusted: event?.isTrusted ?? null, touches: event?.touches?.length ?? 0, changedTouches: event?.changedTouches?.length ?? 0, touch: touch ? { identifier: touch.identifier, clientX: Math.round(touch.clientX), clientY: Math.round(touch.clientY), pageX: Math.round(touch.pageX), pageY: Math.round(touch.pageY) } : null, target: target ? { tag: target.tagName, role: target.getAttribute("role"), type: target.getAttribute("type"), component: target.dataset.component || target.dataset.action || null, touchAction: getComputedStyle(target).touchAction } : null, viewport: { scale: viewport?.scale ?? 1, width: viewport?.width ?? innerWidth, height: viewport?.height ?? innerHeight, offsetLeft: viewport?.offsetLeft ?? 0, offsetTop: viewport?.offsetTop ?? 0, innerWidth, innerHeight, scrollX, scrollY }, render: { appTransform, documentScrollWidth: document.documentElement.scrollWidth, documentClientWidth: document.documentElement.clientWidth, horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth }, ...extra };
+    this.#events.push(row);
+    if (this.#events.length > LIMIT) this.#events.splice(0, this.#events.length - LIMIT);
+  }
+  export() {
+    return { diagnosticVersion: 1, kind: "ios_touch_zoom_qa6", startedAt: this.#startedAt, exportedAt: (/* @__PURE__ */ new Date()).toISOString(), environment: { standalone: matchMedia?.("(display-mode: standalone)").matches === true || navigator.standalone === true, viewport: { innerWidth, innerHeight, devicePixelRatio }, listenerStatus: this.listenerStatus }, privacy: { ownerNotes: false, childProfile: false, toyHistory: false, inputValues: false, networkTransmission: false }, events: this.#events.map((event) => ({ ...event })) };
+  }
+};
+
 // src/domain/development-model.js
 var SKILL_OBSERVATION = Object.freeze({
   MASTERED: "MASTERED",
@@ -10990,10 +11056,18 @@ function escapeAttribute(value) {
 var root = document.querySelector("#app");
 var lastContentTap = null;
 root?.addEventListener("touchend", (event) => {
-  if (event.touches.length || event.changedTouches.length !== 1) return;
-  if (event.target.closest('input,select,textarea,[contenteditable="true"]')) return;
+  if (event.touches.length || event.changedTouches.length !== 1) {
+    touchZoomDiagnostic?.recordFallbackDecision(event, "ignored_multitouch");
+    return;
+  }
+  if (event.target instanceof Element && event.target.closest('input,select,textarea,[contenteditable="true"]')) {
+    touchZoomDiagnostic?.recordFallbackDecision(event, "ignored_editable");
+    return;
+  }
   const now3 = Date.now(), touch = event.changedTouches[0];
-  if (lastContentTap && now3 - lastContentTap.at < 280 && Math.hypot(touch.clientX - lastContentTap.x, touch.clientY - lastContentTap.y) < 24) event.preventDefault();
+  const suppress = Boolean(lastContentTap && now3 - lastContentTap.at < 280 && Math.hypot(touch.clientX - lastContentTap.x, touch.clientY - lastContentTap.y) < 24);
+  if (suppress) event.preventDefault();
+  touchZoomDiagnostic?.recordFallbackDecision(event, suppress ? "prevented_rapid_same_location_second_tap" : "allowed");
   lastContentTap = { at: now3, x: touch.clientX, y: touch.clientY };
 }, { passive: false });
 var STARTUP_DIAGNOSTIC_KEY = "toyRotation.startupDiagnostic";
@@ -11049,6 +11123,7 @@ store.subscribe((state, reason2) => {
 var catalog = new CatalogRepository(store, { baseUrl: window.TOY_ROTATION_CONFIG?.API_BASE });
 var images = new ImageRepository();
 var runtimeImageDiagnostics = new RuntimeImageDiagnostics({ release: window.TOY_ROTATION_CONFIG?.RELEASE });
+var touchZoomDiagnostic = new IosTouchZoomDiagnostic();
 var recognitionDeviceDiagnostic = new RecognitionDeviceDiagnostic({ build: window.TOY_ROTATION_CONFIG });
 store.attachDiagnostic(recognitionDeviceDiagnostic);
 runtimeImageDiagnostics.installCatalogLookupProbe(catalog);
@@ -11432,7 +11507,8 @@ function renderRotation() {
   const coverage2 = Object.values(surface.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).slice(0, 6).map((row) => `<span>${escape(resolveDisplay(row.skill, i18n.language))} \u2713</span>`).join("") || "\u2014";
   const reasons = shelf.rotation.map((toy) => surface.byToyId.get(toy.id)).filter(Boolean).map((model) => `<li><b>${escape(displayName(model.toy))}</b> \u2014 ${escape(developmentReasonLabel(model.displayReason))}</li>`).join("");
   const cards = shelf.rotation.map(renderRotationCard).join("") || renderEmpty();
-  return `<section class="head"><h2>${t("rotation")}</h2></section><section class="panel shelf-total"><b>${t("thisRotation")} ${shelf.rotation.length} \uFF5C ${t("customPermanent")} ${shelf.permanent.length}</b></section><section class="rotation-grid" aria-label="${t("thisRotation")}">${cards}</section><div class="rotation-generate"><button class="primary" data-action="generate">${t("generate")}</button></div>${shortage}<section class="rotation-section"><details><summary>${t("customPermanent")} \xB7 ${shelf.permanent.length}</summary><div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div></details></section>${manual}<section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u672C\u8F6E\u4E3A\u4EC0\u4E48\u8FD9\u6837\u9009" : "Why this round"}</summary><ul>${reasons || "<li>\u2014</li>"}</ul></details></section><section class="rotation-section"><details><summary>${developmentText("coverage")}</summary><div class="chips">${coverage2}</div><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button></details></section><section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u9AD8\u7EA7\u8BCA\u65AD" : "Advanced diagnostics"}</summary><p>${t("currentShelfTotal", { count: shelf.totalShelfCount })} \xB7 ${t("paused")} ${pausedCount}</p><button data-action="copy-rotation-audit">${i18n.language === "zh" ? "\u590D\u5236\u8F6E\u6362\u8BCA\u65AD" : "Copy rotation audit"}</button></details></section>`;
+  const touchStatus = touchZoomDiagnostic.active ? i18n.language === "zh" ? "\u8BB0\u5F55\u4E2D" : "Recording" : i18n.language === "zh" ? "\u5DF2\u5173\u95ED" : "Off";
+  return `<section class="head"><h2>${t("rotation")}</h2></section><section class="panel shelf-total"><b>${t("thisRotation")} ${shelf.rotation.length} \uFF5C ${t("customPermanent")} ${shelf.permanent.length}</b></section><section class="rotation-grid" aria-label="${t("thisRotation")}">${cards}</section><div class="rotation-generate"><button class="primary" data-action="generate">${t("generate")}</button></div>${shortage}<section class="rotation-section"><details><summary>${t("customPermanent")} \xB7 ${shelf.permanent.length}</summary><div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div></details></section>${manual}<section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u672C\u8F6E\u4E3A\u4EC0\u4E48\u8FD9\u6837\u9009" : "Why this round"}</summary><ul>${reasons || "<li>\u2014</li>"}</ul></details></section><section class="rotation-section"><details><summary>${developmentText("coverage")}</summary><div class="chips">${coverage2}</div><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button></details></section><section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u9AD8\u7EA7\u8BCA\u65AD" : "Advanced diagnostics"}</summary><p>${t("currentShelfTotal", { count: shelf.totalShelfCount })} \xB7 ${t("paused")} ${pausedCount}</p><button data-action="copy-rotation-audit">${i18n.language === "zh" ? "\u590D\u5236\u8F6E\u6362\u8BCA\u65AD" : "Copy rotation audit"}</button><section class="touch-zoom-diagnostic"><h3>iOS Touch / Zoom Diagnostics <small>${touchStatus}</small></h3><p>${i18n.language === "zh" ? "QA6 \u4E34\u65F6\u8BCA\u65AD\uFF1A\u9ED8\u8BA4\u5173\u95ED\uFF1B\u4EC5\u8BB0\u5F55\u672C\u6B21\u4F1A\u8BDD\u7684\u89E6\u63A7\u4E0E\u89C6\u53E3\u6280\u672F\u6570\u636E\u3002" : "QA6 temporary diagnostic: off by default; records only this session\u2019s touch and viewport technical data."}</p><div class="actions"><button data-action="toggle-touch-zoom-diagnostic">${touchZoomDiagnostic.active ? i18n.language === "zh" ? "\u505C\u6B62\u8BB0\u5F55" : "Stop recording" : i18n.language === "zh" ? "\u5F00\u59CB\u8BB0\u5F55" : "Start recording"}</button><button data-action="copy-touch-zoom-diagnostic" ${touchZoomDiagnostic.hasEvents ? "" : "disabled"}>${i18n.language === "zh" ? "\u590D\u5236\u89E6\u63A7\u8BCA\u65AD" : "Copy touch diagnostic"}</button></div></section></details></section>`;
 }
 function renderRotationCard(toy) {
   const model = toyUseViewModel(toy, developmentContext());
@@ -11568,6 +11644,8 @@ async function action(name, data) {
   }, "permanent-section-collapse");
   if (name === "generate") return generateNewRotation();
   if (name === "copy-rotation-audit") return copyRotationAudit();
+  if (name === "toggle-touch-zoom-diagnostic") return toggleTouchZoomDiagnostic();
+  if (name === "copy-touch-zoom-diagnostic") return copyTouchZoomDiagnostic();
   if (name === "all-overlaps") return openAllOverlaps(data.id);
   if (name === "all-skill-overlaps") return openAllSkillOverlaps(data.id);
   if (name === "coverage-details") return openCoverageDetails();
@@ -11587,6 +11665,21 @@ async function copyRotationAudit() {
   } catch {
     downloadJson(JSON.parse(text2), "rotation-candidate-audit.json");
     alert(i18n.language === "zh" ? "\u65E0\u6CD5\u8BBF\u95EE\u526A\u8D34\u677F\uFF0C\u5DF2\u4E0B\u8F7D\u8F6E\u6362\u8BCA\u65AD\u6587\u4EF6\u3002" : "Clipboard unavailable; the rotation audit was downloaded.");
+  }
+}
+function toggleTouchZoomDiagnostic() {
+  if (touchZoomDiagnostic.active) touchZoomDiagnostic.stop();
+  else touchZoomDiagnostic.start();
+  render();
+}
+async function copyTouchZoomDiagnostic() {
+  const value = touchZoomDiagnostic.export();
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(value, null, 2));
+    alert(i18n.language === "zh" ? "\u89E6\u63A7\u8BCA\u65AD\u5DF2\u590D\u5236\u3002" : "Touch diagnostic copied.");
+  } catch {
+    downloadJson(value, "ios-touch-zoom-diagnostic-qa6.json");
+    alert(i18n.language === "zh" ? "\u65E0\u6CD5\u8BBF\u95EE\u526A\u8D34\u677F\uFF0C\u5DF2\u4E0B\u8F7D\u89E6\u63A7\u8BCA\u65AD\u6587\u4EF6\u3002" : "Clipboard unavailable; the touch diagnostic was downloaded.");
   }
 }
 function confirmDevelopmentPlaying(id) {
