@@ -488,6 +488,7 @@ pre { max-width: 100%; overflow: auto; color: var(--text-secondary); }
 .challenge-chip { display:inline-block; margin-left:5px; padding:2px 7px; border:1px solid var(--border); border-radius:999px; color:var(--text-secondary); font-size:.72em; font-weight:600; vertical-align:middle; }
 .challenge-status { font-weight:700; }
 .cross-age-approval h3 { margin-top:0; }
+.rotation-explanation-notice { margin:4px 0 12px; color:var(--text-secondary); font-size:.88rem; line-height:1.45; list-style:none; }
 @media (max-width: 520px) {
   .form,.sheet { min-inline-size:0; padding:14px; }
   .filter-actions,.actions { flex-wrap:wrap; }

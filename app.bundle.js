@@ -10882,7 +10882,9 @@ var COPY = {
     parentGoal: "\u5339\u914D\u5F53\u524D\u5BB6\u5EAD\u7684\u53D1\u5C55\u76EE\u6807",
     interest: "\u8D34\u5408\u5F53\u524D\u5174\u8DA3",
     nextMilestone: "\u652F\u6301\u4E0B\u4E00\u9636\u6BB5\u7EC3\u4E60",
-    unavailable: "\u672C\u8F6E\u672A\u4FDD\u5B58\u53EF\u7528\u7684\u9009\u54C1\u8BF4\u660E"
+    unavailable: "\u672C\u8F6E\u672A\u4FDD\u5B58\u53EF\u7528\u7684\u9009\u54C1\u8BF4\u660E",
+    roundUnavailable: "\u8FD9\u8F6E\u8F6E\u6362\u521B\u5EFA\u65F6\u5C1A\u672A\u4FDD\u5B58\u9010\u4EF6\u9009\u54C1\u8BF4\u660E\uFF0C\u56E0\u6B64\u65E0\u6CD5\u67E5\u770B\u5F53\u65F6\u7684\u5177\u4F53\u63A8\u8350\u7406\u7531\u3002",
+    roundPartialUnavailable: "\u672C\u8F6E\u90E8\u5206\u73A9\u5177\u6CA1\u6709\u4FDD\u5B58\u9009\u54C1\u8BF4\u660E\u3002"
   },
   en: {
     mechanism: "Adds a different play mechanism to this round",
@@ -10890,7 +10892,9 @@ var COPY = {
     parentGoal: "Matches the current family development goal",
     interest: "Matches the current interest",
     nextMilestone: "Supports practice toward the next milestone",
-    unavailable: "No saved selection explanation is available for this round"
+    unavailable: "No saved selection explanation is available for this round",
+    roundUnavailable: "Item-level selection explanations were not saved when this round was created, so its specific reasons are unavailable.",
+    roundPartialUnavailable: "Selection explanations were not saved for some toys in this round."
   }
 };
 function copy(locale) {
@@ -10910,6 +10914,19 @@ function resolveRotationSelectionExplanation(selection, locale = "en") {
   if (signals.has("MECHANISM_VARIETY")) add(text2.mechanism);
   if (signals.has("RECENCY_AVOIDANCE")) add(text2.lessRecent);
   return reasons.length ? { selected: reasons, available: true } : { selected: [text2.unavailable], available: false };
+}
+function resolveRotationExplanationList(toys, selectionByCanonical, hasValidRound, locale = "en") {
+  if (!hasValidRound || !toys.length) return { status: "empty", rows: [], notice: null };
+  const rows = [];
+  let missingCount = 0;
+  for (const toy of toys) {
+    const resolved = resolveRotationSelectionExplanation(selectionByCanonical.get(toy.canonicalKey), locale);
+    if (resolved.available) rows.push({ canonicalKey: toy.canonicalKey, name: toy.name, reasons: resolved.selected });
+    else missingCount++;
+  }
+  if (missingCount === toys.length) return { status: "all-missing", rows: [], notice: copy(locale).roundUnavailable };
+  if (missingCount) return { status: "partial", rows, notice: copy(locale).roundPartialUnavailable };
+  return { status: "complete", rows, notice: null };
 }
 
 // src/ui/modal-manager.js
@@ -11746,15 +11763,16 @@ function renderRotation() {
   const surface = developmentSurfaceModel(developmentContext());
   const pausedCount = (store.state.toys || []).filter(isRotationPaused).length;
   const collapsed = store.state.settings?.permanentSectionCollapsed === true;
-  const latest2 = store.state.rotationHistory?.[0]?.rotationDiagnostics;
+  const currentRound = store.state.rotationHistory?.[0] || null;
+  const latest2 = currentRound?.rotationDiagnostics;
   const shortage = latest2?.shortageCount ? `<p class="panel">${t("rotationShortage", { selected: latest2.selectedRotationCount ?? latest2.selectedCount, requested: latest2.requestedRotationCount ?? latest2.requestedCount })}</p>` : "";
   const manual = shelf.manual.length ? `<section class="rotation-section"><details><summary>${t("manuallyOnShelf")} \xB7 ${shelf.manual.length}</summary><div class="list">${shelf.manual.map(renderToyCard).join("")}</div></details></section>` : "";
   const coverage2 = Object.values(surface.coverage.bySkill).filter((row) => ["MODERATE", "SUFFICIENT"].includes(row.status)).slice(0, 6).map((row) => `<span>${escape(resolveDisplay(row.skill, i18n.language))} \u2713</span>`).join("") || "\u2014";
   const selectionByCanonical = new Map((latest2?.selectedCandidateScores || []).map((row) => [row.canonicalKey, row]));
-  const reasons = shelf.rotation.map((toy) => {
-    const explanation = resolveRotationSelectionExplanation(selectionByCanonical.get(toy.canonicalKey), i18n.language);
-    return `<li class="rotation-selection-reason"><b>${escape(displayName(toy))}</b><span>${explanation.selected.map((reason2) => `<span class="rotation-reason-chip">${escape(reason2)}</span>`).join("")}</span></li>`;
-  }).join("");
+  const explanationList = resolveRotationExplanationList(shelf.rotation.map((toy) => ({ canonicalKey: toy.canonicalKey, name: displayName(toy) })), selectionByCanonical, Boolean(currentRound && Array.isArray(currentRound.toyIds)), i18n.language);
+  const reasonRows = explanationList.rows.map((row) => `<li class="rotation-selection-reason"><b>${escape(row.name)}</b><span>${row.reasons.map((reason2) => `<span class="rotation-reason-chip">${escape(reason2)}</span>`).join("")}</span></li>`);
+  if (explanationList.notice) reasonRows.push(`<li class="rotation-explanation-notice">${escape(explanationList.notice)}</li>`);
+  const reasons = explanationList.status === "empty" ? "<li>\u2014</li>" : reasonRows.join("");
   const cards = shelf.rotation.map(renderRotationCard).join("") || renderEmpty();
   const touchStatus = touchZoomDiagnostic.active ? i18n.language === "zh" ? "\u8BB0\u5F55\u4E2D" : "Recording" : i18n.language === "zh" ? "\u5DF2\u5173\u95ED" : "Off";
   return `<section class="head"><h2>${t("rotation")}</h2></section><section class="panel shelf-total"><b>${t("thisRotation")} ${shelf.rotation.length} \uFF5C ${t("customPermanent")} ${shelf.permanent.length}</b></section><section class="rotation-grid" aria-label="${t("thisRotation")}">${cards}</section><div class="rotation-generate"><button class="primary" data-action="generate">${t("generate")}</button></div>${shortage}<section class="rotation-section"><details><summary>${t("customPermanent")} \xB7 ${shelf.permanent.length}</summary><div class="list">${shelf.permanent.length ? shelf.permanent.map(renderToyCard).join("") : `<p class="panel">${t("noCustomPermanent")}</p>`}</div></details></section>${manual}<section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u672C\u8F6E\u4E3A\u4EC0\u4E48\u8FD9\u6837\u9009" : "Why this round"}</summary><ul>${reasons || "<li>\u2014</li>"}</ul></details></section><section class="rotation-section"><details><summary>${developmentText("coverage")}</summary><div class="chips">${coverage2}</div><button data-action="coverage-details">${i18n.language === "zh" ? "\u67E5\u770B\u8986\u76D6\u8BE6\u60C5" : "View coverage details"}</button></details></section><section class="rotation-section"><details><summary>${i18n.language === "zh" ? "\u9AD8\u7EA7\u8BCA\u65AD" : "Advanced diagnostics"}</summary><p>${t("currentShelfTotal", { count: shelf.totalShelfCount })} \xB7 ${t("paused")} ${pausedCount}</p><button data-action="copy-rotation-audit">${i18n.language === "zh" ? "\u590D\u5236\u8F6E\u6362\u8BCA\u65AD" : "Copy rotation audit"}</button><section class="touch-zoom-diagnostic"><h3>iOS Touch / Zoom Diagnostics <small>${touchStatus}</small></h3><p>${i18n.language === "zh" ? "QA6 \u4E34\u65F6\u8BCA\u65AD\uFF1A\u9ED8\u8BA4\u5173\u95ED\uFF1B\u4EC5\u8BB0\u5F55\u672C\u6B21\u4F1A\u8BDD\u7684\u89E6\u63A7\u4E0E\u89C6\u53E3\u6280\u672F\u6570\u636E\u3002" : "QA6 temporary diagnostic: off by default; records only this session\u2019s touch and viewport technical data."}</p><div class="actions"><button data-action="toggle-touch-zoom-diagnostic">${touchZoomDiagnostic.active ? i18n.language === "zh" ? "\u505C\u6B62\u8BB0\u5F55" : "Stop recording" : i18n.language === "zh" ? "\u5F00\u59CB\u8BB0\u5F55" : "Start recording"}</button><button data-action="copy-touch-zoom-diagnostic" ${touchZoomDiagnostic.hasEvents ? "" : "disabled"}>${i18n.language === "zh" ? "\u590D\u5236\u89E6\u63A7\u8BCA\u65AD" : "Copy touch diagnostic"}</button></div></section></details></section>`;

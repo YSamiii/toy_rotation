@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-10-15T19:18:14.154Z",
+  "generatedAt": "2026-10-15T20:14:50.111Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.13.0",
-    "buildName": "Toy Rotation App v0.13.0 Final Production",
+    "buildName": "Toy Rotation App v0.13.0 Rotation Explanation UI Fix",
     "buildDate": "20261015",
-    "buildId": "v0.13.0-final-production-r2-20261015"
+    "buildId": "v0.13.0-rotation-explanation-ui-fix-20261015"
   },
   "entries": [
     "index.html",
@@ -18,8 +18,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 1169827,
-      "sha256": "b0ebfbcd2f25031c2cc87706ad060477e0ff338a62293b507cea0c8e39355b68",
+      "bytes": 1171580,
+      "sha256": "4df8460606ff05e10b65a7774fed8ae0bea15a0c7124f9c6ab082215fd820d42",
       "importedBy": [
         "streaming-package"
       ],
@@ -33,8 +33,8 @@
     {
       "path": "app.css",
       "resolvedDeployPath": "./app.css",
-      "bytes": 23893,
-      "sha256": "3eb9c1acfca3df7509036c568c4daa3930fc7b119bb9cdf637aba4c228a12eb8",
+      "bytes": 24027,
+      "sha256": "806d3d7a58b282de41f694e66cc12da625d31e31237107207e7317c2569a6cb0",
       "importedBy": [
         "streaming-package"
       ],
@@ -2013,8 +2013,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 340,
-      "sha256": "d4396cab7fa92887ff3187071b38f9cbf997c7b85d56dd074c88c6f5444e6c97",
+      "bytes": 370,
+      "sha256": "a3ebe9c477b49385b9a15e47bb94ff6939fd0904a550fc5790a00242cb9dd599",
       "importedBy": [
         "streaming-package"
       ],
@@ -2238,8 +2238,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2881,
-      "sha256": "31143db260d1561c68d0b63f74a7f80f3c35388c16a13106f7cb2db74d6184b1",
+      "bytes": 2889,
+      "sha256": "87321d742555fc60045a69067c0c8ef09561bda87446faba2d99e1d85190bc1c",
       "importedBy": [
         "streaming-package"
       ],

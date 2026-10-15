@@ -1,7 +1,7 @@
 // Offline enhancement only. The page starts without this worker: failed
 // install/activation/cache work must never gate first paint or startup.
 importScripts('./sw-precache-assets.js');
-const CACHE = 'toy-rotation-v0.13.0-final-production-r2-20261015';
+const CACHE = 'toy-rotation-v0.13.0-rotation-explanation-ui-fix-20261015';
 const FALLBACK_ASSETS = [
   './index.html', './config.js', './app.bundle.js', './theme.css', './app.css',
   './manifest.webmanifest', './storage-recovery-diagnostic.html', './storage-recovery-diagnostic.bundle.js',
