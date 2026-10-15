@@ -2681,7 +2681,10 @@ function isSearchOrTransientChildImage(ref) {
 // src/data/backup-service.js
 async function exportBackup(store2, imageRepository) {
   const state = structuredClone(store2.state);
-  const imageRefs = state.toys.map((toy) => toy.imageRef).filter((ref) => ref?.kind === "personal" || ref?.kind === "catalog");
+  const imageRefs = [
+    ...(state.toys || []).map((toy) => toy.imageRef),
+    ...(state.wishlist || []).map((item) => item.catalogSnapshot?.imageRef)
+  ].filter((ref) => ref?.kind === "personal" || ref?.kind === "catalog");
   const images2 = {};
   for (const ref of imageRefs) {
     const dataUrl2 = await imageRepository.resolve(ref);
@@ -2692,6 +2695,8 @@ async function exportBackup(store2, imageRepository) {
 async function restoreBackup(payload, store2, imageRepository, { catalog: catalog2 = null, onStage = () => {
 }, trace: existingTrace = null } = {}) {
   const trace = existingTrace || createRestoreTrace();
+  let imageImportSnapshot = null;
+  let stateCommitCompleted = false;
   const stage = (name, detail = {}) => {
     trace.mark(name, detail);
     onStage({ name, detail, timing: trace.snapshot() });
@@ -2704,6 +2709,10 @@ async function restoreBackup(payload, store2, imageRepository, { catalog: catalo
     const staged = prepareRestoreState(payload.state, catalog2, stage, { migrationShadow: (state) => runMD1460IdentityMigration(state, { context: "import", mode: "shadow" }) });
     stage("detached_staging_end", { phase: "end", toyCount: staged.state.toys.length });
     stage("backup_image_import_start", { phase: "start" });
+    if (typeof imageRepository.captureImportState === "function") {
+      imageImportSnapshot = await imageRepository.captureImportState(payload.images || {});
+      stage("backup_image_snapshot_end", { phase: "end", imageCount: imageImportSnapshot.length });
+    }
     await importBackupImages(payload.images || {}, imageRepository, stage);
     stage("backup_image_import_end", { phase: "end" });
     stage("fake_personal_placeholder_repair_start", { phase: "start" });
@@ -2727,15 +2736,31 @@ async function restoreBackup(payload, store2, imageRepository, { catalog: catalo
     if (typeof store2.commit !== "function") throw new Error("restoreTransactionUnavailable");
     stage("atomic_commit_start", { phase: "start" });
     store2.commit(staged.state, "restore", { onStage: stage });
+    stateCommitCompleted = true;
     stage("atomic_commit_end", { phase: "end", toyCount: store2.state?.toys?.length ?? staged.state.toys.length });
     stage("persistence_complete", { phase: "end" });
     trace.complete();
     onStage({ name: "restore_complete", detail: staged.summary, timing: trace.snapshot() });
     return { ...staged.summary, timing: trace.snapshot() };
   } catch (error) {
-    trace.mark("restore_failed", { success: false, errorName: error?.name || "Error", errorMessage: error?.message || "restoreFailed" });
-    trace.fail(error);
-    onStage({ name: "restore_failed", detail: { code: error?.message || "restoreFailed" }, timing: trace.snapshot() });
+    const originalFailureStage = trace.failureStage || trace.latestStage || "unknown";
+    if (imageImportSnapshot && !stateCommitCompleted && typeof imageRepository.restoreImportState === "function") {
+      try {
+        stage("backup_image_rollback_start", { phase: "start", imageCount: imageImportSnapshot.length });
+        await imageRepository.restoreImportState(imageImportSnapshot);
+        stage("backup_image_rollback_end", { phase: "end" });
+      } catch (rollbackError) {
+        stage("backup_image_rollback_failed", { phase: "error", errorName: rollbackError?.name || "Error", errorMessage: rollbackError?.message || "imageRollbackFailed" });
+        const combined = new Error("restoreImageRollbackFailed");
+        combined.cause = error;
+        combined.rollbackError = rollbackError;
+        error = combined;
+      }
+    }
+    const failedAt = originalFailureStage;
+    trace.mark("restore_failed", { success: false, failedAt, errorName: error?.name || "Error", errorMessage: error?.message || "restoreFailed" });
+    trace.fail(error, failedAt);
+    onStage({ name: "restore_failed", detail: { code: error?.message || "restoreFailed", failedAt }, timing: trace.snapshot() });
     throw error;
   }
 }
@@ -2951,9 +2976,11 @@ async function importBackupImages(images2, repository, stage) {
     const [key, dataUrl2] = entries2[index];
     const [kind, ...rest] = key.split(":");
     const id = rest.join(":");
+    stage("backup_image_import_item_start", { phase: "start", index: index + 1, total: entries2.length, kind: kind === "catalog" ? "catalog" : "personal" });
     if (kind === "catalog") await repository.importCatalog(id, dataUrl2);
     else if (kind === "personal") await repository.importPersonal(id, dataUrl2);
     else await repository.importPersonal(key, dataUrl2);
+    stage("backup_image_import_item_end", { phase: "end", index: index + 1, total: entries2.length });
     if (index % 3 === 2 || index === entries2.length - 1) {
       stage("local_image_import_progress", { phase: "progress", completed: index + 1, total: entries2.length });
       await yieldToUi();
@@ -2965,9 +2992,9 @@ function yieldToUi() {
 }
 function createRestoreTrace() {
   const startedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
-  const trace = { startedAt: (/* @__PURE__ */ new Date()).toISOString(), stages: [], status: "running", latestStage: "started" };
+  const trace = { startedAt: (/* @__PURE__ */ new Date()).toISOString(), stages: [], status: "running", latestStage: "started", failureStage: null };
   const now3 = () => Math.round((typeof performance !== "undefined" ? performance.now() : Date.now()) - startedAt);
-  const snapshot = () => ({ startedAt: trace.startedAt, status: trace.status, latestStage: trace.latestStage, completedAtMs: trace.completedAtMs, failedAtMs: trace.failedAtMs, error: trace.error, stages: trace.stages.map((stage) => ({ ...stage })) });
+  const snapshot = () => ({ startedAt: trace.startedAt, status: trace.status, latestStage: trace.latestStage, failureStage: trace.failureStage, completedAtMs: trace.completedAtMs, failedAtMs: trace.failedAtMs, error: trace.error, stages: trace.stages.map((stage) => ({ ...stage })) });
   const publish = () => {
     globalThis.__TOY_ROTATION_RESTORE_TIMING__ = snapshot();
   };
@@ -2984,9 +3011,10 @@ function createRestoreTrace() {
     trace.completedAtMs = now3();
     publish();
   };
-  trace.fail = (error) => {
+  trace.fail = (error, failedAt = trace.latestStage) => {
     trace.status = "failed";
     trace.error = error?.message || "restoreFailed";
+    trace.failureStage ||= failedAt || "unknown";
     trace.failedAtMs = now3();
     publish();
   };
@@ -3028,6 +3056,25 @@ var ImageRepository = class {
     await this.#write(id, dataUrl2);
     this.#cache.set(`catalog:${id}`, dataUrl2);
     return { kind: "catalog", id };
+  }
+  async captureImportState(images2 = {}) {
+    const records = [];
+    for (const key of Object.keys(images2)) {
+      const [declaredKind, ...rest] = key.split(":");
+      const kind = declaredKind === "catalog" ? "catalog" : "personal";
+      const id = declaredKind === "personal" || declaredKind === "catalog" ? rest.join(":") : key;
+      if (!id) continue;
+      const previous = await this.#read(id);
+      records.push({ kind, id, existed: previous != null, previous });
+    }
+    return records;
+  }
+  async restoreImportState(records = []) {
+    for (const record of [...records].reverse()) {
+      if (record.existed) await this.#write(record.id, record.previous);
+      else await this.#delete(record.id);
+      this.#cache.delete(`${record.kind}:${record.id}`);
+    }
   }
   async saveCatalog(dataUrl2, canonicalKey2) {
     if (!dataUrl2 || !canonicalKey2) throw new Error("Catalog image and canonical key are required");
@@ -4542,6 +4589,127 @@ var BATCH13_OFFICIAL_IMAGE_ROWS = Object.freeze([
   ["smartgames-wolf-seven-goats", "https://d32bxxnq6qs937.cloudfront.net/sites/default/files/SG-027-MULTI-Wolf%26the7Goats-%28pack%29.jpg", "https://www.smartgames.eu/uk/one-player-games/wolf-seven-goats"]
 ]);
 
+// src/data/catalog-image-assets-batch14.js
+var BATCH14_PACKAGED_IMAGE_ROWS = Object.freeze([
+  {
+    canonicalKey: "btoys-meowsic-keyboard",
+    sku: "BX1025",
+    officialProductName: "Meowsic",
+    imagePath: "catalog-assets/btoys-meowsic-bx1025.png",
+    mimeType: "image/png",
+    contentHash: "sha256:4ce2dca580520138a18a3ad63813e2213095571c88f30234f02b8684cea210dd",
+    sourcePage: "https://btoys.ca/products/meowsic-bx1025",
+    sourceImageUrl: "https://cdn.shopify.com/s/files/1/0611/5301/8053/files/BX1025_DP_A.png?v=1733204305"
+  },
+  {
+    canonicalKey: "btoys-woofer-guitar",
+    sku: "BX1166",
+    officialProductName: "Woofer",
+    imagePath: "catalog-assets/btoys-woofer-bx1166.jpg",
+    mimeType: "image/jpeg",
+    contentHash: "sha256:cb734799e387e276c1cc79a24494ceddb2e5ae0352d96fa73bd53389a66216f9",
+    sourcePage: "https://btoys.ca/products/woofer-bx1166",
+    sourceImageUrl: "https://cdn.shopify.com/s/files/1/0611/5301/8053/products/BX1166-pr-B-2.jpg?v=1664551525"
+  }
+]);
+
+// src/data/catalog-image-assets-batch15.js
+var BATCH15_PACKAGED_IMAGE_ROWS = Object.freeze([
+  ["cherrypick-jumbo-magic-playwall", "UPJ-BLSH", "JUMBO Magic Playwall", "catalog-assets/cherrypick-jumbo-magic-playwall-upj-blsh.jpg", "image/jpeg", "sha256:103fb99a1deaa722f54c16df0ae45709fb404a85fa04ff3c060133ec05d643d7", "https://shopcherrypick.com/products/jumbo-magic-playwall-arch-magnetic-wall-decal-for-kids"],
+  ["cherrypick-magnetic-dress-up-dolls", "MAG-DOLL", "Magnetic Dress-Up Dolls Play Set", "catalog-assets/cherrypick-magnetic-dress-up-dolls-mag-doll.png", "image/png", "sha256:43ba7e85acba0481cca583a524a5ee00c031ffb2e87b1016fac47c06429c3b8f", "https://shopcherrypick.com/products/magnetic-dress-up-dolls"],
+  ["cherrypick-mega-magic-playwall", "UPM-NCHK", "MEGA Magic Playwall", "catalog-assets/cherrypick-mega-magic-playwall-upm-nchk.jpg", "image/jpeg", "sha256:46d88cb3dfbcad46e107edc22eea75a64c83dc7d2c155915a2e90d46e7bff6b8", "https://shopcherrypick.com/products/mega-magic-playwall-arch-magnetic-wall-decal-for-kids"],
+  ["cherrypick-mini-magic-playwall", "UPS-GREY", "MINI Magic Playwall", "catalog-assets/cherrypick-mini-magic-playwall-ups-grey.jpg", "image/jpeg", "sha256:e4ef13b070ea2009c21298f9c758ec91df3d14c3e0183c82786d3f18ad1457a9", "https://shopcherrypick.com/products/2-0-mini-magic-playwall-arch-magnetic-art-wall-decal-for-small-spaces"],
+  ["cherrypick-sprinkler-splash-pad", "SP-SMILE", "Sprinkler Splash Pad for Kids", "catalog-assets/cherrypick-sprinkler-splash-pad-sp-smile.jpg", "image/jpeg", "sha256:f0151e1f8cffa6037927f0f7a43afe4ef9d65d966d723c0f785088867557d1c9", "https://shopcherrypick.com/products/sprinkler-splash-pad-for-kids"],
+  ["btoys-one-two-squeeze-blocks", "BX1481", "One Two Squeeze", "catalog-assets/btoys-one-two-squeeze-bx1481.jpg", "image/jpeg", "sha256:6b40f1b770d9f6c922e50d60c3e6780c6bdb6b4b279261e392d7ab68e7c010d3", "https://btoys.ca/products/one-two-squeeze-bx1481"],
+  ["ltv-pop-up-toaster-breakfast", "TV287", "Pop-up Toaster & Breakfast Set", "catalog-assets/ltv-pop-up-toaster-breakfast-tv287.jpg", "image/jpeg", "sha256:26034b17a50595ec4fcf1a0cb9219df6acd30269b523e7c7690a76016985b6a7", "https://letoyvan.com/products/toaster-breakfast-set"],
+  ["ltv-ice-cream-stand", "TV310", "Wooden Ice Cream Stand & Toppings", "catalog-assets/ltv-ice-cream-stand-tv310.jpg", "image/jpeg", "sha256:dcf015c9df67f25cd9c6399c769965239b382396c0d0e33f9d8195416ac8dc43", "https://letoyvan.com/products/carlos-gelato"],
+  ["ltv-wooden-ice-lollies", "TV284", "Wooden Ice Lollies & Popsicles", "catalog-assets/ltv-wooden-ice-lollies-tv284.jpg", "image/jpeg", "sha256:573cdc1777629b6ebf5af746a5f160060bfbecb44a4bf5b9e514ea6966499d6c", "https://letoyvan.com/products/ice-lollies"],
+  ["ltv-market-stall-fruit-crate", "TV181", "Wooden Market Stall & Fruit Play Food Crate", "catalog-assets/ltv-market-stall-fruit-crate-tv181.jpg", "image/jpeg", "sha256:5bdbb4afa9fef7244c9bfc5b195c38da6cdfd256c5eedf1b1050d0423eac6cdb", "https://letoyvan.com/products/honeybee-market"],
+  ["ltv-wooden-tea-set-tray", "TV281", "Wooden Tea Set & Tray", "catalog-assets/ltv-wooden-tea-set-tray-tv281.jpg", "image/jpeg", "sha256:be62aaf19f501cfeda7a9df735f810db85299428a46ab42f36ef23d5818abc35", "https://letoyvan.com/products/wooden-tea-set-tray"],
+  ["ltv-stacking-forest-animals", "PL087", "Woodland Stacking Forest Animals & Bag", "catalog-assets/ltv-stacking-forest-animals-pl087.jpg", "image/jpeg", "sha256:9c533e9fcaadf8c6f1d8a30f8354c32966943b8d0857770974d4f268c6f44b35", "https://letoyvan.com/products/forest-stacker-bag"]
+]);
+
+// src/data/catalog-image-assets-batch16.js
+var BATCH16_PACKAGED_IMAGE_ROWS = Object.freeze([
+  ["connetix-pastel-lemon-peach-base-plate-2", "official-slug:pastel-lemon-peach-base-plate-2-pc", "Pastel Lemon & Peach Base Plate 2 pc", "catalog-assets/connetix-pastel-lemon-peach-base-plate-2.webp", "image/webp", "sha256:67d8fef2de721abb578d291a54f0751793b7d4bfd5a4a67b9853eb377c6e259a", "https://connetixtiles.com/product/pastel-lemon-peach-base-plate-2-pc"],
+  ["connetix-pastel-square", "official-slug:pastel-square-pack-40-pc", "Pastel Square Pack 40 pc", "catalog-assets/connetix-pastel-square-pack-40.webp", "image/webp", "sha256:2ae2bcca81fc986a7ea3f9a09f8f2d248fe0f7bc8587315c2f67192c496626e5", "https://connetixtiles.com/product/pastel-square-pack-40-pc"],
+  ["connetix-pastel-transport", "official-slug:pastel-transport-pack-50-pc", "Pastel Transport Pack 50 pc", "catalog-assets/connetix-pastel-transport-pack-50.webp", "image/webp", "sha256:565d5ca63e996bc2c99f52bae312ba58d7757f365054fdfc9357c59fb91bbfbd", "https://connetixtiles.com/product/pastel-transport-pack-50-pc"],
+  ["connetix-rainbow-blue-green-base-plate-2", "official-slug:rainbow-blue-green-base-plate-2-pc", "Rainbow Blue & Green Base Plate 2 pc", "catalog-assets/connetix-rainbow-blue-green-base-plate-2.webp", "image/webp", "sha256:92ad12afe5ea89409493297996d4c1d1c6b5124e33d9aa5d432407f61cfc72af", "https://connetixtiles.com/product/rainbow-blue-green-base-plate-2-pc"],
+  ["connetix-rainbow-geometry", "official-slug:rainbow-geometry-pack-30-pc", "Rainbow Geometry Pack 30 pc", "catalog-assets/connetix-rainbow-geometry-pack-30.png", "image/png", "sha256:a837742085e7ac562dbb719acbd1e07cf0c4bec2890b98e26f5cc61bb07c0a2c", "https://connetixtiles.com/product/rainbow-geometry-pack-30-pc"],
+  ["connetix-rainbow-creative-212", "official-slug:rainbow-mega-pack-212-pc", "Rainbow Mega Pack 212 pc", "catalog-assets/connetix-rainbow-mega-pack-212.webp", "image/webp", "sha256:d168e14c9fa9c363047171945fae8548a78bc11c612950183e60d77651ebf433", "https://connetixtiles.com/product/rainbow-mega-pack-212-pc"],
+  ["connetix-rainbow-rectangle", "official-slug:rainbow-rectangle-pack-18-pc", "Rainbow Rectangle Pack 18 pc", "catalog-assets/connetix-rainbow-rectangle-pack-18.png", "image/png", "sha256:f39441b473f9b563385ae9d702ead5b7626aacd872a462fc6793f372e3beacd9", "https://connetixtiles.com/product/rainbow-rectangle-pack-18-pc"],
+  ["connetix-rainbow-square", "official-slug:rainbow-square-pack-42-pc", "Rainbow Square Pack 42 pc", "catalog-assets/connetix-rainbow-square-pack-42.png", "image/png", "sha256:7d404f70fc9553302c4df8536b360874286863050504fda0899b99f67a35ead3", "https://connetixtiles.com/product/rainbow-square-pack-42-pc"],
+  ["connetix-rainbow-transport", "official-slug:rainbow-transport-pack-50-pc", "Rainbow Transport Pack 50 pc", "catalog-assets/connetix-rainbow-transport-pack-50.webp", "image/webp", "sha256:de1498e23267d3f413d9e8217f9ad83f3ea47d971bc174097d6383550f8a408c", "https://connetixtiles.com/product/rainbow-transport-pack-50-pc"],
+  ["haba-animal-upon-animal-junior", "306069", "My Very First Games - Animal Upon Animal Junior", "catalog-assets/haba-animal-upon-animal-junior-306069.jpg", "image/jpeg", "sha256:b72f29f1145e5b8213f57c57c0d0aded16d1071258d34ae425b645bc6355f994", "https://www.habausa.com/products/my-very-first-games-animal-upon-animal-junior"],
+  ["haba-cars-my-first-racetrack", "2011834001", "HABA Cars - My First Racetrack", "catalog-assets/haba-cars-my-first-racetrack-2011834001.jpg", "image/jpeg", "sha256:2b8ec23e5d62a8380b8ce0cc79f40c7439cab0e30b4deed9371aaf35580ac6ba", "https://www.habausa.com/products/haba-cars-my-first-race-track"],
+  ["haba-little-friends-family", "990003", "Little Friends Doll Bundle - Family Set", "catalog-assets/haba-little-friends-family-990003.jpg", "image/jpeg", "sha256:1554ec93f65bdf74a29fd7e92a546ca814d15338afa5e6c5d381c7a4ac1769f6", "https://www.habausa.com/products/little-friends-doll-bundle-family-set"],
+  ["letoyvan-petilou-sensory-shapes", "PL089", "Rainbow Sensory Shape Sorter", "catalog-assets/ltv-petilou-sensory-shapes-pl089.jpg", "image/jpeg", "sha256:35d5b145c272b8052d4c2a4e9cabe83c03bed0a4c8a32f11afb1d0ed445d36c9", "https://letoyvan.com/products/sensory-shapes"],
+  ["ltv-wooden-coffee-machine", "TV299", "Wooden Coffee Machine & Cup", "catalog-assets/ltv-wooden-coffee-machine-tv299.jpg", "image/jpeg", "sha256:7a10936ab06aaafb003b187b49b3eaeff31ee41a73834ee97e64fd5d228db6b9", "https://letoyvan.com/products/cafe-machine"]
+]);
+
+// src/data/catalog-image-assets-batch17.js
+var BATCH17_PACKAGED_IMAGE_ROWS = Object.freeze([
+  ["londji-puzzle-animal-planet", "PZ602U", "Puzzle - ANIMAL PLANET", "catalog-assets/londji-puzzle-animal-planet-pz602u.jpg", "image/jpeg", "sha256:1d546ebd20f20f14e3336b547708734397dc01a01cc9df2463ddf8bb59683a4b", "https://londji.com/en/puzzles/puzzle-animal-planet.html"],
+  ["londji-puzzle-i-love-my-pets", "PZ003U", "Puzzle - I LOVE MY PETS", "catalog-assets/londji-puzzle-i-love-my-pets-pz003u.jpg", "image/jpeg", "sha256:320d1226669458f39fba77ea9d628e1cbd12ba35ca6212a70a5d5c5a68a0032a", "https://londji.com/en/puzzles/puzzle-i-love-my-pets.html"],
+  ["londji-puzzle-rabbit-s-garden", "PZ568U", "Puzzle - RABBIT'S GARDEN", "catalog-assets/londji-puzzle-rabbits-garden-pz568u.jpg", "image/jpeg", "sha256:3dd8963dad336b3a19f978e34480822afc8190d56def396f1acecb87d5ae4a41", "https://londji.com/en/puzzles/puzzle-rabbits-garden.html"],
+  ["londji-puzzle-10-penguins", "PZ348U", "Puzzle - 10 PENGUINS", "catalog-assets/londji-puzzle-10-penguins-pz348u.jpg", "image/jpeg", "sha256:e0a11f6a0af72b7e8d529c4ad39aa1424273d1430baafaceb7252a3f59527362", "https://londji.com/en/puzzles/puzzle-10-penguins.html"],
+  ["londji-puzzle-my-jungle-puzzle", "PZ333U", "Puzzle - MY JUNGLE PUZZLE", "catalog-assets/londji-puzzle-my-jungle-puzzle-pz333u.jpg", "image/jpeg", "sha256:f83b97c9606642317d88815450553b3b3523568c3810b6e09374ff98028d3363", "https://londji.com/en/puzzles/puzzle-my-jungle-puzzle.html"],
+  ["londji-puzzle-mon-petit-pommier", "PZ565U", "Puzzle - MON PETIT POMMIER", "catalog-assets/londji-puzzle-mon-petit-pommier-pz565u.jpg", "image/jpeg", "sha256:2cf3e9398ffcbbbb899de7f32019ca9083268ad522ce53a6a858f9270355c65c", "https://londji.com/en/puzzles/puzzle-mon-petit-pommier.html"],
+  ["londji-puzzle-my-big-blue", "PZ335U", "Puzzle - MY BIG BLUE", "catalog-assets/londji-puzzle-my-big-blue-pz335u.jpg", "image/jpeg", "sha256:823b36826068ac2de56ee6e2b74cf5bfb18c27c1a7b35d89c711c360a82ada06", "https://londji.com/en/puzzles/puzzle-my-big-blue.html"],
+  ["londji-puzzle-circus-round", "PZ330U", "Puzzle - CIRCUS ROUND", "catalog-assets/londji-puzzle-circus-round-pz330u.jpg", "image/jpeg", "sha256:29ce0000b8edbfffc61227307a9c048fb17eb86701db88342513d2c6818b0cba", "https://londji.com/en/puzzles/puzzle-circus-round.html"],
+  ["londji-puzzle-up-to-the-moon", "PZ370U", "Puzzle - UP TO THE MOON", "catalog-assets/londji-puzzle-up-to-the-moon-pz370u.jpg", "image/jpeg", "sha256:e4b510f47b4521d52e9734270dbe45b08db37f6ea106247f7d81010801a4ae95", "https://londji.com/en/puzzles/puzzle-up-to-the-moon.html"],
+  ["londji-puzzle-welcome-to-my-home", "PZ560U", "Puzzle - WELCOME TO MY HOME", "catalog-assets/londji-puzzle-welcome-to-my-home-pz560u.jpg", "image/jpeg", "sha256:801327fbc7060c14bbac56facb86b0cd8a1c7ee4094a6cba624048b3af1bca58", "https://londji.com/en/puzzles/puzzle-welcome-to-my-home.html"],
+  ["londji-where-is-cheese", "FG010U", "Family Game - WHERE IS THE CHEESE?", "catalog-assets/londji-family-game-where-is-the-cheese-fg010u.jpg", "image/jpeg", "sha256:55eab18b9558ada2f6a44a35dbe962aa3e4ad0029039e93c66430d8043bd1dd7", "https://londji.com/en/games/family-game-where-is-the-cheese.html"]
+]);
+
+// src/data/catalog-image-assets-campaign1.js
+var CAMPAIGN1_PACKAGED_IMAGE_ROWS = Object.freeze([
+  ["mideer-levelup-l1-animals-vehicles", "MD1474", "Level Up! Puzzles with Storage Bag - Level 1: Animals and Vehicles 2P-6P", "catalog-assets/mideer-levelup-l1-animals-vehicles-md1474.jpg", "image/jpeg", "sha256:1fdcaa24f285e52e62ba34b4f1706afb23f3a9f969772fffe3b16c42a23b4ef4", "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-1-animals-and-vehicles-2p-6p"],
+  ["mideer-levelup-l3-city-teamers", "MD1477", "Level Up! Puzzles with Storage Bag - Level 3: City Teamers 24P-35P", "catalog-assets/mideer-levelup-l3-city-teamers-md1477.jpg", "image/jpeg", "sha256:3ccccc1febb218d7dcf2f86e81cd7379c6efcb30f1c77ae8b93f2480fe703335", "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-3-city-teamers-24p-35p"],
+  ["mideer-levelup-l3-natural-scenery", "MD1480", "Level Up! Puzzles with Storage Bag - Level 3: Natural Scenery 24P-35P", "catalog-assets/mideer-levelup-l3-natural-scenery-md1480.jpg", "image/jpeg", "sha256:5199e5b2a8b5bf40b935c94342f727dc22181a6c7f5a22f99edc4fa7c7d29d9c", "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-3-natural-scenery-24p-35p"],
+  ["mideer-levelup-l4-dinosaur-world", "MD1643", "Level Up! Puzzles with Storage Bag - Level 4: Dinosaur's World 48P-72P", "catalog-assets/mideer-levelup-l4-dinosaur-world-md1643.jpg", "image/jpeg", "sha256:d10c774b024985ef4fa7df43bce6ad274cd84d9fe0f395940d2979cc8c48c08a", "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-4-dinosaurs-world-48p-72p"],
+  ["mideer-level6-long-holiday", "MD1488", "Level Up! Puzzles with Storage Bag - Level 6: Relaxing Holiday 154P-180P", "catalog-assets/mideer-level6-long-holiday-md1488.jpg", "image/jpeg", "sha256:8af0935a9a8db46be683bf68f5925add2e4717f43c1c6789891e40302978c97a", "https://mideerart.com/products/level-up-puzzles-with-storage-bag-level-6-a-long-holiday-154p-180p"],
+  ["mideer-time-imprints-3d-gallery", "MD1651", "Time Imprints 3D Memory Gallery", "catalog-assets/mideer-time-imprints-3d-gallery-md1651.jpg", "image/jpeg", "sha256:a0cef1d35510268f3b2fa9f79ff416e95dfdebfb97eb4e28497d1f4825fa15dc", "https://mideerart.com/products/time-imprints-3d-memory-gallery"],
+  ["radio-flyer-push-pull-walker-wagon", "609AZ", "Push & Pull Walker Wagon", "catalog-assets/radio-flyer-push-pull-walker-wagon-609az.jpg", "image/jpeg", "sha256:76c2a07939eba264126034945df0f4b8ffe837061a4c2ee6a972035de29b3f1e", "https://www.radioflyer.com/products/push-pull-walker-wagon"],
+  ["vtech-animal-rhymes-music-book", "80-166770", "Animal Rhymes Music Book", "catalog-assets/vtech-animal-rhymes-music-book-80-166770.jpg", "image/jpeg", "sha256:58cf308032a58533ac84bf454f57b9ed064e7a6b916a522318e221a2157fff63", "https://www.vtechkids.com/product/detail/20228"],
+  ["vtech-smart-rocker", "80-136200", "2-in-1 Smart Rocker", "catalog-assets/vtech-smart-rocker-80-136200.jpg", "image/jpeg", "sha256:9e3f78dc3dce795b5935972401cd1a5d784c63db00dbb2f78ac76cf2986301c2", "https://www.vtechkids.com/product/detail/18682/2_in_1_Smart_Rocker"],
+  ["vtech-toddle-talk-turtle", "80-547600", "2-in-1 Toddle & Talk Turtle", "catalog-assets/vtech-toddle-talk-turtle-80-547600.jpg", "image/jpeg", "sha256:501a055dc10548b74fd3f683650933b887f098bd8a2df5ee5b12282cab09ddb3", "https://www.vtechkids.com/product/detail/20009/2_in_1_Toddle_and_Talk_Turtle"],
+  ["vtech-bounce-discover-llama", "80-547700", "Bounce & Discover Llama", "catalog-assets/vtech-bounce-discover-llama-80-547700.jpg", "image/jpeg", "sha256:25d64753daaaecf08df7f7995e04314fa144a079bed244d45bc2a8ebddd545da", "https://www.vtechkids.com/product/detail/20010/Bounce_and_Discover_Llama"],
+  ["vtech-care-go-unicorn", "80-592535", "Care & Go Unicorn", "catalog-assets/vtech-care-go-unicorn-80-592535.jpg", "image/jpeg", "sha256:77a95c551150c9870dcc2a3de1afbd111ee98bc449588e03d64e143408bfdc9a", "https://www.vtechkids.com/product/detail/21741"],
+  ["vtech-count-win-sports-center", "80-533500", "Count & Win Sports Center", "catalog-assets/vtech-count-win-sports-center-80-533500.jpg", "image/jpeg", "sha256:7e690ed4144c22bd5941cf07d889af19b26d4fff54341486e9f6ffcd98975216", "https://www.vtechkids.com/product/detail/19513/sitemap/"],
+  ["ikea-lillabo-5-piece-bridge", "103.200.63", "LILLABO 5-piece train bridge set", "catalog-assets/ikea-lillabo-5-piece-bridge-10320063.jpg", "image/jpeg", "sha256:b0e237af77b9ceaba109e625c714a6dbd3162821de9a1fc9287453c6ce5753f4", "https://www.ikea.com/ca/en/p/lillabo-5-piece-train-bridge-set-10320063/"],
+  ["ikea-leka-baby-gym", "705.750.80", "LEKA Baby gym, birch plywood/multicolor", "catalog-assets/ikea-leka-baby-gym-70575080.jpg", "image/jpeg", "sha256:d76de1464c9368fca8f7cf53fb005c2f23f77f9bdb1bc19df116b27e3a457a6a", "https://www.ikea.com/ca/en/p/leka-baby-gym-birch-plywood-multicolor-70575080/"],
+  ["ikea-lillabo-garage", "805.893.50", "LILLABO Garage with car and helicopter, multicolor", "catalog-assets/ikea-lillabo-garage-80589350.jpg", "image/jpeg", "sha256:c8564a092b22f441bb8c1921837e5d8cbcf4d44bd7a00d11a3843e358d0d37d0", "https://www.ikea.com/ca/en/p/lillabo-garage-with-car-and-helicopter-multicolor-80589350/"],
+  ["lr-a-to-z-mini-foods", "LER6795", "A to Z Mini Foods", "catalog-assets/lr-a-to-z-mini-foods-ler6795.jpg", "image/jpeg", "sha256:a61d106428917830a12c2ef78a8cfa4f5a36232c20ab699ddbc059ebfb459cae", "https://www.learningresources.co.uk/mini-alphabet-foods"],
+  ["londji-puzzle-once-upon-a-time", "PZ599U", "Puzzle - ONCE UPON A TIME", "catalog-assets/londji-puzzle-once-upon-a-time-pz599u.jpg", "image/jpeg", "sha256:ad1ff3f2f3013c82a4ee1d9316d4268195db4b0d86a2e24329c280233dd923f6", "https://londji.com/en/puzzles/puzzle-once-upon-a-time.html"],
+  ["vtech-care-for-me-learning-carrier", "80-191500", "Care for Me Learning Carrier", "catalog-assets/vtech-care-for-me-learning-carrier-80-191500.jpg", "image/jpeg", "sha256:28e5638c244032fb5067763e3c26af55ff31c24e15cb030c9ef7faeb4312695a", "https://www.vtechkids.com/product/detail/17091/support/"],
+  ["vtech-drill-learn-toolbox", "80-178200", "Drill & Learn Toolbox", "catalog-assets/vtech-drill-learn-toolbox-80-178200.jpg", "image/jpeg", "sha256:8a5704ae71f6e6948bce87f09718037ca0e08e7c27f6d8bce4032b9cd3ce4bca", "https://www.vtechkids.com/product/detail/17143/"],
+  ["vtech-explore-crawl-elephant", "80-533200", "Explore & Crawl Elephant", "catalog-assets/vtech-explore-crawl-elephant-80-533200.jpg", "image/jpeg", "sha256:bb0308d525c5dfdcf5e3bcdc357fd6abae63058639a6d17a70261a0b5ec22835", "https://www.vtechkids.com/product/detail/19545/Explore_and_Crawl_Elephant"],
+  ["vtech-explore-learn-smart-tv", "80-578700", "Explore & Learn Smart TV", "catalog-assets/vtech-explore-learn-smart-tv-80-578700.jpg", "image/jpeg", "sha256:ae1a1a419e1d924859a925265c86396b83f4c81bdd49abe01dcf79328b33943f", "https://www.vtechkids.com/product/detail/21444"],
+  ["vtech-wiggle-crawl-ball", "80-184900", "Wiggle & Crawl Ball", "catalog-assets/vtech-wiggle-crawl-ball-80-184900.jpg", "image/jpeg", "sha256:ac5a3d70e59566dcea3391e382a7eadc3d8ab1d6d428533abd5f74f5a9ebcbdb", "https://www.vtechkids.com/product/detail/17138/Wiggle_and_Crawl_Ball_/"],
+  ["vtech-sort-discover-activity-cube", "80-183400", "Sort & Discover Activity Cube", "catalog-assets/vtech-sort-discover-activity-cube-80-183400.jpg", "image/jpeg", "sha256:61fed40fca9356c27da9aa157e1e84955f683b2565ec741ae346e2d2faf5883b", "https://www.vtechkids.com/product/detail/17092"],
+  ["vtech-put-take-peek-a-boo-house", "80-587300", "Put & Take Peek-a-Boo House", "catalog-assets/vtech-put-take-peek-a-boo-house-80-587300.jpg", "image/jpeg", "sha256:dff1b7cab44e1acb53737492d8c823d846854f24a23f43d49abd403722f36d8f", "https://www.vtechkids.com/product/detail/21830"],
+  ["ikea-barkborre-doctor-set", "205.446.42", "BARKBORRE 7-piece toy doctor\u2019s set", "catalog-assets/ikea-barkborre-doctor-set-20544642.jpg", "image/jpeg", "sha256:3ec645a93ed3e109af5fa2c7e392443a578e86993e82862570d578bb0d4315b1", "https://www.ikea.com/ca/en/p/barkborre-7-piece-toy-doctor-s-set-20544642/"],
+  ["ikea-mala-easel", "304.889.66", "M\xC5LA Easel, softwood", "catalog-assets/ikea-mala-easel-30488966.jpg", "image/jpeg", "sha256:1058962d0927b55a9a2f248822dbe66d49ad7b1e68209b68f0057e85197c457d", "https://www.ikea.com/ca/en/p/mala-easel-softwood-30488966/"],
+  ["vtech-musical-rhymes-book", "80-166700", "Musical Rhymes Book", "catalog-assets/vtech-musical-rhymes-book-80-166700.jpg", "image/jpeg", "sha256:a9f7efee29c99fdb2871dc36e3306f47c9666914a5ea14297e27d5181c88b5d1", "https://www.vtechkids.com/product/detail/16426/Musical_Rhymes_Book"],
+  ["vtech-lil-critters-moosical-beads", "80-166000", "Lil\u2019 Critters Moosical Beads", "catalog-assets/vtech-lil-critters-moosical-beads-80-166000.jpg", "image/jpeg", "sha256:ead9c282e855022e22e639e9f41c74d3ba065af6811a1d1f85d28b52d2d9f02f", "https://www.vtechkids.com/product/detail/16423"],
+  ["vtech-nest-build-tree-stacker", "80-185000", "Nest & Build Tree Stacker", "catalog-assets/vtech-nest-build-tree-stacker-80-185000.jpg", "image/jpeg", "sha256:4024c2e601d434dbe7d13d9e472e43a2dd77bd54faa1a0bd3c2369657aba3e05", "https://www.vtechkids.com/product/detail/16931/Nest_and_Build_Tree_Stacker"],
+  ["vtech-peek-turn-discovery-book", "80-574200", "Peek & Turn Discovery Book", "catalog-assets/vtech-peek-turn-discovery-book-80-574200.jpg", "image/jpeg", "sha256:217740ed5ff05187f25e093debbced90067ecf2e8fd44565f938b9318f2c7851", "https://www.vtechkids.com/product/detail/21120/VTech_Baby_Peek_and_Turn_Discovery_Book"],
+  ["vtech-twist-teach-animal-cube", "80-558400", "Twist & Teach Animal Cube", "catalog-assets/vtech-twist-teach-animal-cube-80-558400.jpg", "image/jpeg", "sha256:84a3e78edde9491f7c054ba348ab9a189e18ba903de9462d02eb3b2d62b902f6", "https://www.vtechkids.com/product/detail/20586"],
+  ["vtech-sing-stroll-kitty", "80-574835", "Sing & Stroll Kitty", "catalog-assets/vtech-sing-stroll-kitty-80-574835.jpg", "image/jpeg", "sha256:58824f953aeecf4ab418bdff5d2a8f26bd47891e8fcd0e4c57800becea22ae55", "https://www.vtechkids.com/product/detail/21502"],
+  ["fisher-price-little-people-school-bus", "GTL67", "Little People Big Yellow School Bus - English & French Version", "catalog-assets/fisher-price-little-people-school-bus-gtl67.jpg", "image/jpeg", "sha256:736ad72c4cb761ce2ab2d9777b1a506a86125640e3c9bb7220472fac4ec74800", "https://shop.mattel.com/en-ca/products/fisher-price-little-people-big-yellow-school-bus-gtl67-en-ca"],
+  ["ikea-lillabo-turntable", "105.152.06", "LILLABO Turntable", "catalog-assets/ikea-lillabo-turntable-10515206.jpg", "image/jpeg", "sha256:231f818b3301f43671712b8a5872f351e452c5300ea772b7d60af42a53074bdd", "https://www.ikea.com/ae/en/p/lillabo-turntable-10515206/"],
+  ["vtech-gogo-race-team-2pack", "80-420670", "Go! Go! Smart Wheels Race Team 2-Pack", "catalog-assets/vtech-gogo-race-team-2pack-80-420670.jpg", "image/jpeg", "sha256:2881bec2172b394623d428d372c107944705f8face85e3f22f94dc9a25a0d7ca", "https://www.vtechkids.com/product/detail/20712/Go_Go_Smart_Wheels_Race_Team_2_Pack"],
+  ["vtech-gogo-zigzag-raceway", "80-556500", "Go! Go! Smart Wheels 4-in-1 Zig-Zag Raceway", "catalog-assets/vtech-gogo-zigzag-raceway-80-556500.jpg", "image/jpeg", "sha256:e373d198eea80fc842f2324492133a1e03f831fce02353407344caf3ad9b4fd5", "https://www.vtechkids.com/product/detail/20668/support/"],
+  ["vtech-pull-back-skater-cat", "80-560900", "Pull Back Skater Cat", "catalog-assets/vtech-pull-back-skater-cat-80-560900.jpg", "image/jpeg", "sha256:c46b7e7c673807295ef80b210d49dbb83166418abda720974c78140cb7329069", "https://www.vtechkids.com/product/detail/20556/Pull_Back_Skater_Cat"],
+  ["vtech-press-squish-flip-phone", "80-560730", "VTech Baby Press & Squish Flip Phone", "catalog-assets/vtech-press-squish-flip-phone-80-560730.jpg", "image/jpeg", "sha256:ed78297b361669f49f436a2efd66965fc4f9988f12a4604e6cdff421e95ca775", "https://www.vtechkids.com/product/detail/21315"],
+  ["vtech-gogo-spinning-spiral-tower", "80-152700", "Go! Go! Smart Wheels Spinning Spiral Tower Playset", "catalog-assets/vtech-gogo-spinning-spiral-tower-80-152700.jpg", "image/jpeg", "sha256:64a9c1ebed95b3610cc9db02d1f84e9954e38c2df7846adf9b23d4662b1d4028", "https://www.vtechkids.com/product/detail/15423"],
+  ["ikea-lillabo-3-piece-vehicle-fire", "705.893.55", "LILLABO 3-piece vehicle set, fire truck sports car/tow truck multicolor", "catalog-assets/ikea-lillabo-fire-vehicles-70589355.jpg", "image/jpeg", "sha256:12e0b203d36116e1a7810fc2ca9bfb29de97efecfc579dbe7da0b13c4fd483a2", "https://www.ikea.com/ca/en/p/lillabo-3-piece-vehicle-set-fire-truck-sports-car-tow-truck-multicolor-70589355/"],
+  ["vtech-push-pop-bulldozer", "80-506000", "Pop-a-Balls Push & Pop Bulldozer", "catalog-assets/vtech-push-pop-bulldozer-80-506000.jpg", "image/jpeg", "sha256:5569da940e72379240dc0c2675ac181232b195ed586bc6896c6d3b41cc9e323b", "https://www.vtechkids.com/assets/data/products/%7BB1AFD93D-E20E-48B8-9D1F-40C2FEF4B107%7D/images/506000_1_large.jpg"],
+  ["vtech-gogo-freight-train", "80-194400", "Go! Go! Smart Wheels Freight Train with Tanker Car", "catalog-assets/vtech-gogo-freight-train-80-194400.jpg", "image/jpeg", "sha256:b504ec45f960c785412bd219963482324351a9ab8cee608942e61d6a9507e8d0", "https://www.vtechkids.com/assets/data/products/%7B61818F8F-3CAF-4A4F-981D-F727C23AC6FA%7D/images/194400_1Main_large.jpg"],
+  ["smartgames-snowwhite", "SG 024", "SnowWhite Deluxe", "catalog-assets/smartgames-snowwhite-sg024.jpg", "image/jpeg", "sha256:46f991b6cb30f34bdf31fd4ca106eea91cd9ed8cec7d261b1c3e614cd18ef3c7", "https://d32bxxnq6qs937.cloudfront.net/sites/default/files/smartgames-product-banner_SnowWhite-Deluxe-NL.jpg"]
+]);
+
 // src/data/catalog-image-assets-hape-batch1.js
 var HAPE_PRIORITY_BATCH1_IMAGE_ROWS = Object.freeze([
   Object.freeze({
@@ -4864,6 +5032,18 @@ var BATCH10_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH10_OFFICIAL_IMAGE_RO
 var BATCH11_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH11_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, "official_cdn"), imageOwnerCanonicalKey: key, updatedAt: "2026-09-11T00:00:00.000Z" }]));
 var BATCH12_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH12_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, "official_cdn"), imageOwnerCanonicalKey: key, updatedAt: "2026-09-11T00:00:00.000Z" }]));
 var BATCH13_OFFICIAL_IMAGE_ASSETS = Object.fromEntries(BATCH13_OFFICIAL_IMAGE_ROWS.map(([key, url, source]) => [key, { ...remote(url, source, "official_cdn"), imageOwnerCanonicalKey: key, updatedAt: "2026-09-11T00:00:00.000Z" }]));
+var BATCH14_PACKAGED_IMAGE_ASSETS = Object.fromEntries(BATCH14_PACKAGED_IMAGE_ROWS.map((row) => [row.canonicalKey, {
+  ...packaged(row.imagePath, row.sourcePage, "official_cdn", row.mimeType, row.contentHash),
+  imageOwnerCanonicalKey: row.canonicalKey,
+  sku: row.sku,
+  officialProductName: row.officialProductName,
+  sourceImageUrl: row.sourceImageUrl,
+  updatedAt: "2026-10-14T00:00:00.000Z"
+}]));
+var BATCH15_PACKAGED_IMAGE_ASSETS = Object.fromEntries(BATCH15_PACKAGED_IMAGE_ROWS.map(([canonicalKey2, sku, officialProductName, path, mimeType, contentHash, imageSource]) => [canonicalKey2, { ...packaged(path, imageSource, "official_cdn", mimeType, contentHash), imageOwnerCanonicalKey: canonicalKey2, sku, officialProductName, updatedAt: "2026-10-14T00:00:00.000Z" }]));
+var BATCH16_PACKAGED_IMAGE_ASSETS = Object.fromEntries(BATCH16_PACKAGED_IMAGE_ROWS.map(([canonicalKey2, sku, officialProductName, path, mimeType, contentHash, imageSource]) => [canonicalKey2, { ...packaged(path, imageSource, "official_cdn", mimeType, contentHash), imageOwnerCanonicalKey: canonicalKey2, sku, officialProductName, updatedAt: "2026-10-14T00:00:00.000Z" }]));
+var BATCH17_PACKAGED_IMAGE_ASSETS = Object.fromEntries(BATCH17_PACKAGED_IMAGE_ROWS.map(([canonicalKey2, sku, officialProductName, path, mimeType, contentHash, imageSource]) => [canonicalKey2, { ...packaged(path, imageSource, "official_cdn", mimeType, contentHash), imageOwnerCanonicalKey: canonicalKey2, sku, officialProductName, updatedAt: "2026-10-14T00:00:00.000Z" }]));
+var CAMPAIGN1_PACKAGED_IMAGE_ASSETS = Object.fromEntries(CAMPAIGN1_PACKAGED_IMAGE_ROWS.map(([canonicalKey2, sku, officialProductName, path, mimeType, contentHash, imageSource]) => [canonicalKey2, { ...packaged(path, imageSource, "official_cdn", mimeType, contentHash), imageOwnerCanonicalKey: canonicalKey2, sku, officialProductName, updatedAt: "2026-10-14T00:00:00.000Z" }]));
 var HAPE_PRIORITY_BATCH1_IMAGE_ASSETS = Object.fromEntries(HAPE_PRIORITY_BATCH1_IMAGE_ROWS.map((row) => [row.canonicalKey, {
   ...remote(row.imageRef, row.imageSource, row.imageSourceType),
   imageOwnerCanonicalKey: row.canonicalKey,
@@ -5012,6 +5192,11 @@ var CATALOG_IMAGE_ASSETS = Object.freeze({
   ...BATCH11_OFFICIAL_IMAGE_ASSETS,
   ...BATCH12_OFFICIAL_IMAGE_ASSETS,
   ...BATCH13_OFFICIAL_IMAGE_ASSETS,
+  ...BATCH14_PACKAGED_IMAGE_ASSETS,
+  ...BATCH15_PACKAGED_IMAGE_ASSETS,
+  ...BATCH16_PACKAGED_IMAGE_ASSETS,
+  ...BATCH17_PACKAGED_IMAGE_ASSETS,
+  ...CAMPAIGN1_PACKAGED_IMAGE_ASSETS,
   ...HAPE_PRIORITY_BATCH1_IMAGE_ASSETS,
   ...HAPE_PRIORITY_BATCH2_IMAGE_ASSETS,
   ...HAPE_FINAL_RESOLUTION_IMAGE_ASSETS,
@@ -9719,6 +9904,7 @@ function localizePlayMechanism(value, locale) {
 var DICTIONARY = {
   en: {
     manageStandardCatalog: "Manage Standard Catalog",
+    restoreSelectFile: "Choose a backup JSON file to restore.",
     want: "Want",
     purchased: "Purchased",
     removeFromWishlist: "Remove from Wishlist",
@@ -10070,6 +10256,7 @@ var DICTIONARY = {
     skill: { logic: "Logic", math: "Early math", sorting: "Sorting", memory: "Memory", problem_solving: "Problem solving", cause_effect: "Cause & effect", spatial_awareness: "Spatial awareness", fine_motor: "Fine motor", hand_eye: "Hand-eye coordination", visual_spatial: "Visual-spatial", language: "Language", matching: "Matching", attention: "Attention", creativity: "Creativity", pretend_play: "Pretend play", social: "Social interaction", gross_motor: "Gross motor", sensory_exploration: "Sensory exploration", practical_life: "Practical life", colour: "Colour recognition", observation: "Observation", music: "Music", shapes: "Shape recognition", balance: "Balance control", rules: "Rule awareness", body_coordination: "Body coordination", grasping: "Grasping", aesthetics: "Aesthetic expression", visual_tracking: "Visual tracking", strategy: "Strategic thinking", social_cognition: "Social cognition", animal_cognition: "Animal knowledge", science: "Early science", open_play: "Open-ended play", imagination: "Imagination", letters: "Letter awareness", oral_motor: "Oral motor" }
   },
   zh: {
+    restoreSelectFile: "\u8BF7\u9009\u62E9\u4E00\u4E2A\u5907\u4EFD JSON \u6587\u4EF6\u518D\u6062\u590D\u3002",
     exportRuntimeImageDiagnostic: "\u5BFC\u51FA\u771F\u673A\u56FE\u7247\u8FD0\u884C\u8BCA\u65AD",
     exportRuntimeImageDiagnosticHint: "\u53EA\u8BFB\u5BFC\u51FA\u5F53\u524D Toy Library \u5361\u7247\u3001Catalog \u540E\u53F0\u52A0\u8F7D\u3001\u89E3\u6790\u7ED3\u679C\u4E0E\u6700\u7EC8 DOM \u56FE\u7247\u94FE\u3002",
     manageStandardCatalog: "\u7BA1\u7406\u6807\u51C6\u73A9\u5177\u5E93",
@@ -12482,10 +12669,13 @@ function openSettings() {
   dialog.querySelector("#catalog-safety-audit-export")?.addEventListener("click", () => downloadJson(buildCatalogSafetyAudit({ state: store.state, catalog, build: window.TOY_ROTATION_CONFIG }), `toy-safety-audit-v0116-${auditFilenameStamp()}.json`));
   dialog.querySelector("#raw-identity-reference-audit-export")?.addEventListener("click", () => downloadJson(buildRawIdentityReferenceAudit({ catalog, build: window.TOY_ROTATION_CONFIG }), `toy-raw-identity-audit-v0116-${auditFilenameStamp()}.json`));
   dialog.querySelector("#backup-import").onchange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
     const input = event.currentTarget;
     const status = dialog.querySelector("#backup-restore-status");
+    const file = input.files?.[0];
+    if (!file) {
+      status.textContent = t("restoreSelectFile");
+      return;
+    }
     const controls = [...form.querySelectorAll("button:not([data-close]), input, select, textarea")];
     const setStatus = (key, params = {}) => {
       status.textContent = t(key, params);
@@ -12525,9 +12715,10 @@ function openSettings() {
       const repaired = restored.historicalReferenceRepair?.remapped + restored.historicalReferenceRepair?.markedMissing || 0;
       setStatus(repaired ? "restoreCompleteWithHistoricalRepair" : "restoreComplete", { count: repaired });
     } catch (error) {
-      trace.mark("restore_handler_failed", { success: false, errorName: error?.name || "Error", errorMessage: error?.message || "restoreFailed" });
-      trace.fail(error);
-      setStatus("restoreFailed", { stage: globalThis.__TOY_ROTATION_RESTORE_TIMING__?.latestStage || "unknown" });
+      const failedAt = trace.failureStage || globalThis.__TOY_ROTATION_RESTORE_TIMING__?.failureStage || trace.latestStage || "unknown";
+      trace.mark("restore_handler_failed", { success: false, failedAt, errorName: error?.name || "Error", errorMessage: error?.message || "restoreFailed" });
+      trace.fail(error, failedAt);
+      setStatus("restoreFailed", { stage: failedAt });
       console.error("Backup restore failed", error);
     } finally {
       controls.forEach((control) => {
@@ -12535,6 +12726,9 @@ function openSettings() {
       });
       input.value = "";
     }
+  };
+  dialog.querySelector("#backup-import").oncancel = () => {
+    dialog.querySelector("#backup-restore-status").textContent = t("restoreSelectFile");
   };
   dialog.querySelector("#restore-diagnostic-export")?.addEventListener("click", exportRestoreDiagnostic);
   bindMd1460AuditExport(dialog);

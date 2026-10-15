@@ -1,12 +1,12 @@
 {
   "manifestVersion": 1,
-  "generatedAt": "2026-10-14T14:59:36.166Z",
+  "generatedAt": "2026-10-15T19:18:14.154Z",
   "target": "safari16",
   "buildIdentity": {
     "appVersion": "v0.13.0",
-    "buildName": "Toy Rotation v0.13.0 Development-Centered QA7 Explanation Fix1",
-    "buildDate": "20261014",
-    "buildId": "v0.13.0-development-centered-qa7-explanation-fix1-20261014"
+    "buildName": "Toy Rotation App v0.13.0 Final Production",
+    "buildDate": "20261015",
+    "buildId": "v0.13.0-final-production-r2-20261015"
   },
   "entries": [
     "index.html",
@@ -18,8 +18,8 @@
     {
       "path": "app.bundle.js",
       "resolvedDeployPath": "./app.bundle.js",
-      "bytes": 1138758,
-      "sha256": "c92bbdfa1ee2c8a66e74af075c052c0d8161b93285a3af52b1562e0db57d55bd",
+      "bytes": 1169827,
+      "sha256": "b0ebfbcd2f25031c2cc87706ad060477e0ff338a62293b507cea0c8e39355b68",
       "importedBy": [
         "streaming-package"
       ],
@@ -61,6 +61,51 @@
       }
     },
     {
+      "path": "catalog-assets/btoys-meowsic-bx1025.png",
+      "resolvedDeployPath": "./catalog-assets/btoys-meowsic-bx1025.png",
+      "bytes": 1717020,
+      "sha256": "4ce2dca580520138a18a3ad63813e2213095571c88f30234f02b8684cea210dd",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/btoys-one-two-squeeze-bx1481.jpg",
+      "resolvedDeployPath": "./catalog-assets/btoys-one-two-squeeze-bx1481.jpg",
+      "bytes": 144216,
+      "sha256": "6b40f1b770d9f6c922e50d60c3e6780c6bdb6b4b279261e392d7ab68e7c010d3",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/btoys-woofer-bx1166.jpg",
+      "resolvedDeployPath": "./catalog-assets/btoys-woofer-bx1166.jpg",
+      "bytes": 31878,
+      "sha256": "cb734799e387e276c1cc79a24494ceddb2e5ae0352d96fa73bd53389a66216f9",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "catalog-assets/cherrypick-dustless-chalk-crayons.jpg",
       "resolvedDeployPath": "./catalog-assets/cherrypick-dustless-chalk-crayons.jpg",
       "bytes": 23977,
@@ -91,6 +136,66 @@
       }
     },
     {
+      "path": "catalog-assets/cherrypick-jumbo-magic-playwall-upj-blsh.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-jumbo-magic-playwall-upj-blsh.jpg",
+      "bytes": 148586,
+      "sha256": "103fb99a1deaa722f54c16df0ae45709fb404a85fa04ff3c060133ec05d643d7",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/cherrypick-magnetic-dress-up-dolls-mag-doll.png",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-magnetic-dress-up-dolls-mag-doll.png",
+      "bytes": 452952,
+      "sha256": "43ba7e85acba0481cca583a524a5ee00c031ffb2e87b1016fac47c06429c3b8f",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/cherrypick-mega-magic-playwall-upm-nchk.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-mega-magic-playwall-upm-nchk.jpg",
+      "bytes": 295629,
+      "sha256": "46d88cb3dfbcad46e107edc22eea75a64c83dc7d2c155915a2e90d46e7bff6b8",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/cherrypick-mini-magic-playwall-ups-grey.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-mini-magic-playwall-ups-grey.jpg",
+      "bytes": 201179,
+      "sha256": "e4ef13b070ea2009c21298f9c758ec91df3d14c3e0183c82786d3f18ad1457a9",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "catalog-assets/cherrypick-original-magic-playwall.jpg",
       "resolvedDeployPath": "./catalog-assets/cherrypick-original-magic-playwall.jpg",
       "bytes": 65681,
@@ -110,6 +215,216 @@
       "resolvedDeployPath": "./catalog-assets/cherrypick-soft-foam-magnetic-letters.jpg",
       "bytes": 30365,
       "sha256": "3c3fbf7c25b1c94c3e6879213d771f18bc1ead0903b2aa4f90b38ac95a4a8ad3",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/cherrypick-sprinkler-splash-pad-sp-smile.jpg",
+      "resolvedDeployPath": "./catalog-assets/cherrypick-sprinkler-splash-pad-sp-smile.jpg",
+      "bytes": 632933,
+      "sha256": "f0151e1f8cffa6037927f0f7a43afe4ef9d65d966d723c0f785088867557d1c9",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/connetix-pastel-lemon-peach-base-plate-2.webp",
+      "resolvedDeployPath": "./catalog-assets/connetix-pastel-lemon-peach-base-plate-2.webp",
+      "bytes": 78084,
+      "sha256": "67d8fef2de721abb578d291a54f0751793b7d4bfd5a4a67b9853eb377c6e259a",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/connetix-pastel-square-pack-40.webp",
+      "resolvedDeployPath": "./catalog-assets/connetix-pastel-square-pack-40.webp",
+      "bytes": 59114,
+      "sha256": "2ae2bcca81fc986a7ea3f9a09f8f2d248fe0f7bc8587315c2f67192c496626e5",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/connetix-pastel-transport-pack-50.webp",
+      "resolvedDeployPath": "./catalog-assets/connetix-pastel-transport-pack-50.webp",
+      "bytes": 68332,
+      "sha256": "565d5ca63e996bc2c99f52bae312ba58d7757f365054fdfc9357c59fb91bbfbd",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/connetix-rainbow-blue-green-base-plate-2.webp",
+      "resolvedDeployPath": "./catalog-assets/connetix-rainbow-blue-green-base-plate-2.webp",
+      "bytes": 81488,
+      "sha256": "92ad12afe5ea89409493297996d4c1d1c6b5124e33d9aa5d432407f61cfc72af",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/connetix-rainbow-geometry-pack-30.png",
+      "resolvedDeployPath": "./catalog-assets/connetix-rainbow-geometry-pack-30.png",
+      "bytes": 627910,
+      "sha256": "a837742085e7ac562dbb719acbd1e07cf0c4bec2890b98e26f5cc61bb07c0a2c",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/connetix-rainbow-mega-pack-212.webp",
+      "resolvedDeployPath": "./catalog-assets/connetix-rainbow-mega-pack-212.webp",
+      "bytes": 101960,
+      "sha256": "d168e14c9fa9c363047171945fae8548a78bc11c612950183e60d77651ebf433",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/connetix-rainbow-rectangle-pack-18.png",
+      "resolvedDeployPath": "./catalog-assets/connetix-rainbow-rectangle-pack-18.png",
+      "bytes": 460227,
+      "sha256": "f39441b473f9b563385ae9d702ead5b7626aacd872a462fc6793f372e3beacd9",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/connetix-rainbow-square-pack-42.png",
+      "resolvedDeployPath": "./catalog-assets/connetix-rainbow-square-pack-42.png",
+      "bytes": 544183,
+      "sha256": "7d404f70fc9553302c4df8536b360874286863050504fda0899b99f67a35ead3",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/connetix-rainbow-transport-pack-50.webp",
+      "resolvedDeployPath": "./catalog-assets/connetix-rainbow-transport-pack-50.webp",
+      "bytes": 76796,
+      "sha256": "de1498e23267d3f413d9e8217f9ad83f3ea47d971bc174097d6383550f8a408c",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/fisher-price-little-people-school-bus-gtl67.jpg",
+      "resolvedDeployPath": "./catalog-assets/fisher-price-little-people-school-bus-gtl67.jpg",
+      "bytes": 77633,
+      "sha256": "736ad72c4cb761ce2ab2d9777b1a506a86125640e3c9bb7220472fac4ec74800",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/haba-animal-upon-animal-junior-306069.jpg",
+      "resolvedDeployPath": "./catalog-assets/haba-animal-upon-animal-junior-306069.jpg",
+      "bytes": 407092,
+      "sha256": "b72f29f1145e5b8213f57c57c0d0aded16d1071258d34ae425b645bc6355f994",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/haba-cars-my-first-racetrack-2011834001.jpg",
+      "resolvedDeployPath": "./catalog-assets/haba-cars-my-first-racetrack-2011834001.jpg",
+      "bytes": 126504,
+      "sha256": "2b8ec23e5d62a8380b8ce0cc79f40c7439cab0e30b4deed9371aaf35580ac6ba",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/haba-little-friends-family-990003.jpg",
+      "resolvedDeployPath": "./catalog-assets/haba-little-friends-family-990003.jpg",
+      "bytes": 119993,
+      "sha256": "1554ec93f65bdf74a29fd7e92a546ca814d15338afa5e6c5d381c7a4ac1769f6",
       "importedBy": [
         "streaming-package"
       ],
@@ -166,6 +481,111 @@
       }
     },
     {
+      "path": "catalog-assets/ikea-barkborre-doctor-set-20544642.jpg",
+      "resolvedDeployPath": "./catalog-assets/ikea-barkborre-doctor-set-20544642.jpg",
+      "bytes": 189500,
+      "sha256": "3ec645a93ed3e109af5fa2c7e392443a578e86993e82862570d578bb0d4315b1",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ikea-leka-baby-gym-70575080.jpg",
+      "resolvedDeployPath": "./catalog-assets/ikea-leka-baby-gym-70575080.jpg",
+      "bytes": 79248,
+      "sha256": "d76de1464c9368fca8f7cf53fb005c2f23f77f9bdb1bc19df116b27e3a457a6a",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ikea-lillabo-5-piece-bridge-10320063.jpg",
+      "resolvedDeployPath": "./catalog-assets/ikea-lillabo-5-piece-bridge-10320063.jpg",
+      "bytes": 62795,
+      "sha256": "b0e237af77b9ceaba109e625c714a6dbd3162821de9a1fc9287453c6ce5753f4",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ikea-lillabo-fire-vehicles-70589355.jpg",
+      "resolvedDeployPath": "./catalog-assets/ikea-lillabo-fire-vehicles-70589355.jpg",
+      "bytes": 91287,
+      "sha256": "12e0b203d36116e1a7810fc2ca9bfb29de97efecfc579dbe7da0b13c4fd483a2",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ikea-lillabo-garage-80589350.jpg",
+      "resolvedDeployPath": "./catalog-assets/ikea-lillabo-garage-80589350.jpg",
+      "bytes": 155031,
+      "sha256": "c8564a092b22f441bb8c1921837e5d8cbcf4d44bd7a00d11a3843e358d0d37d0",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ikea-lillabo-turntable-10515206.jpg",
+      "resolvedDeployPath": "./catalog-assets/ikea-lillabo-turntable-10515206.jpg",
+      "bytes": 94687,
+      "sha256": "231f818b3301f43671712b8a5872f351e452c5300ea772b7d60af42a53074bdd",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ikea-mala-easel-30488966.jpg",
+      "resolvedDeployPath": "./catalog-assets/ikea-mala-easel-30488966.jpg",
+      "bytes": 77126,
+      "sha256": "1058962d0927b55a9a2f248822dbe66d49ad7b1e68209b68f0057e85197c457d",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "catalog-assets/lego-duplo-3in1-construction-vehicles-10475.png",
       "resolvedDeployPath": "./catalog-assets/lego-duplo-3in1-construction-vehicles-10475.png",
       "bytes": 120435,
@@ -200,6 +620,321 @@
       "resolvedDeployPath": "./catalog-assets/lego-duplo-fire-truck-hose-firefighter-10473.jpg",
       "bytes": 100919,
       "sha256": "ad876feeb6209405527d7e3813de4aedc9509053471b6c9f59b874b741c0d174",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-family-game-where-is-the-cheese-fg010u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-family-game-where-is-the-cheese-fg010u.jpg",
+      "bytes": 140862,
+      "sha256": "55eab18b9558ada2f6a44a35dbe962aa3e4ad0029039e93c66430d8043bd1dd7",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-10-penguins-pz348u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-10-penguins-pz348u.jpg",
+      "bytes": 92778,
+      "sha256": "e0a11f6a0af72b7e8d529c4ad39aa1424273d1430baafaceb7252a3f59527362",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-animal-planet-pz602u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-animal-planet-pz602u.jpg",
+      "bytes": 134889,
+      "sha256": "1d546ebd20f20f14e3336b547708734397dc01a01cc9df2463ddf8bb59683a4b",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-circus-round-pz330u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-circus-round-pz330u.jpg",
+      "bytes": 104675,
+      "sha256": "29ce0000b8edbfffc61227307a9c048fb17eb86701db88342513d2c6818b0cba",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-i-love-my-pets-pz003u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-i-love-my-pets-pz003u.jpg",
+      "bytes": 114711,
+      "sha256": "320d1226669458f39fba77ea9d628e1cbd12ba35ca6212a70a5d5c5a68a0032a",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-mon-petit-pommier-pz565u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-mon-petit-pommier-pz565u.jpg",
+      "bytes": 122304,
+      "sha256": "2cf3e9398ffcbbbb899de7f32019ca9083268ad522ce53a6a858f9270355c65c",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-my-big-blue-pz335u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-my-big-blue-pz335u.jpg",
+      "bytes": 108629,
+      "sha256": "823b36826068ac2de56ee6e2b74cf5bfb18c27c1a7b35d89c711c360a82ada06",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-my-jungle-puzzle-pz333u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-my-jungle-puzzle-pz333u.jpg",
+      "bytes": 97392,
+      "sha256": "f83b97c9606642317d88815450553b3b3523568c3810b6e09374ff98028d3363",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-once-upon-a-time-pz599u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-once-upon-a-time-pz599u.jpg",
+      "bytes": 123700,
+      "sha256": "ad1ff3f2f3013c82a4ee1d9316d4268195db4b0d86a2e24329c280233dd923f6",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-rabbits-garden-pz568u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-rabbits-garden-pz568u.jpg",
+      "bytes": 155384,
+      "sha256": "3dd8963dad336b3a19f978e34480822afc8190d56def396f1acecb87d5ae4a41",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-up-to-the-moon-pz370u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-up-to-the-moon-pz370u.jpg",
+      "bytes": 95571,
+      "sha256": "e4b510f47b4521d52e9734270dbe45b08db37f6ea106247f7d81010801a4ae95",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/londji-puzzle-welcome-to-my-home-pz560u.jpg",
+      "resolvedDeployPath": "./catalog-assets/londji-puzzle-welcome-to-my-home-pz560u.jpg",
+      "bytes": 143944,
+      "sha256": "801327fbc7060c14bbac56facb86b0cd8a1c7ee4094a6cba624048b3af1bca58",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/lr-a-to-z-mini-foods-ler6795.jpg",
+      "resolvedDeployPath": "./catalog-assets/lr-a-to-z-mini-foods-ler6795.jpg",
+      "bytes": 34590,
+      "sha256": "a61d106428917830a12c2ef78a8cfa4f5a36232c20ab699ddbc059ebfb459cae",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ltv-ice-cream-stand-tv310.jpg",
+      "resolvedDeployPath": "./catalog-assets/ltv-ice-cream-stand-tv310.jpg",
+      "bytes": 123140,
+      "sha256": "dcf015c9df67f25cd9c6399c769965239b382396c0d0e33f9d8195416ac8dc43",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ltv-market-stall-fruit-crate-tv181.jpg",
+      "resolvedDeployPath": "./catalog-assets/ltv-market-stall-fruit-crate-tv181.jpg",
+      "bytes": 123936,
+      "sha256": "5bdbb4afa9fef7244c9bfc5b195c38da6cdfd256c5eedf1b1050d0423eac6cdb",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ltv-petilou-sensory-shapes-pl089.jpg",
+      "resolvedDeployPath": "./catalog-assets/ltv-petilou-sensory-shapes-pl089.jpg",
+      "bytes": 294519,
+      "sha256": "35d5b145c272b8052d4c2a4e9cabe83c03bed0a4c8a32f11afb1d0ed445d36c9",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ltv-pop-up-toaster-breakfast-tv287.jpg",
+      "resolvedDeployPath": "./catalog-assets/ltv-pop-up-toaster-breakfast-tv287.jpg",
+      "bytes": 150384,
+      "sha256": "26034b17a50595ec4fcf1a0cb9219df6acd30269b523e7c7690a76016985b6a7",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ltv-stacking-forest-animals-pl087.jpg",
+      "resolvedDeployPath": "./catalog-assets/ltv-stacking-forest-animals-pl087.jpg",
+      "bytes": 204876,
+      "sha256": "9c533e9fcaadf8c6f1d8a30f8354c32966943b8d0857770974d4f268c6f44b35",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ltv-wooden-coffee-machine-tv299.jpg",
+      "resolvedDeployPath": "./catalog-assets/ltv-wooden-coffee-machine-tv299.jpg",
+      "bytes": 102194,
+      "sha256": "7a10936ab06aaafb003b187b49b3eaeff31ee41a73834ee97e64fd5d228db6b9",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ltv-wooden-ice-lollies-tv284.jpg",
+      "resolvedDeployPath": "./catalog-assets/ltv-wooden-ice-lollies-tv284.jpg",
+      "bytes": 121194,
+      "sha256": "573cdc1777629b6ebf5af746a5f160060bfbecb44a4bf5b9e514ea6966499d6c",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/ltv-wooden-tea-set-tray-tv281.jpg",
+      "resolvedDeployPath": "./catalog-assets/ltv-wooden-tea-set-tray-tv281.jpg",
+      "bytes": 133613,
+      "sha256": "be62aaf19f501cfeda7a9df735f810db85299428a46ab42f36ef23d5818abc35",
       "importedBy": [
         "streaming-package"
       ],
@@ -676,10 +1411,100 @@
       }
     },
     {
+      "path": "catalog-assets/mideer-level6-long-holiday-md1488.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-level6-long-holiday-md1488.jpg",
+      "bytes": 217314,
+      "sha256": "8af0935a9a8db46be683bf68f5925add2e4717f43c1c6789891e40302978c97a",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-levelup-l1-animals-vehicles-md1474.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-levelup-l1-animals-vehicles-md1474.jpg",
+      "bytes": 175591,
+      "sha256": "1fdcaa24f285e52e62ba34b4f1706afb23f3a9f969772fffe3b16c42a23b4ef4",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-levelup-l3-city-teamers-md1477.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-levelup-l3-city-teamers-md1477.jpg",
+      "bytes": 222849,
+      "sha256": "3ccccc1febb218d7dcf2f86e81cd7379c6efcb30f1c77ae8b93f2480fe703335",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-levelup-l3-natural-scenery-md1480.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-levelup-l3-natural-scenery-md1480.jpg",
+      "bytes": 200455,
+      "sha256": "5199e5b2a8b5bf40b935c94342f727dc22181a6c7f5a22f99edc4fa7c7d29d9c",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-levelup-l4-dinosaur-world-md1643.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-levelup-l4-dinosaur-world-md1643.jpg",
+      "bytes": 219018,
+      "sha256": "d10c774b024985ef4fa7df43bce6ad274cd84d9fe0f395940d2979cc8c48c08a",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "catalog-assets/mideer-my-first-puzzle-dinosaurs-6in1.webp",
       "resolvedDeployPath": "./catalog-assets/mideer-my-first-puzzle-dinosaurs-6in1.webp",
       "bytes": 32238,
       "sha256": "e5fe90815379cd197aa58f5aeaaa5bb3cde546a2fb35882c2d2cbe9074043432",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/mideer-time-imprints-3d-gallery-md1651.jpg",
+      "resolvedDeployPath": "./catalog-assets/mideer-time-imprints-3d-gallery-md1651.jpg",
+      "bytes": 189161,
+      "sha256": "a0cef1d35510268f3b2fa9f79ff416e95dfdebfb97eb4e28497d1f4825fa15dc",
       "importedBy": [
         "streaming-package"
       ],
@@ -706,10 +1531,430 @@
       }
     },
     {
+      "path": "catalog-assets/radio-flyer-push-pull-walker-wagon-609az.jpg",
+      "resolvedDeployPath": "./catalog-assets/radio-flyer-push-pull-walker-wagon-609az.jpg",
+      "bytes": 23698,
+      "sha256": "76c2a07939eba264126034945df0f4b8ffe837061a4c2ee6a972035de29b3f1e",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/smartgames-snowwhite-sg024.jpg",
+      "resolvedDeployPath": "./catalog-assets/smartgames-snowwhite-sg024.jpg",
+      "bytes": 316289,
+      "sha256": "46f991b6cb30f34bdf31fd4ca106eea91cd9ed8cec7d261b1c3e614cd18ef3c7",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-animal-rhymes-music-book-80-166770.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-animal-rhymes-music-book-80-166770.jpg",
+      "bytes": 259449,
+      "sha256": "58cf308032a58533ac84bf454f57b9ed064e7a6b916a522318e221a2157fff63",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-bounce-discover-llama-80-547700.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-bounce-discover-llama-80-547700.jpg",
+      "bytes": 130983,
+      "sha256": "25d64753daaaecf08df7f7995e04314fa144a079bed244d45bc2a8ebddd545da",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
       "path": "catalog-assets/vtech-busy-learners-music-activity-cube-80-574100.jpg",
       "resolvedDeployPath": "./catalog-assets/vtech-busy-learners-music-activity-cube-80-574100.jpg",
       "bytes": 189033,
       "sha256": "383931a359dca748e531e8ec6f9a88e45d9db8eebb1f4c64d7dbe2d08920d79e",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-care-for-me-learning-carrier-80-191500.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-care-for-me-learning-carrier-80-191500.jpg",
+      "bytes": 250934,
+      "sha256": "28e5638c244032fb5067763e3c26af55ff31c24e15cb030c9ef7faeb4312695a",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-care-go-unicorn-80-592535.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-care-go-unicorn-80-592535.jpg",
+      "bytes": 130253,
+      "sha256": "77a95c551150c9870dcc2a3de1afbd111ee98bc449588e03d64e143408bfdc9a",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-count-win-sports-center-80-533500.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-count-win-sports-center-80-533500.jpg",
+      "bytes": 202808,
+      "sha256": "7e690ed4144c22bd5941cf07d889af19b26d4fff54341486e9f6ffcd98975216",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-drill-learn-toolbox-80-178200.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-drill-learn-toolbox-80-178200.jpg",
+      "bytes": 271382,
+      "sha256": "8a5704ae71f6e6948bce87f09718037ca0e08e7c27f6d8bce4032b9cd3ce4bca",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-explore-crawl-elephant-80-533200.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-explore-crawl-elephant-80-533200.jpg",
+      "bytes": 187446,
+      "sha256": "bb0308d525c5dfdcf5e3bcdc357fd6abae63058639a6d17a70261a0b5ec22835",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-explore-learn-smart-tv-80-578700.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-explore-learn-smart-tv-80-578700.jpg",
+      "bytes": 172724,
+      "sha256": "ae1a1a419e1d924859a925265c86396b83f4c81bdd49abe01dcf79328b33943f",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-gogo-freight-train-80-194400.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-gogo-freight-train-80-194400.jpg",
+      "bytes": 170974,
+      "sha256": "b504ec45f960c785412bd219963482324351a9ab8cee608942e61d6a9507e8d0",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-gogo-race-team-2pack-80-420670.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-gogo-race-team-2pack-80-420670.jpg",
+      "bytes": 249000,
+      "sha256": "2881bec2172b394623d428d372c107944705f8face85e3f22f94dc9a25a0d7ca",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-gogo-spinning-spiral-tower-80-152700.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-gogo-spinning-spiral-tower-80-152700.jpg",
+      "bytes": 114001,
+      "sha256": "64a9c1ebed95b3610cc9db02d1f84e9954e38c2df7846adf9b23d4662b1d4028",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-gogo-zigzag-raceway-80-556500.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-gogo-zigzag-raceway-80-556500.jpg",
+      "bytes": 191979,
+      "sha256": "e373d198eea80fc842f2324492133a1e03f831fce02353407344caf3ad9b4fd5",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-lil-critters-moosical-beads-80-166000.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-lil-critters-moosical-beads-80-166000.jpg",
+      "bytes": 222736,
+      "sha256": "ead9c282e855022e22e639e9f41c74d3ba065af6811a1d1f85d28b52d2d9f02f",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-musical-rhymes-book-80-166700.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-musical-rhymes-book-80-166700.jpg",
+      "bytes": 267630,
+      "sha256": "a9f7efee29c99fdb2871dc36e3306f47c9666914a5ea14297e27d5181c88b5d1",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-nest-build-tree-stacker-80-185000.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-nest-build-tree-stacker-80-185000.jpg",
+      "bytes": 217743,
+      "sha256": "4024c2e601d434dbe7d13d9e472e43a2dd77bd54faa1a0bd3c2369657aba3e05",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-peek-turn-discovery-book-80-574200.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-peek-turn-discovery-book-80-574200.jpg",
+      "bytes": 231029,
+      "sha256": "217740ed5ff05187f25e093debbced90067ecf2e8fd44565f938b9318f2c7851",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-press-squish-flip-phone-80-560730.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-press-squish-flip-phone-80-560730.jpg",
+      "bytes": 201889,
+      "sha256": "ed78297b361669f49f436a2efd66965fc4f9988f12a4604e6cdff421e95ca775",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-pull-back-skater-cat-80-560900.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-pull-back-skater-cat-80-560900.jpg",
+      "bytes": 149413,
+      "sha256": "c46b7e7c673807295ef80b210d49dbb83166418abda720974c78140cb7329069",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-push-pop-bulldozer-80-506000.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-push-pop-bulldozer-80-506000.jpg",
+      "bytes": 140925,
+      "sha256": "5569da940e72379240dc0c2675ac181232b195ed586bc6896c6d3b41cc9e323b",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-put-take-peek-a-boo-house-80-587300.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-put-take-peek-a-boo-house-80-587300.jpg",
+      "bytes": 179845,
+      "sha256": "dff1b7cab44e1acb53737492d8c823d846854f24a23f43d49abd403722f36d8f",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-sing-stroll-kitty-80-574835.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-sing-stroll-kitty-80-574835.jpg",
+      "bytes": 96152,
+      "sha256": "58824f953aeecf4ab418bdff5d2a8f26bd47891e8fcd0e4c57800becea22ae55",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-smart-rocker-80-136200.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-smart-rocker-80-136200.jpg",
+      "bytes": 157789,
+      "sha256": "9e3f78dc3dce795b5935972401cd1a5d784c63db00dbb2f78ac76cf2986301c2",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-sort-discover-activity-cube-80-183400.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-sort-discover-activity-cube-80-183400.jpg",
+      "bytes": 354426,
+      "sha256": "61fed40fca9356c27da9aa157e1e84955f683b2565ec741ae346e2d2faf5883b",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-toddle-talk-turtle-80-547600.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-toddle-talk-turtle-80-547600.jpg",
+      "bytes": 102031,
+      "sha256": "501a055dc10548b74fd3f683650933b887f098bd8a2df5ee5b12282cab09ddb3",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-twist-teach-animal-cube-80-558400.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-twist-teach-animal-cube-80-558400.jpg",
+      "bytes": 311698,
+      "sha256": "84a3e78edde9491f7c054ba348ab9a189e18ba903de9462d02eb3b2d62b902f6",
+      "importedBy": [
+        "streaming-package"
+      ],
+      "staticImports": [],
+      "dynamicImports": [],
+      "browserTargetCompatibility": {
+        "target": "safari16",
+        "result": "pass"
+      }
+    },
+    {
+      "path": "catalog-assets/vtech-wiggle-crawl-ball-80-184900.jpg",
+      "resolvedDeployPath": "./catalog-assets/vtech-wiggle-crawl-ball-80-184900.jpg",
+      "bytes": 197145,
+      "sha256": "ac5a3d70e59566dcea3391e382a7eadc3d8ab1d6d428533abd5f74f5a9ebcbdb",
       "importedBy": [
         "streaming-package"
       ],
@@ -768,8 +2013,8 @@
     {
       "path": "config.js",
       "resolvedDeployPath": "./config.js",
-      "bytes": 404,
-      "sha256": "6cfed7ff84a08e60a997be0fb69a76971b835f7ab9bb09af674445425e7898f2",
+      "bytes": 340,
+      "sha256": "d4396cab7fa92887ff3187071b38f9cbf997c7b85d56dd074c88c6f5444e6c97",
       "importedBy": [
         "streaming-package"
       ],
@@ -903,8 +2148,8 @@
     {
       "path": "manifest.webmanifest",
       "resolvedDeployPath": "./manifest.webmanifest",
-      "bytes": 354,
-      "sha256": "3dad3f3e13c23cf4b242788eac73f1228778325e562e19c7c3896427fb92b688",
+      "bytes": 333,
+      "sha256": "82d9e6c49a5abcfc37783ef42bc697eb6558d877e1af3d19279fa8890969d865",
       "importedBy": [
         "streaming-package"
       ],
@@ -978,8 +2223,8 @@
     {
       "path": "sw-precache-assets.js",
       "resolvedDeployPath": "./sw-precache-assets.js",
-      "bytes": 2655,
-      "sha256": "d405ef867fa37e946dd4a5aa80ff938fcd84299118665834c28017620161fe12",
+      "bytes": 7559,
+      "sha256": "e3940c5111ed9f98c452440dd680cad84b0d012100cd410b38882c1cdcfada30",
       "importedBy": [
         "streaming-package"
       ],
@@ -993,8 +2238,8 @@
     {
       "path": "sw.js",
       "resolvedDeployPath": "./sw.js",
-      "bytes": 2903,
-      "sha256": "80bec70fa439a9ab3aa8ebd681102ecb016aa6aa51fce34b7b575ba608659ab5",
+      "bytes": 2881,
+      "sha256": "31143db260d1561c68d0b63f74a7f80f3c35388c16a13106f7cb2db74d6184b1",
       "importedBy": [
         "streaming-package"
       ],
@@ -1024,6 +2269,6 @@
   "browserTargetCompatibility": {
     "target": "safari16",
     "result": "pass",
-    "checkedInputs": 67
+    "checkedInputs": 150
   }
 }
